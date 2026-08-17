@@ -3,22 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="theme-color" content="#120A8F">
+  <meta name="theme-color" content="#f7f7f5">
   <title>Обновление приложения</title>
   <style>
-    html,body{height:100%;margin:0;background:#fff;color:#120A8F;font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+    :root{color-scheme:light dark;--bg:#f7f7f5;--text:#2f2f2f;--muted:#6f6f6b;--card:#fff;--line:rgba(55,53,47,.14)}
+    @media(prefers-color-scheme:dark){:root{--bg:#191919;--text:#e6e6e5;--muted:#a9a9a5;--card:#202020;--line:rgba(255,255,255,.12)}}
+    html,body{height:100%;margin:0;background:var(--bg);color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
     body{display:grid;place-items:center;padding:24px;text-align:center}
-    .box{max-width:360px}
+    .box{max-width:360px;padding:28px;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:0 12px 32px rgba(15,15,15,.08)}
+    img{width:54px;height:54px;border-radius:13px;margin-bottom:18px}
     h1{margin:0 0 10px;font-size:24px;line-height:1.1}
-    p{margin:0;color:#514DB0;font-size:15px;line-height:1.45}
-    a{color:#120A8F;font-weight:700}
+    p{margin:0;color:var(--muted);font-size:15px;line-height:1.45}
+    a{color:var(--text);font-weight:700}
   </style>
 </head>
 <body>
   <div class="box">
+    <img src="app-icon.svg?v=20260817" alt="">
     <h1>Обновляю приложение</h1>
-    <p>Сейчас сброшу старый кэш и открою свежую светлую версию.</p>
-    <p style="margin-top:16px"><a id="manual" href="./?v=20260706-ultramarine-reset">Открыть вручную</a></p>
+    <p>Сейчас сброшу старый кэш и открою актуальную версию трекера.</p>
+    <p style="margin-top:16px"><a id="manual" href="./?v=20260817-notion-ui">Открыть вручную</a></p>
   </div>
   <script>
     (async()=>{
@@ -32,7 +36,7 @@
           await Promise.all(keys.map(k=>caches.delete(k)));
         }
       }catch(e){}
-      location.replace('./?v=20260706-ultramarine-reset-'+Date.now());
+      location.replace('./?v=20260817-notion-ui-'+Date.now());
     })();
   </script>
 </body>
