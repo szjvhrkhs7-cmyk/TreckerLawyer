@@ -162,9 +162,10 @@
   }
 
   async function authRequest(path, options = {}) {
+    const { token, headers, ...requestOptions } = options;
     const response = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
-      ...options,
-      headers: { ...authHeaders(options.token), ...(options.headers || {}) }
+      ...requestOptions,
+      headers: { ...authHeaders(token), ...(headers || {}) }
     });
     return parseResponse(response);
   }
@@ -219,7 +220,9 @@
   }
 
   async function fetchCloudRows() {
-    const rows = await dataRequest('/lawyer_store?select=storage_key,value,updated_at');
+    const user = session?.user || await loadUser();
+    if (!user?.id) throw new Error('AUTH_REQUIRED');
+    const rows = await dataRequest(`/lawyer_store?user_id=eq.${encodeURIComponent(user.id)}&select=storage_key,value,updated_at`);
     if (!Array.isArray(rows)) throw new Error('INVALID_CLOUD_DATA');
     return rows;
   }
@@ -442,7 +445,7 @@
   async function signOut() {
     try {
       if (session?.access_token && navigator.onLine) {
-        await authRequest('/logout', { method: 'POST', token: session.access_token });
+        await authRequest('/logout?scope=local', { method: 'POST', token: session.access_token });
       }
     } catch (error) {
       console.warn('Cloud logout failed', error);
