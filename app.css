@@ -1049,19 +1049,54 @@ select:focus-visible,
 }
 
 .is-sorting [data-sort-id] {
-  transition: transform 0.14s ease, opacity 0.14s ease, box-shadow 0.14s ease;
+  transition: transform 190ms cubic-bezier(.2, .8, .2, 1), opacity 140ms ease, box-shadow 140ms ease;
 }
 
 [data-sort-id].dragging {
   position: relative;
   z-index: 4;
-  opacity: 0.72;
 }
 
-[data-sort-id].dragging > .card,
-.card[data-sort-id].dragging {
+.card[data-sort-id].drag-placeholder,
+.drag-placeholder > .card {
+  border-color: color-mix(in srgb, var(--focus) 38%, var(--line));
+  background: color-mix(in srgb, var(--surface) 45%, transparent);
+  box-shadow: none;
+  opacity: 0.2;
+}
+
+.drag-floating {
+  position: fixed !important;
+  z-index: 1000 !important;
+  margin: 0 !important;
+  overflow: visible !important;
+  pointer-events: none !important;
+  transform-origin: center center;
+  will-change: transform;
+  opacity: 0.98;
+  filter: saturate(1.04);
+}
+
+.card.drag-floating,
+.drag-floating > .card {
+  border-color: color-mix(in srgb, var(--focus) 62%, var(--line));
+  background: var(--surface-raised);
+  box-shadow: 0 24px 60px rgba(15, 15, 15, 0.24), 0 8px 20px rgba(15, 15, 15, 0.14);
+}
+
+:root[data-theme="dark"] .card.drag-floating,
+:root[data-theme="dark"] .drag-floating > .card {
+  box-shadow: 0 28px 70px rgba(0, 0, 0, 0.58), 0 8px 24px rgba(0, 0, 0, 0.38);
+}
+
+.drag-floating .note-card {
+  transform: none !important;
+}
+
+.drag-floating .drag-handle {
   border-color: var(--focus);
-  box-shadow: var(--shadow-md);
+  color: var(--focus);
+  background: var(--surface);
 }
 
 body.drag-reordering {
