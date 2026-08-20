@@ -1018,11 +1018,13 @@ select:focus-visible,
   place-items: center;
   width: 38px;
   height: 38px;
-  border: 1px solid transparent;
+  border: 1px solid var(--line);
   border-radius: 9px;
   color: var(--faint);
+  background: var(--surface-hover);
   cursor: grab;
   touch-action: none;
+  -webkit-touch-callout: none;
   user-select: none;
 }
 
@@ -1051,8 +1053,9 @@ select:focus-visible,
 }
 
 [data-sort-id].dragging {
+  position: relative;
   z-index: 4;
-  opacity: 0.62;
+  opacity: 0.72;
 }
 
 [data-sort-id].dragging > .card,
@@ -1064,6 +1067,12 @@ select:focus-visible,
 body.drag-reordering {
   cursor: grabbing;
   user-select: none;
+}
+
+body.drag-reordering .drag-handle {
+  border-color: var(--focus);
+  color: var(--focus);
+  cursor: grabbing;
 }
 
 @media (max-width: 460px) {
