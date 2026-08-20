@@ -22,7 +22,7 @@
     <img src="app-icon.svg?v=20260817" alt="">
     <h1>Обновляю приложение</h1>
     <p>Сейчас сброшу старый кэш и открою актуальную версию трекера.</p>
-    <p style="margin-top:16px"><a id="manual" href="./?v=20260820-mobile-drag-fix">Открыть вручную</a></p>
+    <p style="margin-top:16px"><a id="manual" href="./?v=20260820-spatial-drag-security">Открыть вручную</a></p>
   </div>
   <script>
     (async()=>{
@@ -36,7 +36,7 @@
           await Promise.all(keys.map(k=>caches.delete(k)));
         }
       }catch(e){}
-      location.replace('./?v=20260820-mobile-drag-fix-'+Date.now());
+      location.replace('./?v=20260820-spatial-drag-security-'+Date.now());
     })();
   </script>
 </body>
