@@ -3,7 +3,7 @@
   "short_name": "Трекер",
   "description": "Задачи, проекты и заметки юриста",
   "lang": "ru",
-  "start_url": "./?source=pwa&v=20260817-notion-ui",
+  "start_url": "./?source=pwa&v=20260820-spatial-drag-security",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f7f7f5",
