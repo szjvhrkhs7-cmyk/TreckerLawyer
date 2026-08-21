@@ -1049,7 +1049,7 @@ select:focus-visible,
 }
 
 .is-sorting [data-sort-id] {
-  transition: transform 190ms cubic-bezier(.2, .8, .2, 1), opacity 140ms ease, box-shadow 140ms ease;
+  transition: opacity 140ms ease, box-shadow 140ms ease;
 }
 
 [data-sort-id].dragging {
@@ -1073,8 +1073,9 @@ select:focus-visible,
   pointer-events: none !important;
   transform-origin: center center;
   will-change: transform;
+  contain: layout paint style;
+  backface-visibility: hidden;
   opacity: 0.98;
-  filter: saturate(1.04);
 }
 
 .card.drag-floating,
@@ -1102,6 +1103,7 @@ select:focus-visible,
 body.drag-reordering {
   cursor: grabbing;
   user-select: none;
+  overscroll-behavior: none;
 }
 
 body.drag-reordering .drag-handle {

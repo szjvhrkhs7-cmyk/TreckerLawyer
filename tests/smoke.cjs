@@ -89,7 +89,13 @@ async function testDrag() {
   const document = new Element();
   document.body = new Element();
   document.body.classList = new ClassList(document.body);
-  const window = { innerHeight: 800, scrollBy() {} };
+  const window = {
+    innerHeight: 800,
+    PointerEvent: function PointerEvent() {},
+    scrollBy() {},
+    requestAnimationFrame(callback) { return setTimeout(callback, 0); },
+    cancelAnimationFrame(id) { clearTimeout(id); }
+  };
   const list = new Element();
   list.classList.add('list');
   const items = ['a', 'b', 'c'].map(id => {
@@ -107,6 +113,7 @@ async function testDrag() {
   firstHandle.dispatch('pointerdown', { clientY: 40 });
   assert.equal(document.body.children.length, 1, 'dragging creates a floating card');
   document.dispatch('pointermove', { clientY: 180 });
+  await new Promise(resolve => setTimeout(resolve, 5));
   document.dispatch('pointerup');
   assert.deepEqual(list.children.map(item => item.dataset.sortId), ['b', 'a', 'c']);
   assert.equal(JSON.stringify(persisted.at(-1)), JSON.stringify(['task', ['b', 'a', 'c']]));
@@ -115,10 +122,44 @@ async function testDrag() {
   assert.equal(items[0].classList.contains('drag-placeholder'), false);
 
   const lastHandle = items[2].children[0];
-  lastHandle.dispatch('touchstart', { touches: [{ clientX: 40, clientY: 245 }] });
-  document.dispatch('touchmove', { touches: [{ clientX: 40, clientY: 10 }] });
-  document.dispatch('touchend');
+  lastHandle.dispatch('pointerdown', { clientY: 245 });
+  document.dispatch('pointermove', { clientY: 10 });
+  await new Promise(resolve => setTimeout(resolve, 5));
+  document.dispatch('pointerup');
   assert.deepEqual(list.children.map(item => item.dataset.sortId), ['c', 'b', 'a']);
+
+  const touchDocument = new Element();
+  touchDocument.body = new Element();
+  touchDocument.body.classList = new ClassList(touchDocument.body);
+  const touchWindow = {
+    innerHeight: 800,
+    scrollBy() {},
+    requestAnimationFrame(callback) { return setTimeout(callback, 0); },
+    cancelAnimationFrame(id) { clearTimeout(id); }
+  };
+  const touchList = new Element();
+  touchList.classList.add('list');
+  const touchItems = ['x', 'y'].map(id => {
+    const item = new Element(id);
+    const handle = new Element('', true);
+    handle.parentNode = item;
+    item.children.push(handle);
+    return item;
+  });
+  touchItems.forEach(item => touchList.append(item));
+  vm.runInNewContext(`${extractFunction('bindSortable')}; bindSortable(root, 'note');`, {
+    document: touchDocument,
+    window: touchWindow,
+    persistSortableOrder() {},
+    setTimeout,
+    clearTimeout,
+    root: touchList
+  });
+  touchItems[0].children[0].dispatch('touchstart', { touches: [{ clientX: 40, clientY: 40 }] });
+  touchDocument.dispatch('touchmove', { touches: [{ clientX: 40, clientY: 180 }] });
+  await new Promise(resolve => setTimeout(resolve, 5));
+  touchDocument.dispatch('touchend');
+  assert.deepEqual(touchList.children.map(item => item.dataset.sortId), ['y', 'x']);
 }
 
 function testSyncSecurityShape() {
