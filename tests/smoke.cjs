@@ -19,6 +19,9 @@ assert.doesNotMatch(html, /fonts\.googleapis\.com|fonts\.gstatic\.com|family=Int
 assert.doesNotMatch(css, /--font:\s*Inter/);
 assert.match(resetCacheHtml, /font-family:"Iowan Old Style",Iowan/);
 assert.doesNotMatch(resetCacheHtml, /font-family:Inter/);
+assert.deepEqual(manifest.icons.map(icon => icon.src), ['tracker-icon-blue-192.png', 'tracker-icon-blue-512.png']);
+assert.match(html, /apple-touch-icon[^>]+tracker-icon-blue-180\.png/);
+assert.match(resetCacheHtml, /tracker-icon-blue-180\.png/);
 
 class ClassList {
   constructor(owner) { this.owner = owner; this.values = new Set(); }
