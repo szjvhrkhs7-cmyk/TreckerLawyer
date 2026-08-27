@@ -3,6 +3,8 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const html = fs.readFileSync(new URL('../index.html', `file://${__filename}`), 'utf8');
+const css = fs.readFileSync(new URL('../app.css', `file://${__filename}`), 'utf8');
+const resetCacheHtml = fs.readFileSync(new URL('../reset-cache.html', `file://${__filename}`), 'utf8');
 const syncSource = fs.readFileSync(new URL('../sync.js', `file://${__filename}`), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(new URL('../manifest.webmanifest', `file://${__filename}`), 'utf8'));
 
@@ -11,6 +13,12 @@ for (const [index, match] of [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\
 }
 assert.doesNotThrow(() => new Function(syncSource), 'sync.js must parse');
 assert.equal(manifest.name, 'Трекер юриста');
+assert.match(html, /--font:"Iowan Old Style",Iowan/);
+assert.match(css, /--font:\s*"Iowan Old Style", Iowan/);
+assert.doesNotMatch(html, /fonts\.googleapis\.com|fonts\.gstatic\.com|family=Inter/);
+assert.doesNotMatch(css, /--font:\s*Inter/);
+assert.match(resetCacheHtml, /font-family:"Iowan Old Style",Iowan/);
+assert.doesNotMatch(resetCacheHtml, /font-family:Inter/);
 
 class ClassList {
   constructor(owner) { this.owner = owner; this.values = new Set(); }
