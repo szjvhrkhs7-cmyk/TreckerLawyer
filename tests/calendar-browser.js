@@ -23,13 +23,18 @@
       try {
         document.querySelector('[data-tab="calendar"]')?.click();
         if (!document.querySelector('.calendar-view')) return finish('FAIL: календарь не открылся');
-        if (document.querySelectorAll('.calendar-day-head').length !== 7) return finish('FAIL: в неделе не семь дней');
-        if (document.querySelectorAll('.calendar-time-column .calendar-time-label').length !== 48) return finish('FAIL: отсутствует полная временная шкала');
+        if (document.querySelectorAll('.calendar-weekday').length !== 7) return finish('FAIL: в неделе не семь дней');
+        if (document.querySelectorAll('.calendar-date').length !== 42) return finish('FAIL: месячная сетка неполная');
         if (document.getElementById('calendarCount')?.textContent !== '1') return finish('FAIL: счётчик событий неверен');
+        const eventDate = document.querySelector(`[data-calendar-day="${date}"]`);
+        if (!eventDate?.classList.contains('has-events') || !eventDate.querySelector('.calendar-date-dot:not(.is-empty)')) return finish('FAIL: дата события не отмечена красной точкой');
+        eventDate.click();
+        const agendaEvent = document.querySelector('.calendar-day-events [data-calendar-event="ci-calendar-event"]');
+        if (!agendaEvent || !agendaEvent.textContent.includes('Заседание') || !agendaEvent.textContent.includes('10:00')) return finish('FAIL: список событий выбранной даты не появился');
         const sidebarEvent = document.querySelector('[data-sidebar-event="ci-calendar-event"]');
         if (!sidebarEvent) return finish('FAIL: событие не появилось в плане на семь дней');
-        sidebarEvent.click();
-        if (!document.getElementById('eventSheet')?.classList.contains('show')) return finish('FAIL: событие нельзя открыть из боковой панели');
+        agendaEvent.click();
+        if (!document.getElementById('eventSheet')?.classList.contains('show')) return finish('FAIL: событие нельзя открыть из списка выбранного дня');
         if (!document.querySelector('[data-export-current-event]')) return finish('FAIL: нет экспорта в календарь iPhone');
         const title = document.querySelector('#eventForm [name="title"]');
         title.value = 'Заседание обновлено';
