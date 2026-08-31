@@ -2,7 +2,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
 
-const source = fs.readFileSync(new URL('../sync.js', `file://${__filename}`), 'utf8');
+const source = fs.readFileSync(new URL('../sync-core.js', `file://${__filename}`), 'utf8');
 
 class Storage {
   constructor(initial = {}) { this.values = new Map(Object.entries(initial)); }
@@ -24,12 +24,13 @@ class Element {
 
 async function main() {
   const keys = {
-    tasks: 'lawyerTasks', projects: 'lawyerProjects', projectTasks: 'lawyerProjectTasks', notes: 'lawyerNotes',
+    tasks: 'lawyerTasks', projects: 'lawyerProjects', projectTasks: 'lawyerProjectTasks', notes: 'lawyerNotes', calendarEvents: 'lawyerCalendarEvents',
     taskOrder: 'lawyerTaskOrder', projectTaskOrder: 'lawyerProjectTaskOrder', projectOrder: 'lawyerProjectOrder', noteOrder: 'lawyerNoteOrder'
   };
   const localStorage = new Storage({
     lawyerCloudSession: JSON.stringify({ access_token: 'access', refresh_token: 'refresh', expires_at: Math.floor(Date.now() / 1000) + 3600, user: { id: 'user/one', email: 'owner@example.test' } }),
     lawyerTasks: '[]',
+    lawyerCalendarEvents: JSON.stringify([{ id: 'local-event', title: 'Calendar copy', date: '2026-08-31', startTime: '10:00', endTime: '11:00' }]),
     lawyerProjects: JSON.stringify([{ id: 'local-project', title: 'Local copy' }])
   });
   const elements = new Map(['syncButton', 'syncButtonText', 'syncSheet', 'syncContent'].map(id => [id, new Element()]));
@@ -65,9 +66,11 @@ async function main() {
 
   assert.deepEqual(JSON.parse(localStorage.getItem(keys.tasks)), [{ id: 'remote-task', title: 'Remote copy' }]);
   assert.deepEqual(JSON.parse(localStorage.getItem(keys.projects)), [{ id: 'local-project', title: 'Local copy' }]);
+  assert.deepEqual(JSON.parse(localStorage.getItem(keys.calendarEvents)), [{ id: 'local-event', title: 'Calendar copy', date: '2026-08-31', startTime: '10:00', endTime: '11:00' }]);
   const upload = requests.find(request => request.url.includes('on_conflict='));
   assert(upload, 'existing local data must be uploaded when the cloud key is absent');
   assert.equal(JSON.parse(upload.options.body)[0].storage_key, 'projects');
+  assert(requests.some(request => request.url.includes('on_conflict=') && JSON.parse(request.options.body)[0].storage_key === 'calendarEvents'), 'local calendar events must be uploaded when the cloud key is absent');
   assert(requests.some(request => request.url.includes('user_id=eq.user%2Fone')), 'cloud reads must be filtered to the signed-in user');
   console.log('sync tests passed');
 }

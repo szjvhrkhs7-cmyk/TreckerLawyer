@@ -1,11 +1,11 @@
 const APP_TITLE='Трекер юриста';
 const A='#787774';
 const THEME_KEY='lawyerTheme';
-const LS={tasks:'lawyerTasks',projects:'lawyerProjects',projectTasks:'lawyerProjectTasks',notes:'lawyerNotes',taskOrder:'lawyerTaskOrder',projectTaskOrder:'lawyerProjectTaskOrder',projectOrder:'lawyerProjectOrder',noteOrder:'lawyerNoteOrder'};
+const LS={tasks:'lawyerTasks',projects:'lawyerProjects',projectTasks:'lawyerProjectTasks',notes:'lawyerNotes',calendarEvents:'lawyerCalendarEvents',taskOrder:'lawyerTaskOrder',projectTaskOrder:'lawyerProjectTaskOrder',projectOrder:'lawyerProjectOrder',noteOrder:'lawyerNoteOrder'};
 const statusText={new:'Новая',inwork:'В работе','in-progress':'В работе',waiting:'Ожидание',done:'Завершена',completed:'Завершена'};
 const priorityText={none:'Обычная',low:'Низкая',normal:'Обычная',medium:'Средняя',high:'Важно / срочно'};
 const statusColor={new:'#2477E5',inwork:'#D97706',waiting:'#7C3AED',done:'#238B57'};
-let state={tab:'tasks',filter:'active',query:'',projectId:null,editingTask:null,editingProject:null,editingNote:null,showCompleted:false};
+let state={tab:'tasks',filter:'active',query:'',projectId:null,editingTask:null,editingProject:null,editingNote:null,editingEvent:null,calendarAnchor:null,calendarSelectedDate:null,showCompleted:false};
 let deletedNote=null,undoTimer=null,lastFocus=null,confirmAction=null;
 const $=s=>document.querySelector(s);
 const uid=()=>globalThis.crypto?.randomUUID?.()||`${Date.now()}-${Math.floor(Math.random()*1e9)}`;
@@ -33,7 +33,7 @@ function allProjects(){return load(LS.projects).filter(valid).map(p=>({...p,titl
 function allNotes(){return load(LS.notes).filter(valid)}
 function tasks(){const arr=load(state.projectId?LS.projectTasks:LS.tasks).filter(valid).map(normTask);return state.projectId?arr.filter(t=>sameId(t.projectId,state.projectId)):arr}
 function putTasks(arr){if(state.projectId){const rest=load(LS.projectTasks).filter(t=>!sameId(t.projectId,state.projectId));save(LS.projectTasks,[...rest,...arr])}else save(LS.tasks,arr)}
-function counts(){return{tasks:load(LS.tasks).filter(t=>valid(t)&&normalStatus(t.status)!=='done').length,projects:allProjects().length,notes:allNotes().length}}
+function counts(){return{tasks:load(LS.tasks).filter(t=>valid(t)&&normalStatus(t.status)!=='done').length,projects:allProjects().length,notes:allNotes().length,calendar:globalThis.upcomingCalendarEvents?.().length||0}}
 function statsLine(){const ts=tasks();return `${ts.filter(t=>t.status==='inwork').length} в работе · ${ts.filter(overdue).length} просрочено · ${ts.filter(t=>t.status==='done').length} завершено`}
 function overdue(t){return t.dueDate&&t.status!=='done'&&new Date(t.dueDate+'T23:59:59')<new Date()}
 function urgent(t){return t.priority==='high'||overdue(t)}
@@ -185,8 +185,8 @@ function bindSortable(root,kind){
     });
   });
 }
-function updateHeader(){const c=counts(),project=allProjects().find(p=>sameId(p.id,state.projectId));tasksCount.textContent=c.tasks;projectsCount.textContent=c.projects;notesCount.textContent=c.notes;stats.textContent=statsLine();navline.classList.toggle('hidden',!project);tabs.classList.toggle('hidden',!!project);mainTitle.classList.toggle('hidden',!!project);mainTitle.textContent='Рабочее пространство';document.title=project?`${project.title} · ${APP_TITLE}`:APP_TITLE;if(project)contextTitle.textContent=project.title;document.querySelectorAll('.tab').forEach(b=>{const active=b.dataset.tab===state.tab;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1})}
-function render(){updateHeader();page.innerHTML='';if(state.projectId||state.tab==='tasks')renderTasks();else if(state.tab==='projects')renderProjects();else renderNotes();bindAutoGrow(page)}
+function updateHeader(){const c=counts(),project=allProjects().find(p=>sameId(p.id,state.projectId));tasksCount.textContent=c.tasks;projectsCount.textContent=c.projects;notesCount.textContent=c.notes;calendarCount.textContent=c.calendar;stats.textContent=state.tab==='calendar'&&!project?(globalThis.calendarStatsLine?.()||'Планирование недели'):statsLine();navline.classList.toggle('hidden',!project);tabs.classList.toggle('hidden',!!project);sidebarAgenda.classList.toggle('hidden',!!project);mainTitle.classList.toggle('hidden',!!project);mainTitle.textContent=state.tab==='calendar'?'Календарь':'Рабочее пространство';document.title=project?`${project.title} · ${APP_TITLE}`:state.tab==='calendar'?`Календарь · ${APP_TITLE}`:APP_TITLE;if(project)contextTitle.textContent=project.title;document.querySelectorAll('.tab').forEach(b=>{const active=b.dataset.tab===state.tab;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active));b.tabIndex=active?0:-1});globalThis.updateSidebarAgenda?.()}
+function render(){updateHeader();page.innerHTML='';page.classList.toggle('calendar-page',state.tab==='calendar'&&!state.projectId);if(state.projectId||state.tab==='tasks')renderTasks();else if(state.tab==='projects')renderProjects();else if(state.tab==='notes')renderNotes();else renderCalendar();bindAutoGrow(page)}
 function renderFilters(){return `<div class="filters" aria-label="Фильтр задач">${[['active','Все активные'],['new','Новые'],['inwork','В работе'],['waiting','Ожидание']].map(([value,label])=>`<button type="button" class="chip ${state.filter===value?'active':''}" data-filter="${value}" aria-pressed="${state.filter===value}">${label}</button>`).join('')}</div>`}
 function taskMatchesQuery(t){const q=state.query.trim().toLocaleLowerCase('ru');return !q||[t.title,t.extra,t.notes].some(value=>stripHtml(value||'').toLocaleLowerCase('ru').includes(q))}
 function taskPass(t){return (state.filter==='active'?t.status!=='done':t.status===state.filter)&&taskMatchesQuery(t)}
@@ -207,14 +207,14 @@ function saveNoteForm(e){e.preventDefault();const f=new FormData(noteForm),arr=a
 function download(name,data,type){const a=document.createElement('a'),u=URL.createObjectURL(data instanceof Blob?data:new Blob([data],{type}));a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),500)}
 function csvSafe(v){v=String(v??'');if(/^[=+\-@]/.test(v))v="'"+v;return '"'+v.replace(/"/g,'""')+'"'}
 function exportCsv(){const rows=[['title','extra','dueDate','reminder','priority','status'],...load(LS.tasks).filter(valid).map(normTask).map(t=>[t.title,t.extra,t.dueDate,t.reminder,t.priority,t.status])];download('tasks.csv',rows.map(r=>r.map(csvSafe).join(',')).join('\n'),'text/csv')}
-function backup(){download('lawyer-backup.json',JSON.stringify({version:7,tasks:load(LS.tasks),projects:load(LS.projects),projectTasks:load(LS.projectTasks),notes:load(LS.notes),taskOrder:load(LS.taskOrder),projectTaskOrder:load(LS.projectTaskOrder),projectOrder:load(LS.projectOrder),noteOrder:load(LS.noteOrder)},null,2),'application/json')}
-function restore(file){if(!file)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);['tasks','projects','projectTasks','notes','taskOrder','projectTaskOrder','projectOrder','noteOrder'].forEach(k=>Array.isArray(d[k])&&save(LS[k],d[k]));render()}catch{alert('Не удалось прочитать файл резервной копии')}};r.readAsText(file)}
+function backup(){download('lawyer-backup.json',JSON.stringify({version:8,tasks:load(LS.tasks),projects:load(LS.projects),projectTasks:load(LS.projectTasks),notes:load(LS.notes),calendarEvents:load(LS.calendarEvents),taskOrder:load(LS.taskOrder),projectTaskOrder:load(LS.projectTaskOrder),projectOrder:load(LS.projectOrder),noteOrder:load(LS.noteOrder)},null,2),'application/json')}
+function restore(file){if(!file)return;const r=new FileReader();r.onload=()=>{try{const d=JSON.parse(r.result);['tasks','projects','projectTasks','notes','calendarEvents','taskOrder','projectTaskOrder','projectOrder','noteOrder'].forEach(k=>Array.isArray(d[k])&&save(LS[k],d[k]));render()}catch{alert('Не удалось прочитать файл резервной копии')}};r.readAsText(file)}
 function icsSafe(v){return String(v??'').replace(/\\/g,'\\\\').replace(/\r?\n/g,'\\n').replace(/([,;])/g,'\\$1')}
 function makeIcs(t){const dt=(t?.dueDate||new Date().toISOString().slice(0,10)).replaceAll('-','');download('task.ics',`BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Lawyer Tracker//RU\r\nBEGIN:VEVENT\r\nUID:${icsSafe(t?.id||uid())}\r\nSUMMARY:${icsSafe(t?.title||'Задача')}\r\nDTSTART;VALUE=DATE:${dt}\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n`,'text/calendar;charset=utf-8')}
 function switchTab(tab){state={...state,tab,query:'',projectId:null,filter:'active',showCompleted:false};render()}
 tabs.onclick=e=>{const b=e.target.closest('.tab');if(b)switchTab(b.dataset.tab)};
 backBtn.onclick=()=>{state.projectId=null;state.filter='active';state.query='';state.showCompleted=false;render()};
-fab.onclick=()=>state.tab==='projects'&&!state.projectId?openProject():state.tab==='notes'&&!state.projectId?openNote():openTask();
+fab.onclick=()=>state.tab==='projects'&&!state.projectId?openProject():state.tab==='notes'&&!state.projectId?openNote():state.tab==='calendar'&&!state.projectId?openCalendarEvent():openTask();
 page.onclick=e=>{
   if(e.target.closest('[data-drag-handle]'))return;
   let id;

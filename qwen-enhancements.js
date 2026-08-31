@@ -3,8 +3,8 @@
 
   const MAX_BACKUP_BYTES = 5 * 1024 * 1024;
   const MAX_RECORDS_PER_SECTION = 10000;
-  const BACKUP_VERSION = 7;
-  const BACKUP_ENTITY_KEYS = ['tasks', 'projects', 'projectTasks', 'notes'];
+  const BACKUP_VERSION = 8;
+  const BACKUP_ENTITY_KEYS = ['tasks', 'projects', 'projectTasks', 'notes', 'calendarEvents'];
   const BACKUP_ORDER_KEYS = ['taskOrder', 'projectTaskOrder', 'projectOrder', 'noteOrder'];
   const DANGEROUS_KEYS = new Set(['__proto__', 'prototype', 'constructor']);
   const NOTIFICATION_STATE_KEY = 'lawyerOverdueNotificationSignature';
@@ -53,6 +53,7 @@
       projects: load(LS.projects),
       projectTasks: load(LS.projectTasks),
       notes: load(LS.notes),
+      calendarEvents: load(LS.calendarEvents),
       taskOrder: load(LS.taskOrder),
       projectTaskOrder: load(LS.projectTaskOrder),
       projectOrder: load(LS.projectOrder),

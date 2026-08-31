@@ -3,9 +3,11 @@ const fs = require('node:fs');
 const vm = require('node:vm');
 
 const html = fs.readFileSync(new URL('../index.html', `file://${__filename}`), 'utf8');
+const appSource = fs.readFileSync(new URL('../app-core.js', `file://${__filename}`), 'utf8');
 const css = fs.readFileSync(new URL('../app.css', `file://${__filename}`), 'utf8');
+const themeCss = fs.readFileSync(new URL('../merriweather-theme.css', `file://${__filename}`), 'utf8');
 const resetCacheHtml = fs.readFileSync(new URL('../reset-cache.html', `file://${__filename}`), 'utf8');
-const syncSource = fs.readFileSync(new URL('../sync.js', `file://${__filename}`), 'utf8');
+const syncSource = fs.readFileSync(new URL('../sync-core.js', `file://${__filename}`), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(new URL('../manifest.webmanifest', `file://${__filename}`), 'utf8'));
 
 for (const [index, match] of [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\/script>/g)].entries()) {
@@ -13,10 +15,10 @@ for (const [index, match] of [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\
 }
 assert.doesNotThrow(() => new Function(syncSource), 'sync.js must parse');
 assert.equal(manifest.name, 'Трекер юриста');
-assert.match(html, /--font:"Iowan Old Style",Iowan/);
-assert.match(css, /--font:\s*"Iowan Old Style", Iowan/);
+assert.match(themeCss, /--font:\s*var\(--merriweather\)/);
+assert.match(themeCss, /font-family:\s*"Merriweather"/);
 assert.doesNotMatch(html, /fonts\.googleapis\.com|fonts\.gstatic\.com|family=Inter/);
-assert.doesNotMatch(css, /--font:\s*Inter/);
+assert.doesNotMatch(themeCss, /--font:\s*Inter/);
 assert.match(resetCacheHtml, /font-family:"Iowan Old Style",Iowan/);
 assert.doesNotMatch(resetCacheHtml, /font-family:Inter/);
 assert.deepEqual(manifest.icons.map(icon => icon.src), ['tracker-icon-blue-192.png', 'tracker-icon-blue-512.png']);
@@ -84,14 +86,14 @@ class Element {
 }
 
 function extractFunction(name) {
-  const start = html.indexOf(`function ${name}(`);
+  const start = appSource.indexOf(`function ${name}(`);
   assert.notEqual(start, -1, `${name} must exist`);
   let depth = 0;
   let bodyStarted = false;
-  for (let index = start; index < html.length; index++) {
-    if (html[index] === '{') { depth++; bodyStarted = true; }
-    if (html[index] === '}') depth--;
-    if (bodyStarted && depth === 0) return html.slice(start, index + 1);
+  for (let index = start; index < appSource.length; index++) {
+    if (appSource[index] === '{') { depth++; bodyStarted = true; }
+    if (appSource[index] === '}') depth--;
+    if (bodyStarted && depth === 0) return appSource.slice(start, index + 1);
   }
   throw new Error(`Could not extract ${name}`);
 }
@@ -178,7 +180,9 @@ function testSyncSecurityShape() {
   assert.match(syncSource, /\/logout\?scope=local/);
   assert.doesNotMatch(syncSource, /service_role|sb_secret_|BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/i);
   assert.match(html, /Content-Security-Policy/);
-  assert.match(html, /function icsSafe/);
+  assert.match(appSource, /function icsSafe/);
+  assert.match(html, /calendar-core\.js/);
+  assert.match(syncSource, /\[LS\.calendarEvents, 'calendarEvents'\]/);
 }
 
 testSyncSecurityShape();
