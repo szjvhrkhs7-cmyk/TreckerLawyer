@@ -146,6 +146,7 @@
     const startMinutes = roundToHalfHour();
     return { startTime: timeFromMinutes(startMinutes), endTime: timeFromMinutes(Math.min(1439, startMinutes + 60)) };
   }
+
   function openCalendarEvent(event = {}, selection = {}) {
     const defaults = defaultEventTimes();
     const value = { date: state.calendarSelectedDate || localYmd(), ...defaults, color: 'blue', reminder: 15, ...event, ...selection };
