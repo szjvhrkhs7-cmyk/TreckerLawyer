@@ -165,6 +165,10 @@
     const { token, headers, ...requestOptions } = options;
     const response = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
       ...requestOptions,
+      cache: 'no-store',
+      credentials: 'omit',
+      redirect: 'error',
+      referrerPolicy: 'no-referrer',
       headers: { ...authHeaders(token), ...(headers || {}) }
     });
     return parseResponse(response);
@@ -203,6 +207,10 @@
     if (!session?.access_token) throw new Error('AUTH_REQUIRED');
     const response = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
       ...options,
+      cache: 'no-store',
+      credentials: 'omit',
+      redirect: 'error',
+      referrerPolicy: 'no-referrer',
       headers: { ...authHeaders(session.access_token), ...(options.headers || {}) }
     });
     if (response.status === 401 && !retried && session?.refresh_token) {
@@ -352,7 +360,7 @@
     if (message.includes('invalid login')) return 'Неверная электронная почта или пароль';
     if (message.includes('email not confirmed')) return 'Сначала подтвердите электронную почту';
     if (message.includes('already registered') || message.includes('already been registered')) return 'Аккаунт уже создан, нажмите «Войти»';
-    if (message.includes('password')) return 'Проверьте пароль, он должен содержать не менее 6 символов';
+    if (message.includes('password')) return 'Проверьте пароль. Для нового аккаунта используйте не менее 12 символов.';
     if (message.includes('lawyer_store') || error?.status === 404) return 'Облачная таблица пока недоступна';
     if (message.includes('auth_required') || error?.status === 401) return 'Нужно войти заново';
     if (message.includes('invalid_cloud_data')) return 'Сетевая копия имеет неверный формат';
@@ -415,6 +423,10 @@
     const data = new FormData(form);
     const email = String(data.get('email') || '').trim();
     const password = String(data.get('password') || '');
+    if (createAccount && password.length < 12) {
+      renderSyncPanel('Для нового аккаунта используйте пароль не короче 12 символов.', 'error');
+      return;
+    }
     setFormBusy(form, true);
     try {
       const path = createAccount
