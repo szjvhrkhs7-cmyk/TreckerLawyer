@@ -1,0 +1,45 @@
+name: Static security checks
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Reject server-side Supabase secrets
+        run: |
+          set -euo pipefail
+          if grep -RInE --exclude-dir=.git --exclude='SECURITY.md' --exclude='*.md' '(sb_secret_|SUPABASE_SERVICE_ROLE|service_role_key)' .; then
+            echo 'Potential server-side Supabase secret found in repository.' >&2
+            exit 1
+          fi
+      - name: Require strict script CSP
+        run: |
+          set -euo pipefail
+          grep -F "script-src 'self'" index.html
+          if grep -F "script-src 'self' 'unsafe-inline'" index.html; then
+            echo "script-src must not allow unsafe-inline" >&2
+            exit 1
+          fi
+      - name: Reject dynamic code execution primitives
+        run: |
+          set -euo pipefail
+          if grep -RInE --include='*.js' --include='*.html' --exclude-dir=.git '(^|[^A-Za-z])(eval\s*\(|new[[:space:]]+Function\s*\()' .; then
+            echo 'Dynamic code execution primitive found.' >&2
+            exit 1
+          fi
+      - name: JavaScript syntax check
+        run: |
+          set -euo pipefail
+          for file in *.js; do
+            node --check "$file"
+          done
