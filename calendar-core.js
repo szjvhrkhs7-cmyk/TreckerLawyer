@@ -1,6 +1,8 @@
 (() => {
   'use strict';
 
+  const COLORS = new Set(['blue', 'green', 'orange', 'purple', 'red']);
+  const SLOT_MINUTES = 30;
   const eventOverlay = document.getElementById('eventSheet');
   const eventFormElement = document.getElementById('eventForm');
   const eventTitleElement = document.getElementById('eventSheetTitle');
@@ -15,180 +17,181 @@
     return localYmd(date) === value ? date : null;
   }
   function addDays(value, amount) { const date = new Date(value); date.setDate(date.getDate() + amount); return date; }
+  function weekStart(value) { const date = new Date(value); date.setHours(0, 0, 0, 0); date.setDate(date.getDate() - ((date.getDay() + 6) % 7)); return date; }
   function minutesFromTime(value) {
     const match = /^(\d{2}):(\d{2})$/.exec(String(value || ''));
     if (!match) return null;
-    const hours = Number(match[1]), minutes = Number(match[2]);
-    return hours < 24 && minutes < 60 ? hours * 60 + minutes : null;
+    const minutes = Number(match[1]) * 60 + Number(match[2]);
+    return Number(match[1]) < 24 && Number(match[2]) < 60 ? minutes : null;
   }
-  function timeFromMinutes(value) {
-    const safe = Math.max(0, Math.min(1439, value));
-    return `${pad(Math.floor(safe / 60))}:${pad(safe % 60)}`;
-  }
-  function defaultTime() {
-    const current = new Date();
-    const rounded = Math.min(23 * 60 + 30, Math.ceil((current.getHours() * 60 + current.getMinutes()) / 30) * 30);
-    return timeFromMinutes(rounded);
+  function timeFromMinutes(value) { const safe = Math.max(0, Math.min(1439, value)); return `${pad(Math.floor(safe / 60))}:${pad(safe % 60)}`; }
+  function eventDateTime(event, end = false) { return new Date(`${event.date}T${end ? event.endTime : event.startTime}:00`); }
+  function roundToHalfHour(value = new Date()) {
+    const minutes = value.getHours() * 60 + value.getMinutes();
+    return Math.min(23 * 60, Math.ceil(minutes / SLOT_MINUTES) * SLOT_MINUTES);
   }
 
   function normalizeCalendarEvent(event) {
     if (!valid(event)) return null;
+    const date = parseYmd(event.date) ? event.date : localYmd();
+    const startMinutes = minutesFromTime(event.startTime) ?? 9 * 60;
+    let endMinutes = minutesFromTime(event.endTime) ?? startMinutes + 60;
+    if (endMinutes <= startMinutes) endMinutes = Math.min(1439, startMinutes + 60);
     return {
       ...event,
       title: String(event.title || 'Без названия'),
-      date: parseYmd(event.date) ? event.date : localYmd(),
-      startTime: minutesFromTime(event.startTime) === null ? '09:00' : event.startTime,
-      endTime: minutesFromTime(event.endTime) === null ? '' : event.endTime,
-      notes: String(event.notes || event.details || ''),
+      date,
+      startTime: timeFromMinutes(startMinutes),
+      endTime: timeFromMinutes(endMinutes),
+      location: String(event.location || ''),
+      notes: String(event.notes || ''),
+      color: COLORS.has(event.color) ? event.color : 'blue',
+      reminder: Math.max(0, Number(event.reminder) || 0),
       createdAt: inferredCreatedAt(event)
     };
   }
 
   function allCalendarEvents() {
-    return load(LS.calendarEvents).map(normalizeCalendarEvent).filter(Boolean).sort((a, b) =>
-      `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`) || a.title.localeCompare(b.title, 'ru')
-    );
+    return load(LS.calendarEvents).map(normalizeCalendarEvent).filter(Boolean).sort((a, b) => `${a.date}T${a.startTime}`.localeCompare(`${b.date}T${b.startTime}`));
   }
 
   function upcomingCalendarEvents() {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const boundary = addDays(today, 6);
-    return allCalendarEvents().filter(event => {
-      const date = parseYmd(event.date);
-      const weekday = date?.getDay();
-      return date && date >= today && date <= boundary && weekday !== 0 && weekday !== 6;
-    });
-  }
-
-  function eventTime(event) {
-    return event.endTime ? `${event.startTime}–${event.endTime}` : event.startTime;
+    const current = new Date();
+    const boundary = addDays(new Date(current.getFullYear(), current.getMonth(), current.getDate()), 7);
+    return allCalendarEvents().filter(event => eventDateTime(event, true) >= current && eventDateTime(event) < boundary);
   }
 
   function calendarStatsLine() {
     const events = upcomingCalendarEvents();
     if (!events.length) return 'На ближайшие 7 дней событий нет';
-    const todayCount = events.filter(event => event.date === localYmd()).length;
-    return `${events.length} на ближайшие 7 дней${todayCount ? ` · ${todayCount} сегодня` : ''}`;
+    const today = localYmd();
+    const todayCount = events.filter(event => event.date === today).length;
+    return `${events.length} на неделю${todayCount ? ` · ${todayCount} сегодня` : ''}`;
   }
 
   function shortEventDate(event) {
     const date = parseYmd(event.date);
     if (!date) return '';
-    if (event.date === localYmd()) return 'Сегодня';
-    if (event.date === localYmd(addDays(new Date(), 1))) return 'Завтра';
+    const today = localYmd();
+    const tomorrow = localYmd(addDays(new Date(), 1));
+    if (event.date === today) return 'Сегодня';
+    if (event.date === tomorrow) return 'Завтра';
     return date.toLocaleDateString('ru-RU', { weekday: 'short', day: 'numeric', month: 'short' }).replace('.', '');
   }
 
   function updateSidebarAgenda() {
     if (!sidebar) return;
     const events = upcomingCalendarEvents();
-    sidebar.innerHTML = `<p class="sidebar-agenda__title">Ближайшие 7 дней · пн–пт</p>${events.length
-      ? events.slice(0, 7).map(event => `<button class="sidebar-event" type="button" data-sidebar-event="${esc(event.id)}"><span>${esc(shortEventDate(event))} · ${esc(eventTime(event))}</span><strong>${esc(event.title)}</strong></button>`).join('')
-      : '<p class="sidebar-agenda__empty">Запланированных дел нет</p>'}`;
+    sidebar.innerHTML = `<p class="sidebar-agenda__title">Ближайшие 7 дней</p>${events.length ? events.map(event => `<button class="sidebar-event" type="button" data-sidebar-event="${esc(event.id)}"><span class="sidebar-event__dot calendar-color-${event.color}" aria-hidden="true"></span><span class="sidebar-event__body"><strong>${esc(event.title)}</strong><small>${esc(shortEventDate(event))} · ${esc(event.startTime)}</small></span></button>`).join('') : '<p class="sidebar-agenda__empty">Событий пока нет</p>'}`;
   }
 
-  function monthCells(monthDate, events) {
-    const year = monthDate.getFullYear(), month = monthDate.getMonth();
-    const first = new Date(year, month, 1);
-    const gridStart = new Date(year, month, 1 - ((first.getDay() + 6) % 7));
-    const today = localYmd();
-    const countByDate = new Map();
-    events.forEach(event => countByDate.set(event.date, (countByDate.get(event.date) || 0) + 1));
-    return Array.from({ length: 42 }, (_, index) => {
-      const date = addDays(gridStart, index);
-      const key = localYmd(date), count = countByDate.get(key) || 0;
-      const classes = [
-        date.getMonth() === month ? '' : 'outside',
-        key === today ? 'today' : '',
-        key === state.calendarSelectedDate ? 'selected' : ''
-      ].filter(Boolean).join(' ');
-      const label = date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' });
-      return `<button type="button" class="calendar-day ${classes}" data-calendar-date="${key}" aria-label="${esc(label)}${count ? `, событий: ${count}` : ''}" aria-pressed="${key === state.calendarSelectedDate}"><span>${date.getDate()}</span>${count ? `<i aria-hidden="true">${count > 3 ? count : '•'.repeat(count)}</i>` : ''}</button>`;
-    }).join('');
-  }
-
-  function selectedEventsHtml(events) {
-    const selected = events.filter(event => event.date === state.calendarSelectedDate);
-    if (!selected.length) return '<div class="calendar-empty">На эту дату событий нет</div>';
-    return selected.map(event => `<article class="calendar-event-card"><div class="calendar-event-time">${esc(eventTime(event))}</div><div class="calendar-event-content"><h3>${esc(event.title)}</h3>${event.notes ? `<p>${esc(event.notes)}</p>` : ''}</div><div class="calendar-event-actions"><button type="button" class="btn" data-edit-event="${esc(event.id)}">Изменить</button><button type="button" class="btn danger" data-delete-event="${esc(event.id)}">Удалить</button></div></article>`).join('');
-  }
+  function monthStart(value) { return new Date(value.getFullYear(), value.getMonth(), 1); }
+  function addMonths(value, amount) { return new Date(value.getFullYear(), value.getMonth() + amount, 1); }
+  function capitalized(value) { return value ? value[0].toLocaleUpperCase('ru-RU') + value.slice(1) : ''; }
 
   function renderCalendar() {
     const today = new Date();
-    const anchor = parseYmd(state.calendarAnchor) || new Date(today.getFullYear(), today.getMonth(), 1);
-    const month = new Date(anchor.getFullYear(), anchor.getMonth(), 1);
-    state.calendarAnchor = localYmd(month);
-    state.calendarSelectedDate = parseYmd(state.calendarSelectedDate) ? state.calendarSelectedDate : localYmd(today);
+    const anchor = parseYmd(state.calendarAnchor) || today;
+    const start = monthStart(anchor);
+    const gridStart = weekStart(start);
+    const days = Array.from({ length: 42 }, (_, index) => addDays(gridStart, index));
+    const selected = parseYmd(state.calendarSelectedDate);
+    const preferred = selected && selected.getMonth() === start.getMonth() && selected.getFullYear() === start.getFullYear()
+      ? localYmd(selected)
+      : today.getMonth() === start.getMonth() && today.getFullYear() === start.getFullYear() ? localYmd(today) : localYmd(start);
+    state.calendarAnchor = localYmd(anchor);
+    state.calendarSelectedDate = preferred;
     const events = allCalendarEvents();
-    const monthTitle = month.toLocaleDateString('ru-RU', { month: 'long', year: 'numeric' });
-    const selectedTitle = parseYmd(state.calendarSelectedDate).toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' });
-    page.innerHTML = `<section class="calendar-view" aria-label="Календарь">
-      <div class="calendar-heading"><div><h2>Календарь</h2><p>События по датам и времени</p></div><button type="button" class="btn primary" data-calendar-new>Добавить событие</button></div>
-      <div class="calendar-layout">
-        <section class="calendar-panel" aria-label="Календарь на ${esc(monthTitle)}">
-          <div class="calendar-toolbar"><button type="button" class="calendar-nav" data-calendar-prev aria-label="Предыдущий месяц">‹</button><h3>${esc(monthTitle)}</h3><button type="button" class="calendar-nav" data-calendar-next aria-label="Следующий месяц">›</button><button type="button" class="btn calendar-today" data-calendar-today>Сегодня</button></div>
-          <div class="calendar-weekdays" aria-hidden="true"><span>Пн</span><span>Вт</span><span>Ср</span><span>Чт</span><span>Пт</span><span>Сб</span><span>Вс</span></div>
-          <div class="calendar-grid">${monthCells(month, events)}</div>
-        </section>
-        <section class="calendar-agenda">
-          <div class="calendar-agenda-head"><div><span>События</span><h3>${esc(selectedTitle)}</h3></div><button type="button" class="calendar-add-small" data-calendar-new aria-label="Добавить событие">+</button></div>
-          <div class="calendar-events">${selectedEventsHtml(events)}</div>
-        </section>
+    const eventDates = new Set(events.map(event => event.date));
+    const monthName = capitalized(start.toLocaleDateString('ru-RU', { month: 'long' }));
+    const weekdayHeaders = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс'].map(day => `<div class="calendar-weekday">${day}</div>`).join('');
+    const dateCells = days.map(date => {
+      const key = localYmd(date);
+      const outside = date.getMonth() !== start.getMonth();
+      const current = key === localYmd(today);
+      const isSelected = key === preferred;
+      const hasEvents = eventDates.has(key);
+      const eventCount = events.filter(item => item.date === key).length;
+      const label = `${date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'long' })}${eventCount ? `, событий: ${eventCount}` : ''}`;
+      return `<button class="calendar-date ${outside ? 'is-outside' : ''} ${current ? 'is-today' : ''} ${isSelected ? 'is-selected' : ''} ${hasEvents ? 'has-events' : ''}" type="button" data-calendar-day="${key}" aria-label="${esc(label)}" aria-pressed="${isSelected}"><span class="calendar-date-dot ${hasEvents ? '' : 'is-empty'}" aria-hidden="true"></span><span class="calendar-date-number">${date.getDate()}</span></button>`;
+    }).join('');
+    const selectedDate = parseYmd(preferred) || today;
+    const selectedEvents = events.filter(event => event.date === preferred);
+    const selectedLabel = capitalized(selectedDate.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }));
+    const eventList = selectedEvents.length
+      ? selectedEvents.map(event => `<button type="button" class="calendar-agenda-event" data-calendar-event="${esc(event.id)}"><span class="calendar-agenda-event__time">${esc(event.startTime)}<small>${esc(event.endTime)}</small></span><span class="calendar-agenda-event__body"><strong>${esc(event.title)}</strong>${event.location ? `<small>${esc(event.location)}</small>` : ''}</span><span class="calendar-agenda-event__chevron" aria-hidden="true">›</span></button>`).join('')
+      : '<p class="calendar-agenda-empty">На этот день событий нет</p>';
+
+    page.innerHTML = `<section class="calendar-view" aria-label="Календарь на месяц">
+      <div class="calendar-toolbar">
+        <div class="calendar-month-title"><h2>${esc(monthName)}</h2><span>${start.getFullYear()}</span></div>
+        <div class="calendar-toolbar__actions">
+          <button class="btn calendar-nav" type="button" data-calendar-prev aria-label="Предыдущий месяц">‹</button>
+          <button class="btn" type="button" data-calendar-today>Сегодня</button>
+          <button class="btn calendar-nav" type="button" data-calendar-next aria-label="Следующий месяц">›</button>
+          <button class="btn primary" type="button" data-calendar-new>Новое событие</button>
+        </div>
+      </div>
+      <div class="calendar-month" role="grid" aria-label="${esc(`${monthName} ${start.getFullYear()}`)}">
+        <div class="calendar-weekdays" role="row">${weekdayHeaders}</div>
+        <div class="calendar-month-grid">${dateCells}</div>
+      </div>
+      <div class="calendar-day-events" aria-live="polite">
+        <div class="calendar-agenda-heading"><div><p>Выбранная дата</p><h3>${esc(selectedLabel)}</h3></div><button class="btn" type="button" data-calendar-new-for-day>+ Добавить</button></div>
+        <div class="calendar-agenda-list">${eventList}</div>
       </div>
     </section>`;
   }
 
+  function defaultEventTimes() {
+    const startMinutes = roundToHalfHour();
+    return { startTime: timeFromMinutes(startMinutes), endTime: timeFromMinutes(Math.min(1439, startMinutes + 60)) };
+  }
+
   function openCalendarEvent(event = {}, selection = {}) {
-    const value = {
-      date: state.calendarSelectedDate || localYmd(),
-      startTime: defaultTime(),
-      endTime: '',
-      ...event,
-      ...selection
-    };
+    const defaults = defaultEventTimes();
+    const value = { date: state.calendarSelectedDate || localYmd(), ...defaults, color: 'blue', reminder: 15, ...event, ...selection };
     state.editingEvent = event.id ? event : null;
     eventTitleElement.textContent = event.id ? 'Редактирование события' : 'Новое событие';
-    eventFormElement.innerHTML = `<div class="field"><label>Название *</label><input name="title" required maxlength="160" value="${esc(value.title || '')}" placeholder="Например, судебное заседание"></div>
-      <div class="field"><label>Дата *</label><input type="date" name="date" required value="${esc(value.date)}"></div>
-      <div class="grid2"><div class="field"><label>Время *</label><input type="time" name="startTime" required value="${esc(value.startTime)}"></div><div class="field"><label>Окончание интервала</label><input type="time" name="endTime" value="${esc(value.endTime || '')}"><small>Оставьте пустым, если нужно указать точное время</small></div></div>
-      <div class="field"><label>Описание</label><textarea name="notes" data-autogrow="true">${esc(value.notes || '')}</textarea></div>
-      ${event.id ? '<div class="event-utility-actions"><button type="button" class="btn" data-export-current-event>Добавить в календарь iPhone</button></div>' : ''}
+    eventFormElement.innerHTML = `<div class="field"><label>Название *</label><input name="title" required maxlength="160" value="${esc(value.title || '')}" placeholder="Например, встреча по проекту"></div>
+      <div class="field"><label>Дата</label><input type="date" name="date" required value="${esc(value.date)}"></div>
+      <div class="grid2"><div class="field"><label>Начало</label><input type="time" name="startTime" step="1800" required value="${esc(value.startTime)}"></div><div class="field"><label>Окончание</label><input type="time" name="endTime" step="1800" required value="${esc(value.endTime)}"></div></div>
+      <div class="field"><label>Место</label><input name="location" maxlength="240" value="${esc(value.location || '')}" placeholder="Офис, суд или ссылка на встречу"></div>
+      <div class="grid2"><div class="field"><label>Цвет</label><select name="color"><option value="blue">Синий</option><option value="green">Зелёный</option><option value="orange">Оранжевый</option><option value="purple">Фиолетовый</option><option value="red">Красный</option></select></div><div class="field"><label>Напомнить</label><select name="reminder"><option value="0">Не напоминать</option><option value="5">За 5 минут</option><option value="10">За 10 минут</option><option value="15">За 15 минут</option><option value="30">За 30 минут</option><option value="60">За 1 час</option><option value="1440">За 1 день</option></select></div></div>
+      <div class="field"><label>Заметка</label><textarea name="notes" data-autogrow="true">${esc(value.notes || '')}</textarea></div>
+      ${event.id ? `<div class="event-utility-actions"><button type="button" class="btn" data-export-current-event>Добавить в календарь iPhone</button><button type="button" class="btn danger" data-delete-current-event>Удалить</button></div>` : ''}
       <div class="sheet-actions"><button type="button" class="btn" data-cancel-event>Отмена</button><button class="btn primary">Сохранить</button></div>`;
+    eventFormElement.color.value = COLORS.has(value.color) ? value.color : 'blue';
+    eventFormElement.reminder.value = String(value.reminder ?? 15);
     showOverlay(eventOverlay);
     bindAutoGrow(eventFormElement);
   }
 
-  function saveCalendarEvent(submitEvent) {
-    submitEvent.preventDefault();
+  function saveCalendarEvent(event) {
+    event.preventDefault();
     const form = new FormData(eventFormElement);
     const title = String(form.get('title') || '').trim();
     const date = String(form.get('date') || '');
     const startTime = String(form.get('startTime') || '');
     const endTime = String(form.get('endTime') || '');
-    const startMinutes = minutesFromTime(startTime), endMinutes = endTime ? minutesFromTime(endTime) : null;
-    if (!title || !parseYmd(date) || startMinutes === null) return;
-    if (endTime && (endMinutes === null || endMinutes <= startMinutes)) {
-      const control = eventFormElement.elements.namedItem('endTime');
-      control.setCustomValidity('Окончание должно быть позже начала');
-      control.reportValidity();
-      control.setCustomValidity('');
+    const startMinutes = minutesFromTime(startTime), endMinutes = minutesFromTime(endTime);
+    if (!title || !parseYmd(date) || startMinutes === null || endMinutes === null) return;
+    if (endMinutes <= startMinutes) {
+      const endControl = eventFormElement.elements.namedItem('endTime');
+      endControl.setCustomValidity('Окончание должно быть позже начала');
+      endControl.reportValidity();
+      endControl.setCustomValidity('');
       return;
     }
     const events = allCalendarEvents();
-    const old = state.editingEvent?.id ? events.find(event => sameId(event.id, state.editingEvent.id)) : null;
+    const old = state.editingEvent?.id ? events.find(item => sameId(item.id, state.editingEvent.id)) : null;
     const value = {
-      ...(old || {}),
-      id: old?.id || uid(),
-      title,
-      date,
-      startTime,
-      endTime,
-      notes: String(form.get('notes') || '').trim(),
-      createdAt: old?.createdAt || now(),
-      updatedAt: now()
+      ...(old || {}), id: old?.id || uid(), title, date, startTime, endTime,
+      location: String(form.get('location') || '').trim(), notes: String(form.get('notes') || '').trim(),
+      color: COLORS.has(form.get('color')) ? form.get('color') : 'blue', reminder: Number(form.get('reminder')) || 0,
+      createdAt: old?.createdAt || now(), updatedAt: now()
     };
-    old ? events.splice(events.indexOf(old), 1, value) : events.push(value);
+    if (old) events.splice(events.indexOf(old), 1, value); else events.push(value);
     save(LS.calendarEvents, events);
     state.calendarAnchor = date;
     state.calendarSelectedDate = date;
@@ -198,66 +201,56 @@
   }
 
   function deleteCalendarEvent(event) {
+    if (!event?.id) return;
     askConfirm('Событие будет удалено без возможности восстановления.', () => {
       save(LS.calendarEvents, allCalendarEvents().filter(item => !sameId(item.id, event.id)));
+      state.editingEvent = null;
+      hideOverlay(eventOverlay);
       render();
     });
   }
 
+  function compactIcsDate(value) { return String(value).replaceAll('-', ''); }
+  function compactIcsTime(value) { return String(value).replace(':', '') + '00'; }
   function icsTimestamp(value = new Date()) { return value.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, ''); }
-  function compactDate(value) { return value.replaceAll('-', ''); }
-  function compactTime(value) { return value.replace(':', '') + '00'; }
+  function safeFilename(value) { return String(value || 'event').replace(/[\\/:*?"<>|\u0000-\u001f]/g, '').trim().slice(0, 70) || 'event'; }
   function exportCalendarEvent(event) {
     if (!event) return;
-    const start = minutesFromTime(event.startTime) || 0;
-    const endTime = event.endTime || timeFromMinutes(Math.min(1439, start + 30));
-    const content = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'CALSCALE:GREGORIAN', 'PRODID:-//TreckerLawyer//Calendar//RU', 'BEGIN:VEVENT', `UID:${icsSafe(event.id)}@treckerlawyer`, `DTSTAMP:${icsTimestamp()}`, `DTSTART:${compactDate(event.date)}T${compactTime(event.startTime)}`, `DTEND:${compactDate(event.date)}T${compactTime(endTime)}`, `SUMMARY:${icsSafe(event.title)}`, event.notes ? `DESCRIPTION:${icsSafe(event.notes)}` : '', 'END:VEVENT', 'END:VCALENDAR'].filter(Boolean).join('\r\n') + '\r\n';
-    download('calendar-event.ics', content, 'text/calendar;charset=utf-8');
+    const alarm = event.reminder ? `BEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:${icsSafe(event.title)}\r\nTRIGGER:${event.reminder === 1440 ? '-P1D' : `-PT${event.reminder}M`}\r\nEND:VALARM\r\n` : '';
+    const lines = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH', 'PRODID:-//TreckerLawyer//Calendar//RU', 'BEGIN:VEVENT', `UID:${icsSafe(event.id)}@treckerlawyer`, `DTSTAMP:${icsTimestamp()}`, `DTSTART:${compactIcsDate(event.date)}T${compactIcsTime(event.startTime)}`, `DTEND:${compactIcsDate(event.date)}T${compactIcsTime(event.endTime)}`, `SUMMARY:${icsSafe(event.title)}`];
+    if (event.location) lines.push(`LOCATION:${icsSafe(event.location)}`);
+    if (event.notes) lines.push(`DESCRIPTION:${icsSafe(event.notes)}`);
+    const content = `${lines.join('\r\n')}\r\n${alarm}END:VEVENT\r\nEND:VCALENDAR\r\n`;
+    download(`${safeFilename(event.title)}.ics`, content, 'text/calendar;charset=utf-8');
   }
 
-  page.addEventListener('click', clickEvent => {
+  page.addEventListener('click', event => {
     if (state.tab !== 'calendar') return;
-    const target = clickEvent.target.closest('button');
-    if (!target) return;
-    if (target.hasAttribute('data-calendar-prev')) {
-      const anchor = parseYmd(state.calendarAnchor) || new Date();
-      state.calendarAnchor = localYmd(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1));
-      state.calendarSelectedDate = state.calendarAnchor;
-      render();
-    } else if (target.hasAttribute('data-calendar-next')) {
-      const anchor = parseYmd(state.calendarAnchor) || new Date();
-      state.calendarAnchor = localYmd(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1));
-      state.calendarSelectedDate = state.calendarAnchor;
-      render();
-    } else if (target.hasAttribute('data-calendar-today')) {
-      state.calendarAnchor = localYmd();
-      state.calendarSelectedDate = localYmd();
-      render();
-    } else if (target.dataset.calendarDate) {
-      state.calendarSelectedDate = target.dataset.calendarDate;
-      render();
-    } else if (target.hasAttribute('data-calendar-new')) {
-      openCalendarEvent();
-    } else if (target.dataset.editEvent) {
-      openCalendarEvent(allCalendarEvents().find(event => sameId(event.id, target.dataset.editEvent)) || {});
-    } else if (target.dataset.deleteEvent) {
-      const event = allCalendarEvents().find(item => sameId(item.id, target.dataset.deleteEvent));
-      if (event) deleteCalendarEvent(event);
-    }
+    const calendarEventId = event.target.closest('[data-calendar-event]')?.dataset.calendarEvent;
+    if (calendarEventId) { event.stopPropagation(); openCalendarEvent(allCalendarEvents().find(item => sameId(item.id, calendarEventId))); return; }
+    if (event.target.closest('[data-calendar-prev]')) { state.calendarAnchor = localYmd(addMonths(monthStart(parseYmd(state.calendarAnchor) || new Date()), -1)); state.calendarSelectedDate = state.calendarAnchor; render(); return; }
+    if (event.target.closest('[data-calendar-next]')) { state.calendarAnchor = localYmd(addMonths(monthStart(parseYmd(state.calendarAnchor) || new Date()), 1)); state.calendarSelectedDate = state.calendarAnchor; render(); return; }
+    if (event.target.closest('[data-calendar-today]')) { state.calendarAnchor = localYmd(); state.calendarSelectedDate = localYmd(); render(); return; }
+    if (event.target.closest('[data-calendar-new], [data-calendar-new-for-day]')) { openCalendarEvent({}, { date: state.calendarSelectedDate || localYmd() }); return; }
+    const day = event.target.closest('[data-calendar-day]')?.dataset.calendarDay;
+    if (day) { state.calendarAnchor = day; state.calendarSelectedDate = day; render(); }
   });
 
   eventFormElement.addEventListener('submit', saveCalendarEvent);
-  eventFormElement.addEventListener('click', clickEvent => {
-    if (clickEvent.target.closest('[data-cancel-event]')) hideOverlay(eventOverlay);
-    if (clickEvent.target.closest('[data-export-current-event]')) exportCalendarEvent(state.editingEvent);
+  eventFormElement.addEventListener('click', event => {
+    if (event.target.closest('[data-cancel-event]')) hideOverlay(eventOverlay);
+    if (event.target.closest('[data-export-current-event]')) exportCalendarEvent(state.editingEvent);
+    if (event.target.closest('[data-delete-current-event]')) deleteCalendarEvent(state.editingEvent);
   });
-  sidebar?.addEventListener('click', clickEvent => {
-    const id = clickEvent.target.closest('[data-sidebar-event]')?.dataset.sidebarEvent;
-    const event = allCalendarEvents().find(item => sameId(item.id, id));
-    if (!event) return;
-    state.calendarAnchor = event.date;
-    state.calendarSelectedDate = event.date;
+  sidebar?.addEventListener('click', event => {
+    const id = event.target.closest('[data-sidebar-event]')?.dataset.sidebarEvent;
+    if (!id) return;
+    const calendarEvent = allCalendarEvents().find(item => sameId(item.id, id));
+    if (!calendarEvent) return;
+    state.calendarAnchor = calendarEvent.date;
+    state.calendarSelectedDate = calendarEvent.date;
     switchTab('calendar');
+    openCalendarEvent(calendarEvent);
   });
 
   globalThis.allCalendarEvents = allCalendarEvents;
