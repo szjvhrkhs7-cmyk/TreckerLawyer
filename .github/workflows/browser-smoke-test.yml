@@ -33,3 +33,24 @@ jobs:
           grep -F 'Поиск по задачам' /tmp/dom.html
           grep -F 'app-core.js' index.html
           grep -F 'legacy-inline.css' index.html
+      - name: Verify project completion lifecycle in Chrome
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path('index.html').read_text(encoding='utf-8')
+          app_tag = '<script src="app-core.js?v=20260831-security"></script>'
+          sync_tag = '<script src="sync.js?v=20260820-spatial-drag-security"></script>'
+          if app_tag not in html or sync_tag not in html:
+              raise SystemExit('Expected application script tags were not found')
+          html = html.replace(app_tag, '<script src="tests/project-lifecycle-browser.js"></script>\n' + app_tag, 1)
+          html = html.replace(sync_tag, '<script src="project-lifecycle.js?v=ci"></script>\n<script src="dashboard-stats.js?v=ci"></script>', 1)
+          Path('project-lifecycle-test.html').write_text(html, encoding='utf-8')
+          PY
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          "$CHROME" --headless --no-sandbox --disable-gpu --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8765/project-lifecycle-test.html > /tmp/project-lifecycle.html
+          grep -F 'PROJECT_LIFECYCLE_PASS' /tmp/project-lifecycle.html
+          if grep -F 'FAIL:' /tmp/project-lifecycle.html; then
+            echo 'Project lifecycle browser test reported a failure.' >&2
+            exit 1
+          fi
