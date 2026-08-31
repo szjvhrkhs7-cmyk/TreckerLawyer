@@ -16,7 +16,7 @@
     const calendarKey = LS.calendarEvents;
     LS.calendarEvents = `${calendarKey}__cloud-disabled`;
     try {
-      await loadScript('sync-core.js?v=20260831-sync-calendar-compat-1');
+      await loadScript('sync-core.js?v=20260831-sync-calendar-compat-2');
     } finally {
       LS.calendarEvents = calendarKey;
     }
@@ -32,6 +32,7 @@
     .then(() => window.lawyerCloudRecoveryReady || Promise.resolve())
     .then(() => loadScript('sync-diagnostic.js?v=20260831-sync-diagnostic-1'))
     .then(() => loadCloudCoreWithoutCalendar())
+    .then(() => loadScript('calendar-cloud-bridge.js?v=20260831-calendar-cloud-1'))
     .then(() => loadScript('qwen-enhancements.js?v=20260831-qwen-merge'))
     .then(() => loadScript('dashboard-stats.js?v=20260831-project-completion'))
     .catch(error => console.error('Tracker module loading failed', error));
