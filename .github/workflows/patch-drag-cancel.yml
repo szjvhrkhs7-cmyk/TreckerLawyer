@@ -1,0 +1,172 @@
+name: Patch drag cancellation and recovery
+
+on:
+  push:
+    branches:
+      - fix/drag-cancel-recovery
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.event.head_commit.message != 'Fix sortable drag cancellation and recovery'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: fix/drag-cancel-recovery
+      - name: Patch sortable drag lifecycle
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+
+          path = Path('app-core.js')
+          text = path.read_text(encoding='utf-8')
+
+          old = "let dragging=false,pointerId=null,moved=false,startX=0,startY=0,floating=null,originRect=null,frameId=0,pendingPoint=null,lastPoint=null;"
+          new = "let dragging=false,pointerId=null,moved=false,startX=0,startY=0,floating=null,originRect=null,originNextSibling=null,originIndex=-1,frameId=0,pendingPoint=null,lastPoint=null;"
+          if text.count(old) != 1:
+              raise SystemExit('Expected sortable state declaration exactly once')
+          text = text.replace(old, new, 1)
+
+          old = '''    const onPointerMove=event=>{if(pointerId!==null&&event.pointerId!==pointerId)return;queueMove(event.clientX,event.clientY,event)};
+    const onTouchMove=event=>{const touch=event.touches[0];if(touch)queueMove(touch.clientX,touch.clientY,event)};
+    const removeGlobalListeners=()=>{
+      document.removeEventListener('pointermove',onPointerMove);
+      document.removeEventListener('pointerup',finish);
+      document.removeEventListener('pointercancel',finish);
+      document.removeEventListener('touchmove',onTouchMove);
+      document.removeEventListener('touchend',finish);
+      document.removeEventListener('touchcancel',finish);
+    };
+    function finish(event){
+      if(!dragging)return;
+      if(pointerId!==null&&event?.pointerId!==undefined&&event.pointerId!==pointerId)return;
+      if(frameId){cancelFrame(frameId);frameId=0}
+      if(pendingPoint){const point=pendingPoint;pendingPoint=null;moveItem(point.clientX,point.clientY)}
+      dragging=false;pointerId=null;lastPoint=null;removeGlobalListeners();list.classList.remove('is-sorting');document.body.classList.remove('drag-reordering');handle.setAttribute('aria-pressed','false');persist();
+      if(floating&&originRect){
+        const target=item.getBoundingClientRect(),dx=target.left-originRect.left,dy=target.top-originRect.top;
+        floating.style.transition='transform 190ms cubic-bezier(.2,.8,.2,1),opacity 190ms ease';
+        floating.style.transform=`translate3d(${dx}px,${dy}px,0) rotate(0deg) scale(1)`;
+        floating.style.opacity='0.9';
+        setTimeout(()=>{floating?.remove();floating=null;item.classList.remove('dragging','drag-placeholder')},205);
+      }else item.classList.remove('dragging','drag-placeholder');
+    }
+'''
+          new = '''    const onPointerMove=event=>{if(pointerId!==null&&event.pointerId!==pointerId)return;queueMove(event.clientX,event.clientY,event)};
+    const onTouchMove=event=>{const touch=event.touches[0];if(touch)queueMove(touch.clientX,touch.clientY,event)};
+    const releasePoint=event=>{
+      if(Number.isFinite(event?.clientX)&&Number.isFinite(event?.clientY))return{clientX:event.clientX,clientY:event.clientY};
+      const touch=event?.changedTouches?.[0];
+      if(touch)return{clientX:touch.clientX,clientY:touch.clientY};
+      return lastPoint;
+    };
+    const pointInsideList=point=>{
+      if(!point)return false;
+      const rect=list.getBoundingClientRect();
+      return point.clientX>=rect.left&&point.clientX<=rect.right&&point.clientY>=rect.top&&point.clientY<=rect.bottom;
+    };
+    const restoreOriginal=()=>{
+      if(originNextSibling&&originNextSibling.parentNode===list)list.insertBefore(item,originNextSibling);
+      else list.append(item);
+    };
+    const onWindowBlur=()=>finish({type:'blur'},true);
+    const onVisibilityChange=()=>{if(document.visibilityState==='hidden')finish({type:'visibilitychange'},true)};
+    const onLostPointerCapture=event=>{
+      if(pointerId!==null&&event?.pointerId!==undefined&&event.pointerId!==pointerId)return;
+      setTimeout(()=>{if(dragging)finish({type:'lostpointercapture'},true)},0);
+    };
+    const removeGlobalListeners=()=>{
+      window.removeEventListener('pointermove',onPointerMove,true);
+      window.removeEventListener('pointerup',finish,true);
+      window.removeEventListener('pointercancel',finish,true);
+      window.removeEventListener('touchmove',onTouchMove,true);
+      window.removeEventListener('touchend',finish,true);
+      window.removeEventListener('touchcancel',finish,true);
+      window.removeEventListener('blur',onWindowBlur,true);
+      document.removeEventListener('visibilitychange',onVisibilityChange);
+      handle.removeEventListener('lostpointercapture',onLostPointerCapture);
+    };
+    function finish(event,forceCancel=false){
+      if(!dragging)return;
+      if(pointerId!==null&&event?.pointerId!==undefined&&event.pointerId!==pointerId)return;
+      if(frameId){cancelFrame(frameId);frameId=0}
+      const hardCancel=forceCancel||['pointercancel','touchcancel','blur','visibilitychange','lostpointercapture'].includes(event?.type);
+      if(!hardCancel&&pendingPoint){const point=pendingPoint;pendingPoint=null;moveItem(point.clientX,point.clientY)}
+      else pendingPoint=null;
+      const point=releasePoint(event),validDrop=!hardCancel&&moved&&pointInsideList(point);
+      if(!validDrop)restoreOriginal();
+      const currentIndex=[...list.querySelectorAll('[data-sort-id]')].indexOf(item),changed=validDrop&&currentIndex!==originIndex;
+      dragging=false;pointerId=null;lastPoint=null;removeGlobalListeners();list.classList.remove('is-sorting');document.body.classList.remove('drag-reordering');handle.setAttribute('aria-pressed','false');
+      if(changed)persist();
+      if(floating&&originRect&&!hardCancel){
+        const target=item.getBoundingClientRect(),dx=target.left-originRect.left,dy=target.top-originRect.top;
+        floating.style.transition='transform 190ms cubic-bezier(.2,.8,.2,1),opacity 190ms ease';
+        floating.style.transform=`translate3d(${dx}px,${dy}px,0) rotate(0deg) scale(1)`;
+        floating.style.opacity='0.9';
+        const stale=floating;
+        setTimeout(()=>{stale.remove();if(floating===stale)floating=null;item.classList.remove('dragging','drag-placeholder')},205);
+      }else{
+        floating?.remove();floating=null;item.classList.remove('dragging','drag-placeholder');
+      }
+    }
+'''
+          if text.count(old) != 1:
+              raise SystemExit('Expected sortable finish lifecycle block exactly once')
+          text = text.replace(old, new, 1)
+
+          old = "event.preventDefault();dragging=true;pointerId=id??null;moved=false;startX=clientX;startY=clientY;originRect=item.getBoundingClientRect();lastPoint={clientX,clientY};pendingPoint=null;"
+          new = "event.preventDefault();dragging=true;pointerId=id??null;moved=false;startX=clientX;startY=clientY;originRect=item.getBoundingClientRect();originNextSibling=item.nextElementSibling;originIndex=[...list.querySelectorAll('[data-sort-id]')].indexOf(item);lastPoint={clientX,clientY};pendingPoint=null;"
+          if text.count(old) != 1:
+              raise SystemExit('Expected sortable begin initialization exactly once')
+          text = text.replace(old, new, 1)
+
+          old = '''      if(supportsPointer){
+        handle.setPointerCapture?.(id);
+        document.addEventListener('pointermove',onPointerMove,{passive:false});
+        document.addEventListener('pointerup',finish);
+        document.addEventListener('pointercancel',finish);
+      }else{
+        document.addEventListener('touchmove',onTouchMove,{passive:false});
+        document.addEventListener('touchend',finish);
+        document.addEventListener('touchcancel',finish);
+      }
+'''
+          new = '''      window.addEventListener('blur',onWindowBlur,true);
+      document.addEventListener('visibilitychange',onVisibilityChange);
+      if(supportsPointer){
+        try{handle.setPointerCapture?.(id)}catch{}
+        handle.addEventListener('lostpointercapture',onLostPointerCapture);
+        window.addEventListener('pointermove',onPointerMove,{passive:false,capture:true});
+        window.addEventListener('pointerup',finish,true);
+        window.addEventListener('pointercancel',finish,true);
+      }else{
+        window.addEventListener('touchmove',onTouchMove,{passive:false,capture:true});
+        window.addEventListener('touchend',finish,true);
+        window.addEventListener('touchcancel',finish,true);
+      }
+'''
+          if text.count(old) != 1:
+              raise SystemExit('Expected sortable global listener block exactly once')
+          text = text.replace(old, new, 1)
+
+          path.write_text(text, encoding='utf-8')
+          PY
+          node --check app-core.js
+          grep -F "const pointInsideList=point=>" app-core.js
+          grep -F "const onWindowBlur=()=>finish({type:'blur'},true);" app-core.js
+          grep -F "if(!validDrop)restoreOriginal();" app-core.js
+      - name: Commit fix
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add app-core.js
+          git commit -m 'Fix sortable drag cancellation and recovery'
+          git push origin HEAD:fix/drag-cancel-recovery
