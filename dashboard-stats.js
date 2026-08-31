@@ -35,7 +35,11 @@
 
     const heading = page.querySelector('.view-heading');
     if (!heading) return;
+
     const data = summary();
+    const signature = `${data.active}|${data.inwork}|${data.overdue}|${data.done}`;
+    if (existing?.dataset.signature === signature) return;
+
     const html = [
       card('Активные задачи', data.active, 'blue', 'Текущая нагрузка'),
       card('В работе', data.inwork, 'indigo', 'Задачи в исполнении'),
@@ -44,12 +48,14 @@
     ].join('');
 
     if (existing) {
+      existing.dataset.signature = signature;
       existing.innerHTML = html;
       return;
     }
 
     const container = document.createElement('section');
     container.className = 'executive-stats';
+    container.dataset.signature = signature;
     container.setAttribute('aria-label', 'Статистика задач');
     container.innerHTML = html;
     heading.insertAdjacentElement('afterend', container);
