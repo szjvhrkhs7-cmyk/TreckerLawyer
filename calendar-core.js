@@ -222,10 +222,12 @@
     if (target.hasAttribute('data-calendar-prev')) {
       const anchor = parseYmd(state.calendarAnchor) || new Date();
       state.calendarAnchor = localYmd(new Date(anchor.getFullYear(), anchor.getMonth() - 1, 1));
+      state.calendarSelectedDate = state.calendarAnchor;
       render();
     } else if (target.hasAttribute('data-calendar-next')) {
       const anchor = parseYmd(state.calendarAnchor) || new Date();
       state.calendarAnchor = localYmd(new Date(anchor.getFullYear(), anchor.getMonth() + 1, 1));
+      state.calendarSelectedDate = state.calendarAnchor;
       render();
     } else if (target.hasAttribute('data-calendar-today')) {
       state.calendarAnchor = localYmd();
