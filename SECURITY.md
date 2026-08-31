@@ -9,9 +9,13 @@ The browser publishable key is intentionally public. It is not a secret and must
 Required production policy:
 
 - `anon` has no table privileges on `public.lawyer_store`;
-- `authenticated` may `SELECT`, `INSERT`, `UPDATE`, and `DELETE` only rows whose `user_id` equals `auth.uid()`;
+- `authenticated` may `SELECT`, `INSERT`, and `UPDATE` only rows whose `user_id` equals `auth.uid()`;
+- the browser role has no table-level `DELETE` privilege because the current sync protocol does not need it;
 - both `USING` and `WITH CHECK` are required for updates;
-- RLS must be enabled. The migration in `supabase/migrations/20260831_harden_lawyer_store_rls.sql` also forces RLS.
+- RLS must be enabled and forced;
+- all previously-existing policies on `lawyer_store` must be removed before installing the owner-only policy set, because permissive PostgreSQL policies can otherwise be OR-combined.
+
+The migration in `supabase/migrations/20260831_harden_lawyer_store_rls.sql` implements this contract.
 
 ## Authentication session
 
@@ -21,12 +25,14 @@ A stronger architecture for highly sensitive or regulated data would put authent
 
 ## Client-side controls
 
-- restrictive Content Security Policy;
+- restrictive Content Security Policy with `script-src 'self'` and no inline executable JavaScript;
 - no third-party executable JavaScript;
 - user text is escaped before insertion into HTML templates;
 - rich-text notes are reduced to a small allowlist of elements and attributes are removed;
 - imported backups are size- and structure-validated;
 - cloud responses are accepted only for known tracker storage sections;
+- Supabase requests disable HTTP caching, ambient browser credentials, referrer forwarding and unexpected redirects;
+- new cloud accounts require a password of at least 12 characters at the client level;
 - local data remains available when the network is unavailable.
 
 ## Data classification
