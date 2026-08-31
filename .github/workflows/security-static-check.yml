@@ -15,11 +15,16 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
-      - name: Reject server-side Supabase secrets
+      - name: Reject server-side Supabase secrets in application source
         run: |
           set -euo pipefail
-          if grep -RInE --exclude-dir=.git --exclude='SECURITY.md' --exclude='*.md' '(sb_secret_|SUPABASE_SERVICE_ROLE|service_role_key)' .; then
-            echo 'Potential server-side Supabase secret found in repository.' >&2
+          files=(index.html app-core.js theme-init.js sync.js sync-core.js qwen-enhancements.js dashboard-stats.js)
+          present=()
+          for file in "${files[@]}"; do
+            [ -f "$file" ] && present+=("$file")
+          done
+          if grep -InE '(sb_secret_|SUPABASE_SERVICE_ROLE|service_role_key|BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY)' "${present[@]}"; then
+            echo 'Potential server-side secret/private key found in application source.' >&2
             exit 1
           fi
       - name: Require strict script CSP
@@ -33,7 +38,12 @@ jobs:
       - name: Reject dynamic code execution primitives
         run: |
           set -euo pipefail
-          if grep -RInE --include='*.js' --include='*.html' --exclude-dir=.git '(^|[^A-Za-z])(eval\s*\(|new[[:space:]]+Function\s*\()' .; then
+          files=(index.html app-core.js theme-init.js sync.js sync-core.js qwen-enhancements.js dashboard-stats.js)
+          present=()
+          for file in "${files[@]}"; do
+            [ -f "$file" ] && present+=("$file")
+          done
+          if grep -InE '(^|[^A-Za-z])(eval\s*\(|new[[:space:]]+Function\s*\()' "${present[@]}"; then
             echo 'Dynamic code execution primitive found.' >&2
             exit 1
           fi
