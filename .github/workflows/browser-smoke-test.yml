@@ -27,6 +27,23 @@ jobs:
           curl --fail --silent --show-error --max-time 15 \
             -H "apikey: $SUPABASE_KEY" \
             "$SUPABASE_URL/auth/v1/settings" >/dev/null
+      - name: Verify Supabase data endpoint
+        run: |
+          set -euo pipefail
+          SUPABASE_URL="$(sed -n "s/.*const SUPABASE_URL = '\([^']*\)'.*/\1/p" sync-core.js | head -n1)"
+          SUPABASE_KEY="$(sed -n "s/.*const SUPABASE_KEY = '\([^']*\)'.*/\1/p" sync-core.js | head -n1)"
+          STATUS="$(curl --silent --show-error --max-time 15 \
+            -o /tmp/supabase-data.json -w '%{http_code}' \
+            -H "apikey: $SUPABASE_KEY" \
+            "$SUPABASE_URL/rest/v1/lawyer_store?select=storage_key&limit=1")"
+          case "$STATUS" in
+            200|401|403) ;;
+            *)
+              echo "Unexpected lawyer_store response: HTTP $STATUS" >&2
+              cat /tmp/supabase-data.json >&2 || true
+              exit 1
+              ;;
+          esac
       - name: Serve app
         run: |
           python3 -m http.server 8765 >/tmp/http.log 2>&1 &
