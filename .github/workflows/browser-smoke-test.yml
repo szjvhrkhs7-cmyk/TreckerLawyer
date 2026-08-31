@@ -1,0 +1,35 @@
+name: Browser smoke test
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Serve app
+        run: |
+          python3 -m http.server 8765 >/tmp/http.log 2>&1 &
+          echo $! >/tmp/http.pid
+          sleep 1
+      - name: Render app in Chrome
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            echo 'Chrome/Chromium is not available on the runner' >&2
+            exit 1
+          fi
+          "$CHROME" --headless --no-sandbox --disable-gpu --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8765/ > /tmp/dom.html
+          grep -F 'Мои задачи' /tmp/dom.html
+          grep -F 'Поиск по задачам' /tmp/dom.html
+          grep -F 'app-core.js' index.html
+          grep -F 'legacy-inline.css' index.html

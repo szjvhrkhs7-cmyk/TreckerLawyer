@@ -31,8 +31,31 @@ jobs:
         run: |
           set -euo pipefail
           grep -F "script-src 'self'" index.html
-          if grep -F "script-src 'self' 'unsafe-inline'" index.html; then
+          if grep -E "script-src[^;]*'unsafe-inline'" index.html; then
             echo "script-src must not allow unsafe-inline" >&2
+            exit 1
+          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('index.html').read_text(encoding='utf-8')
+          if re.search(r'<script\b[^>]*\bsrc=["\']https?://', html, flags=re.I):
+              raise SystemExit('Third-party executable JavaScript is not allowed.')
+          PY
+      - name: Require strict style CSP
+        run: |
+          set -euo pipefail
+          grep -F "style-src 'self'" index.html
+          if grep -E "style-src[^;]*'unsafe-inline'" index.html; then
+            echo "style-src must not allow unsafe-inline" >&2
+            exit 1
+          fi
+          if grep -Eqi '<style([[:space:]>])' index.html; then
+            echo 'Inline style blocks are not allowed.' >&2
+            exit 1
+          fi
+          if grep -Eqi '[[:space:]]style[[:space:]]*=' index.html; then
+            echo 'Inline style attributes are not allowed.' >&2
             exit 1
           fi
       - name: Reject dynamic code execution primitives
