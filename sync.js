@@ -12,6 +12,16 @@
     });
   }
 
+  async function loadCloudCoreWithoutCalendar() {
+    const calendarKey = LS.calendarEvents;
+    LS.calendarEvents = `${calendarKey}__cloud-disabled`;
+    try {
+      await loadScript('sync-core.js?v=20260831-sync-calendar-compat-1');
+    } finally {
+      LS.calendarEvents = calendarKey;
+    }
+  }
+
   loadScript('drag-sortable-fix.js?v=20260831-drag-cancel-recovery')
     .catch(error => console.error('Drag recovery module loading failed', error));
 
@@ -21,7 +31,7 @@
   loadScript('sync-recovery.js?v=20260831-sync-repair-1')
     .then(() => window.lawyerCloudRecoveryReady || Promise.resolve())
     .then(() => loadScript('sync-diagnostic.js?v=20260831-sync-diagnostic-1'))
-    .then(() => loadScript('sync-core.js?v=20260831-sync-diagnostic-1'))
+    .then(() => loadCloudCoreWithoutCalendar())
     .then(() => loadScript('qwen-enhancements.js?v=20260831-qwen-merge'))
     .then(() => loadScript('dashboard-stats.js?v=20260831-project-completion'))
     .catch(error => console.error('Tracker module loading failed', error));
