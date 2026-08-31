@@ -1,0 +1,67 @@
+/* Final cascade corrections for the Light Executive theme. */
+
+:root[data-theme="dark"] .brandmark {
+  background: linear-gradient(145deg, #f4e7d5, #c79559 54%, #996b37);
+  color: #071a33;
+}
+
+:root[data-theme="dark"] .btn.primary,
+:root[data-theme="dark"] .fab {
+  color: #ffffff;
+}
+
+.drag-handle {
+  border-color: transparent;
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--surface-hover) 74%, transparent);
+  color: #9aa8b9;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.35);
+}
+
+.drag-handle:hover,
+.drag-handle:focus-visible {
+  border-color: color-mix(in srgb, var(--exec-blue) 18%, var(--line));
+  background: var(--exec-blue-soft);
+  color: var(--exec-navy-800);
+  box-shadow: 0 6px 16px rgba(22,49,84,.08), inset 0 1px 0 rgba(255,255,255,.72);
+}
+
+:root[data-theme="dark"] .drag-handle {
+  background: rgba(255,255,255,.045);
+  color: #71849e;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.035);
+}
+
+:root[data-theme="dark"] .drag-handle:hover,
+:root[data-theme="dark"] .drag-handle:focus-visible {
+  border-color: rgba(121,174,241,.22);
+  background: rgba(76,129,196,.15);
+  color: #acd0ff;
+}
+
+@media (min-width: 900px) {
+  .drag-handle {
+    top: 12px;
+    right: 12px;
+    width: 36px;
+    height: 36px;
+    opacity: .58;
+  }
+
+  .card:hover .drag-handle,
+  .drag-handle:focus-visible,
+  body.drag-reordering .drag-handle {
+    opacity: 1;
+  }
+}
+
+@media (max-width: 899px) {
+  body {
+    padding-top: 0;
+  }
+
+  .drag-handle {
+    background: transparent;
+    box-shadow: none;
+  }
+}
