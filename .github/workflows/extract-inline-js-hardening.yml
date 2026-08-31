@@ -1,0 +1,69 @@
+name: Extract inline JavaScript for CSP hardening
+
+on:
+  push:
+    branches:
+      - security/hardening-20260831
+
+permissions:
+  contents: write
+
+jobs:
+  harden:
+    if: github.event.head_commit.message != 'Extract inline JavaScript and tighten CSP'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: security/hardening-20260831
+      - name: Extract inline scripts and tighten CSP
+        shell: python
+        run: |
+          from pathlib import Path
+          import re
+
+          index = Path('index.html')
+          text = index.read_text(encoding='utf-8')
+          scripts = re.findall(r'<script>\s*(.*?)\s*</script>', text, flags=re.S)
+          if len(scripts) != 2:
+              raise SystemExit(f'Expected exactly 2 inline script blocks, found {len(scripts)}')
+
+          Path('theme-init.js').write_text(scripts[0].strip() + '\n', encoding='utf-8')
+          Path('app-core.js').write_text(scripts[1].strip() + '\n', encoding='utf-8')
+
+          replacements = iter([
+              '<script src="theme-init.js?v=20260831-security"></script>',
+              '<script src="app-core.js?v=20260831-security"></script>',
+          ])
+          text, count = re.subn(r'<script>\s*.*?\s*</script>', lambda _: next(replacements), text, count=2, flags=re.S)
+          if count != 2:
+              raise SystemExit(f'Expected 2 replacements, made {count}')
+
+          old = "script-src 'self' 'unsafe-inline'"
+          new = "script-src 'self'"
+          if old not in text:
+              raise SystemExit('Expected CSP script-src value not found')
+          text = text.replace(old, new, 1)
+          index.write_text(text, encoding='utf-8')
+      - name: Sanity check extracted scripts
+        run: |
+          set -euo pipefail
+          test -s theme-init.js
+          test -s app-core.js
+          grep -F "script-src 'self'" index.html
+          if grep -F "script-src 'self' 'unsafe-inline'" index.html; then
+            echo 'unsafe-inline still present in script-src' >&2
+            exit 1
+          fi
+          grep -F 'src="theme-init.js?v=20260831-security"' index.html
+          grep -F 'src="app-core.js?v=20260831-security"' index.html
+      - name: Commit hardened layout and remove helper workflow
+        run: |
+          set -euo pipefail
+          rm .github/workflows/extract-inline-js-hardening.yml
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add index.html theme-init.js app-core.js .github/workflows/extract-inline-js-hardening.yml
+          git commit -m 'Extract inline JavaScript and tighten CSP'
+          git push
