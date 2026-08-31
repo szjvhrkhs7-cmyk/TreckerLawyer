@@ -129,7 +129,6 @@
           <button class="btn calendar-nav" type="button" data-calendar-prev aria-label="Предыдущий месяц">‹</button>
           <button class="btn" type="button" data-calendar-today>Сегодня</button>
           <button class="btn calendar-nav" type="button" data-calendar-next aria-label="Следующий месяц">›</button>
-          <button class="btn primary" type="button" data-calendar-new>Новое событие</button>
         </div>
       </div>
       <div class="calendar-month" role="grid" aria-label="${esc(`${monthName} ${start.getFullYear()}`)}">
@@ -147,7 +146,6 @@
     const startMinutes = roundToHalfHour();
     return { startTime: timeFromMinutes(startMinutes), endTime: timeFromMinutes(Math.min(1439, startMinutes + 60)) };
   }
-
   function openCalendarEvent(event = {}, selection = {}) {
     const defaults = defaultEventTimes();
     const value = { date: state.calendarSelectedDate || localYmd(), ...defaults, color: 'blue', reminder: 15, ...event, ...selection };
