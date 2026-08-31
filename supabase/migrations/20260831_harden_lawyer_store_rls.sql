@@ -1,6 +1,7 @@
 -- TreckerLawyer: harden cloud storage isolation.
 -- Apply through Supabase SQL editor / migration tooling with an owner-level connection.
--- Idempotent: safe to re-run.
+-- This migration intentionally replaces ALL existing RLS policies on public.lawyer_store.
+-- Idempotent: safe to re-run after the schema has been verified.
 
 begin;
 
@@ -12,15 +13,29 @@ alter table public.lawyer_store force row level security;
 revoke all on table public.lawyer_store from public;
 revoke all on table public.lawyer_store from anon;
 
--- Signed-in users may perform only the operations the tracker needs. RLS still limits rows.
+-- The tracker only reads and upserts section rows. It does not need table-level DELETE.
 revoke all on table public.lawyer_store from authenticated;
-grant select, insert, update, delete on table public.lawyer_store to authenticated;
+grant select, insert, update on table public.lawyer_store to authenticated;
 
--- Replace any policies with stable, explicit owner-only policies.
-drop policy if exists lawyer_store_select_own on public.lawyer_store;
-drop policy if exists lawyer_store_insert_own on public.lawyer_store;
-drop policy if exists lawyer_store_update_own on public.lawyer_store;
-drop policy if exists lawyer_store_delete_own on public.lawyer_store;
+-- PostgreSQL permissive RLS policies are OR-combined. Leaving an older broad policy in place
+-- could defeat newly-added restrictive policies, so remove every existing policy first.
+do $$
+declare
+  policy_row record;
+begin
+  for policy_row in
+    select policyname
+    from pg_policies
+    where schemaname = 'public'
+      and tablename = 'lawyer_store'
+  loop
+    execute format(
+      'drop policy if exists %I on public.lawyer_store',
+      policy_row.policyname
+    );
+  end loop;
+end
+$$;
 
 create policy lawyer_store_select_own
 on public.lawyer_store
@@ -40,11 +55,5 @@ for update
 to authenticated
 using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
-
-create policy lawyer_store_delete_own
-on public.lawyer_store
-for delete
-to authenticated
-using ((select auth.uid()) = user_id);
 
 commit;
