@@ -10,6 +10,7 @@
     [LS.projects, 'projects'],
     [LS.projectTasks, 'projectTasks'],
     [LS.notes, 'notes'],
+    [LS.calendarEvents, 'calendarEvents'],
     [LS.taskOrder, 'taskOrder'],
     [LS.projectTaskOrder, 'projectTaskOrder'],
     [LS.projectOrder, 'projectOrder'],

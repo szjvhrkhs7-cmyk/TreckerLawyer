@@ -18,7 +18,7 @@
   loadScript('project-lifecycle.js?v=20260831-project-completion')
     .catch(error => console.error('Project lifecycle module loading failed', error));
 
-  loadScript('sync-core.js?v=20260831-qwen-merge')
+  loadScript('sync-core.js?v=20260831-calendar')
     .then(() => loadScript('qwen-enhancements.js?v=20260831-qwen-merge'))
     .then(() => loadScript('dashboard-stats.js?v=20260831-project-completion'))
     .catch(error => console.error('Tracker module loading failed', error));
