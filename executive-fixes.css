@@ -56,6 +56,10 @@
 }
 
 @media (max-width: 899px) {
+  body {
+    padding-top: 0;
+  }
+
   .drag-handle {
     background: transparent;
     box-shadow: none;
