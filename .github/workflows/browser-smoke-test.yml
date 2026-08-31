@@ -72,7 +72,7 @@ jobs:
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
           app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
-          sync_tag = '<script src="sync.js?v=20260831-sync-repair-1"></script>'
+          sync_tag = '<script src="sync.js?v=20260831-sync-diagnostic-1"></script>'
           if app_tag not in html or sync_tag not in html:
               raise SystemExit('Expected application script tags were not found')
           html = html.replace(app_tag, '<script src="tests/project-lifecycle-browser.js"></script>\n' + app_tag, 1)
