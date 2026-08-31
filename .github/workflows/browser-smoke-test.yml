@@ -15,6 +15,18 @@ jobs:
     timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
+      - name: Verify cloud sync logic
+        run: node tests/sync.cjs
+      - name: Verify Supabase auth endpoint
+        run: |
+          set -euo pipefail
+          SUPABASE_URL="$(sed -n "s/.*const SUPABASE_URL = '\([^']*\)'.*/\1/p" sync-core.js | head -n1)"
+          SUPABASE_KEY="$(sed -n "s/.*const SUPABASE_KEY = '\([^']*\)'.*/\1/p" sync-core.js | head -n1)"
+          test -n "$SUPABASE_URL"
+          test -n "$SUPABASE_KEY"
+          curl --fail --silent --show-error --max-time 15 \
+            -H "apikey: $SUPABASE_KEY" \
+            "$SUPABASE_URL/auth/v1/settings" >/dev/null
       - name: Serve app
         run: |
           python3 -m http.server 8765 >/tmp/http.log 2>&1 &
