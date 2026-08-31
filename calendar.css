@@ -67,7 +67,6 @@
 .tabs{grid-template-columns:repeat(4,minmax(0,1fr))}
 .calendar-toolbar{align-items:flex-start;flex-direction:column;gap:16px}
 .calendar-toolbar__actions{width:100%;justify-content:flex-start}
-.calendar-toolbar__actions .btn.primary{margin-left:auto}
 .calendar-date{min-height:70px}
 }
 @media (max-width:560px){
@@ -77,8 +76,6 @@
 .calendar-toolbar__actions{gap:5px}
 .calendar-toolbar__actions .btn{min-height:38px;padding:0 10px;font-size:11px}
 .calendar-toolbar__actions .calendar-nav{width:36px;padding:0;font-size:22px}
-.calendar-toolbar__actions .btn.primary{width:38px;overflow:hidden;padding:0;color:transparent;white-space:nowrap}
-.calendar-toolbar__actions .btn.primary::after{content:"+";display:grid;color:#fff;font-size:24px;place-items:center}
 .calendar-weekday{padding:9px 2px;font-size:9px}
 .calendar-date{min-height:56px;gap:3px;padding:7px 1px 5px}
 .calendar-date-dot{width:5px;height:5px;flex-basis:5px}
