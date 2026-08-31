@@ -47,6 +47,21 @@ jobs:
             echo 'Dynamic code execution primitive found.' >&2
             exit 1
           fi
+      - name: Verify lawyer_store RLS contract
+        run: |
+          set -euo pipefail
+          migration='supabase/migrations/20260831_harden_lawyer_store_rls.sql'
+          test -f "$migration"
+          grep -Fi 'enable row level security' "$migration"
+          grep -Fi 'force row level security' "$migration"
+          grep -Fi 'revoke all on table public.lawyer_store from anon' "$migration"
+          grep -Fi 'grant select, insert, update on table public.lawyer_store to authenticated' "$migration"
+          grep -Fi "tablename = 'lawyer_store'" "$migration"
+          test "$(grep -Fic '(select auth.uid()) = user_id' "$migration")" -ge 4
+          if grep -Fi 'grant select, insert, update, delete' "$migration"; then
+            echo 'DELETE privilege is not required by the tracker.' >&2
+            exit 1
+          fi
       - name: JavaScript syntax check
         run: |
           set -euo pipefail
