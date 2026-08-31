@@ -4,12 +4,13 @@
   let scheduled = false;
 
   function summary() {
-    const source = load(LS.tasks).filter(valid).map(normTask);
+    const rootTasks = load(LS.tasks).filter(valid).map(normTask);
+    const projectTasks = load(LS.projectTasks).filter(valid).map(normTask);
     return {
-      active: source.filter(task => task.status !== 'done').length,
-      inwork: source.filter(task => task.status === 'inwork').length,
-      overdue: source.filter(task => overdue(task)).length,
-      done: source.filter(task => task.status === 'done').length
+      active: rootTasks.filter(task => task.status !== 'done').length,
+      inwork: rootTasks.filter(task => task.status === 'inwork').length,
+      overdue: rootTasks.filter(task => overdue(task)).length,
+      done: rootTasks.filter(task => task.status === 'done').length + projectTasks.filter(task => task.status === 'done').length
     };
   }
 
@@ -44,7 +45,7 @@
       card('Активные задачи', data.active, 'blue', 'Текущая нагрузка'),
       card('В работе', data.inwork, 'indigo', 'Задачи в исполнении'),
       card('Просрочено', data.overdue, 'red', data.overdue ? 'Требуют внимания' : 'Всё под контролем'),
-      card('Завершено', data.done, 'green', 'За всё время')
+      card('Завершено', data.done, 'green', 'Включая задачи проектов')
     ].join('');
 
     if (existing) {
