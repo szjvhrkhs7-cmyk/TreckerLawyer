@@ -1,0 +1,41 @@
+name: Bump Merriweather CSS cache key
+
+on:
+  push:
+    branches:
+      - design/merriweather-brandmark-20260831
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: design/merriweather-brandmark-20260831
+          fetch-depth: 0
+      - name: Update stylesheet cache key
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          path = Path('index.html')
+          text = path.read_text(encoding='utf-8')
+          old = 'href="app.css?v=20260827-iowan"'
+          new = 'href="app.css?v=20260831-merriweather"'
+          if old not in text:
+              raise SystemExit('Expected stylesheet reference not found')
+          path.write_text(text.replace(old, new, 1), encoding='utf-8')
+          PY
+      - name: Commit and remove helper workflow
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add index.html
+          git rm .github/workflows/bump-merriweather-css.yml
+          git commit -m "Refresh stylesheet cache for Merriweather theme"
+          git push origin HEAD:design/merriweather-brandmark-20260831
