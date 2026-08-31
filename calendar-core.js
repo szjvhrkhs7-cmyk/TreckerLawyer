@@ -129,7 +129,6 @@
           <button class="btn calendar-nav" type="button" data-calendar-prev aria-label="Предыдущий месяц">‹</button>
           <button class="btn" type="button" data-calendar-today>Сегодня</button>
           <button class="btn calendar-nav" type="button" data-calendar-next aria-label="Следующий месяц">›</button>
-          <button class="btn primary" type="button" data-calendar-new>Новое событие</button>
         </div>
       </div>
       <div class="calendar-month" role="grid" aria-label="${esc(`${monthName} ${start.getFullYear()}`)}">
