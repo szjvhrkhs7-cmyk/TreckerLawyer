@@ -35,10 +35,13 @@ jobs:
             echo "script-src must not allow unsafe-inline" >&2
             exit 1
           fi
-          if grep -Eqi '<script[^>]+src=["'"']https?://' index.html; then
-            echo 'Third-party executable JavaScript is not allowed.' >&2
-            exit 1
-          fi
+          python3 - <<'PY'
+          from pathlib import Path
+          import re
+          html = Path('index.html').read_text(encoding='utf-8')
+          if re.search(r'<script\b[^>]*\bsrc=["\']https?://', html, flags=re.I):
+              raise SystemExit('Third-party executable JavaScript is not allowed.')
+          PY
       - name: Require strict style CSP
         run: |
           set -euo pipefail
