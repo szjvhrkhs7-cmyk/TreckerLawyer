@@ -16,12 +16,12 @@
     const cancelFrame = window.cancelAnimationFrame?.bind(window) || clearTimeout;
     const supportsPointer = typeof window.PointerEvent === 'function';
     const layoutAnimations = new WeakMap();
-    const persist = () => globalThis.persistSortableOrder?.(
-      kind,
-      [...list.querySelectorAll('[data-sort-id]')].map(item => item.dataset.sortId)
-    );
 
     const sortableChildren = () => [...list.children].filter(element => element.matches?.('[data-sort-id]'));
+    const persist = () => globalThis.persistSortableOrder?.(
+      kind,
+      sortableChildren().map(item => item.dataset.sortId)
+    );
 
     const stopLayoutAnimation = element => {
       const animation = layoutAnimations.get(element);
@@ -52,27 +52,26 @@
         if (typeof element.animate === 'function') {
           const animation = element.animate(
             [{ transform: `translate3d(0,${delta}px,0)` }, { transform: 'translate3d(0,0,0)' }],
-            { duration: 175, easing: 'cubic-bezier(.2,.8,.2,1)' }
+            { duration: 165, easing: 'cubic-bezier(.2,.8,.2,1)' }
           );
           layoutAnimations.set(element, animation);
-          animation.onfinish = () => {
+          const clear = () => {
             if (layoutAnimations.get(element) === animation) layoutAnimations.delete(element);
           };
-          animation.oncancel = () => {
-            if (layoutAnimations.get(element) === animation) layoutAnimations.delete(element);
-          };
+          animation.onfinish = clear;
+          animation.oncancel = clear;
           return;
         }
 
         element.style.transition = 'none';
         element.style.transform = `translate3d(0,${delta}px,0)`;
         void element.offsetHeight;
-        element.style.transition = 'transform 175ms cubic-bezier(.2,.8,.2,1)';
+        element.style.transition = 'transform 165ms cubic-bezier(.2,.8,.2,1)';
         element.style.transform = '';
         setTimeout(() => {
           element.style.transition = '';
           element.style.transform = '';
-        }, 195);
+        }, 185);
       });
     };
 
@@ -115,9 +114,9 @@
 
         const edge = 82;
         let scrollSpeed = 0;
-        if (clientY < edge) scrollSpeed = -Math.ceil((edge - clientY) / 7);
-        else if (clientY > window.innerHeight - edge) scrollSpeed = Math.ceil((clientY - (window.innerHeight - edge)) / 7);
-        scrollSpeed = Math.max(-12, Math.min(12, scrollSpeed));
+        if (clientY < edge) scrollSpeed = -Math.ceil((edge - clientY) / 8);
+        else if (clientY > window.innerHeight - edge) scrollSpeed = Math.ceil((clientY - (window.innerHeight - edge)) / 8);
+        scrollSpeed = Math.max(-10, Math.min(10, scrollSpeed));
         if (scrollSpeed) window.scrollBy(0, scrollSpeed);
 
         const items = sortableChildren();
@@ -127,32 +126,29 @@
         const dragCenterY = originRect.top + dy + originRect.height / 2;
         const previous = items[index - 1];
         const next = items[index + 1];
-        const hysteresis = 8;
-        let changed = false;
+        const hysteresis = 7;
 
         if (previous) {
           const rect = previous.getBoundingClientRect();
-          const threshold = rect.top + rect.height / 2 - hysteresis;
-          if (dragCenterY < threshold) {
+          if (dragCenterY < rect.top + rect.height / 2 - hysteresis) {
             const before = snapshotPositions(item);
             list.insertBefore(item, previous);
             animateLayout(item, before);
-            changed = true;
+            return true;
           }
         }
 
-        if (!changed && next) {
+        if (next) {
           const rect = next.getBoundingClientRect();
-          const threshold = rect.top + rect.height / 2 + hysteresis;
-          if (dragCenterY > threshold) {
+          if (dragCenterY > rect.top + rect.height / 2 + hysteresis) {
             const before = snapshotPositions(item);
             list.insertBefore(item, next.nextSibling);
             animateLayout(item, before);
-            changed = true;
+            return true;
           }
         }
 
-        return scrollSpeed !== 0 || changed;
+        return scrollSpeed !== 0;
       };
 
       const drawFrame = () => {
@@ -168,7 +164,7 @@
 
       const queueMove = (clientX, clientY, event) => {
         if (!dragging) return;
-        event?.preventDefault?.();
+        if (event?.cancelable) event.preventDefault();
         pendingPoint = { clientX, clientY };
         if (!frameId) frameId = requestFrame(drawFrame);
       };
@@ -185,7 +181,7 @@
       const pointInsideList = point => {
         if (!point) return false;
         const rect = list.getBoundingClientRect();
-        const tolerance = 24;
+        const tolerance = 40;
         return point.clientX >= rect.left - tolerance && point.clientX <= rect.right + tolerance &&
           point.clientY >= rect.top - tolerance && point.clientY <= rect.bottom + tolerance;
       };
@@ -221,12 +217,6 @@
           finish({ type: 'escape' }, true);
         }
       };
-      const onLostPointerCapture = event => {
-        if (pointerId !== null && event?.pointerId !== undefined && event.pointerId !== pointerId) return;
-        setTimeout(() => {
-          if (dragging) finish({ type: 'lostpointercapture' }, true);
-        }, 0);
-      };
 
       const removeGlobalListeners = () => {
         window.removeEventListener('pointermove', onPointerMove, true);
@@ -238,7 +228,6 @@
         window.removeEventListener('blur', onWindowBlur, true);
         document.removeEventListener('visibilitychange', onVisibilityChange);
         document.removeEventListener('keydown', onEscape, true);
-        handle.removeEventListener('lostpointercapture', onLostPointerCapture);
       };
 
       function finish(event, forceCancel = false) {
@@ -250,7 +239,7 @@
           frameId = 0;
         }
 
-        const hardCancel = forceCancel || ['pointercancel', 'touchcancel', 'blur', 'visibilitychange', 'lostpointercapture', 'escape'].includes(event?.type);
+        const hardCancel = forceCancel || ['pointercancel', 'touchcancel', 'blur', 'visibilitychange', 'escape'].includes(event?.type);
         if (!hardCancel && pendingPoint) {
           const point = pendingPoint;
           pendingPoint = null;
@@ -281,14 +270,14 @@
           const dx = target.left - originRect.left;
           const dy = target.top - originRect.top;
           const stale = floating;
-          stale.style.transition = 'transform 145ms cubic-bezier(.2,.8,.2,1), opacity 145ms ease';
+          stale.style.transition = 'transform 140ms cubic-bezier(.2,.8,.2,1), opacity 140ms ease';
           stale.style.transform = `translate3d(${dx}px,${dy}px,0) scale(1)`;
           stale.style.opacity = '0.92';
           setTimeout(() => {
             stale.remove();
             if (floating === stale) floating = null;
             item.classList.remove('dragging', 'drag-placeholder');
-          }, 165);
+          }, 160);
         } else {
           floating?.remove();
           floating = null;
@@ -298,12 +287,12 @@
 
       const begin = (clientX, clientY, id, event) => {
         if (dragging) {
-          event.preventDefault();
+          if (event.cancelable) event.preventDefault();
           return;
         }
         if (event.type === 'pointerdown' && event.button !== undefined && event.button !== 0) return;
 
-        event.preventDefault();
+        if (event.cancelable) event.preventDefault();
         dragging = true;
         pointerId = id ?? null;
         moved = false;
@@ -339,9 +328,9 @@
         document.addEventListener('visibilitychange', onVisibilityChange);
         document.addEventListener('keydown', onEscape, true);
 
+        // Pointer capture is deliberately not used here. On iOS Safari moving the
+        // captured card inside the DOM can emit lostpointercapture and cancel drag.
         if (supportsPointer) {
-          try { handle.setPointerCapture?.(id); } catch {}
-          handle.addEventListener('lostpointercapture', onLostPointerCapture);
           window.addEventListener('pointermove', onPointerMove, { passive: false, capture: true });
           window.addEventListener('pointerup', finish, true);
           window.addEventListener('pointercancel', finish, true);
