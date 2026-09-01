@@ -68,7 +68,7 @@ jobs:
           grep -F 'workspace-2026.js' index.html
           grep -F 'workspace-pages.js' sync.js
           grep -F 'workspace-task-restore.js' sync.js
-          grep -F 'drag-sortable-fix.js?v=20260901-ios-drag-2' sync.js
+          grep -F 'drag-sortable-fix.js?v=20260901-ios-drag-3' sync.js
           grep -F 'workspace-pages.css' app.css
           grep -F 'workspace-polish.css' app.css
           grep -F 'desktop-polish.css' app.css
@@ -177,7 +177,7 @@ jobs:
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
           app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
-          sync_tag = '<script src="sync.js?v=20260901-ios-drag-2"></script>'
+          sync_tag = '<script src="sync.js?v=20260901-ios-drag-3"></script>'
           if app_tag not in html or sync_tag not in html:
               raise SystemExit('Expected application script tags were not found')
           html = html.replace(app_tag, '<script src="tests/project-lifecycle-browser.js"></script>\n' + app_tag, 1)
