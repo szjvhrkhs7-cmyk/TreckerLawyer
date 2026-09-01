@@ -167,7 +167,9 @@
         if (!dragging) return;
         if (event?.cancelable) event.preventDefault();
         pendingPoint = { clientX, clientY };
-        if (!frameId) frameId = requestFrame(drawFrame);
+        // Process the leading move immediately. This keeps touch dragging responsive
+        // when requestAnimationFrame is delayed by iOS or an embedded web view.
+        if (!frameId) drawFrame();
       };
 
       const findTouch = touches => {
