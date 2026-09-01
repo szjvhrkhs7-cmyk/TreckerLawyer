@@ -86,16 +86,19 @@
 
     const page = document.querySelector('.workspace-tasks-page');
     const eyebrow = page?.querySelector('.workspace-page-eyebrow');
-    if (eyebrow) eyebrow.textContent = 'Главный экран';
+    if (eyebrow && eyebrow.textContent !== 'Главный экран') eyebrow.textContent = 'Главный экран';
   }
 
   const observer = new MutationObserver(records => {
+    let needsFullPass = false;
     for (const record of records) {
       for (const node of record.addedNodes) {
-        if (node instanceof HTMLElement) enhanceTaskPage(node);
+        if (!(node instanceof HTMLElement)) continue;
+        enhanceTaskPage(node);
+        if (node.matches?.('.workspace-tasks-page') || node.querySelector?.('.workspace-tasks-page')) needsFullPass = true;
       }
     }
-    enhanceTaskPage(document);
+    if (needsFullPass) enhanceTaskPage(document);
   });
 
   activateTasksHome();
