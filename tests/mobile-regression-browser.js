@@ -32,11 +32,26 @@
         if (!viewport.includes('maximum-scale=1') || !viewport.includes('user-scalable=no')) return fail('масштабирование не отключено');
 
         const tabs = document.getElementById('tabs');
+        const top = document.querySelector('.top');
         const firstTabIcon = tabs?.querySelector('.tab .icon');
+        const firstCounter = tabs?.querySelector('.tab .count');
         if (!tabs || getComputedStyle(tabs).position !== 'fixed') return fail('мобильная навигация не закреплена снизу');
         if (getComputedStyle(tabs).bottom !== '0px') return fail('мобильная навигация смещена от нижней границы');
+
+        const tabsRect = tabs.getBoundingClientRect();
+        if (Math.abs(tabsRect.bottom - window.innerHeight) > 2) return fail(`мобильная навигация не у нижнего края viewport: ${tabsRect.bottom}/${window.innerHeight}`);
+        if (tabsRect.top < window.innerHeight * 0.72) return fail(`мобильная навигация ошибочно отрисована сверху: top=${tabsRect.top}`);
+
+        const topStyle = top ? getComputedStyle(top) : null;
+        if (topStyle?.backdropFilter && topStyle.backdropFilter !== 'none') return fail('backdrop-filter верхней панели снова создаёт containing block для fixed-навигации');
+        if (topStyle?.webkitBackdropFilter && topStyle.webkitBackdropFilter !== 'none') return fail('webkit-backdrop-filter верхней панели снова создаёт containing block для fixed-навигации');
+
         if (!firstTabIcon || parseFloat(getComputedStyle(firstTabIcon).width) < 22) return fail('иконки навигации слишком маленькие');
         if (getComputedStyle(firstTabIcon).overflow !== 'visible') return fail('иконки навигации могут обрезаться');
+        if (firstCounter) {
+          const counterRect = firstCounter.getBoundingClientRect();
+          if (counterRect.top < tabsRect.top - 1) return fail('счётчик навигации выступает за верхнюю границу панели');
+        }
 
         document.querySelector('[data-tab="tasks"]')?.click();
         document.getElementById('toggleCompleted')?.click();
