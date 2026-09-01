@@ -61,9 +61,11 @@ jobs:
             exit 1
           fi
           "$CHROME" --headless --no-sandbox --disable-gpu --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8765/ > /tmp/dom.html
-          grep -F 'Мои задачи' /tmp/dom.html
-          grep -F 'Поиск по задачам' /tmp/dom.html
-          grep -F 'app-core.js' index.html
+          grep -F 'Сегодня' /tmp/dom.html
+          grep -F 'Требуют внимания' /tmp/dom.html
+          grep -F 'Сегодня в календаре' /tmp/dom.html
+          grep -F 'data-tab="today"' index.html
+          grep -F 'workspace-2026.js' index.html
           grep -F 'legacy-inline.css' index.html
           grep -F 'Календарь' /tmp/dom.html
       - name: Verify project completion lifecycle in Chrome

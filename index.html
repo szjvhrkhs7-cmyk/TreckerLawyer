@@ -2,26 +2,26 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="default">
   <meta name="apple-mobile-web-app-title" content="Трекер юриста">
-  <meta id="themeColor" name="theme-color" content="#f7f7f5">
+  <meta id="themeColor" name="theme-color" content="#f6f8fb">
   <meta name="referrer" content="no-referrer">
   <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://cfkpxrvinkcutbtqpufa.supabase.co; img-src 'self' data: blob:; style-src 'self'; font-src 'self' https://raw.githubusercontent.com; script-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
   <title>Трекер юриста</title>
   <link rel="icon" type="image/png" sizes="192x192" href="tracker-icon-graphite-192.png?v=20260901-graphite">
   <link rel="apple-touch-icon" sizes="180x180" href="tracker-icon-graphite-180.png?v=20260901-graphite">
   <link rel="apple-touch-icon-precomposed" sizes="180x180" href="tracker-icon-graphite-180.png?v=20260901-graphite">
-  <link rel="manifest" href="manifest.webmanifest?v=20260901-graphite-icon">
-    <link rel="stylesheet" href="legacy-inline.css?v=20260831-security">
-
-  <link rel="stylesheet" href="app.css?v=20260831-calendar-simple">
+  <link rel="manifest" href="manifest.webmanifest?v=20260901-workspace-2026">
+  <link rel="stylesheet" href="legacy-inline.css?v=20260831-security">
+  <link rel="stylesheet" href="app.css?v=20260901-workspace-2026">
   <script src="theme-init.js?v=20260831-security"></script>
 </head>
 <body>
   <svg class="icon-sprite" aria-hidden="true">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></symbol>
     <symbol id="i-check-square" viewBox="0 0 24 24"><path d="M6 3h8l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5"/><path d="m8 14 2.5 2.5L16 11"/></symbol>
     <symbol id="i-tasks" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/></symbol>
     <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5h6l2 2h10v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
@@ -50,13 +50,14 @@
         </button>
       </div>
       <div id="navline" class="navline hidden"><button class="back" id="backBtn" type="button"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>Назад</button><h1 class="title" id="contextTitle"></h1></div>
-      <h1 id="mainTitle" class="title">Рабочее пространство</h1>
+      <h1 id="mainTitle" class="title">Сегодня</h1>
       <p class="stats" id="stats"></p>
       <nav class="tabs" id="tabs" role="tablist" aria-label="Разделы приложения">
-        <button class="tab active" type="button" role="tab" aria-selected="true" data-tab="tasks"><svg class="icon" aria-hidden="true"><use href="#i-tasks"></use></svg>Задачи <span class="count" id="tasksCount">0</span></button>
+        <button class="tab active" type="button" role="tab" aria-selected="true" data-tab="today"><svg class="icon" aria-hidden="true"><use href="#i-home"></use></svg>Сегодня</button>
+        <button class="tab" type="button" role="tab" aria-selected="false" data-tab="tasks"><svg class="icon" aria-hidden="true"><use href="#i-tasks"></use></svg>Задачи <span class="count" id="tasksCount">0</span></button>
         <button class="tab" type="button" role="tab" aria-selected="false" data-tab="projects"><svg class="icon" aria-hidden="true"><use href="#i-folder"></use></svg>Проекты <span class="count" id="projectsCount">0</span></button>
-        <button class="tab" type="button" role="tab" aria-selected="false" data-tab="notes"><svg class="icon" aria-hidden="true"><use href="#i-note"></use></svg>Заметки <span class="count" id="notesCount">0</span></button>
         <button class="tab" type="button" role="tab" aria-selected="false" data-tab="calendar"><svg class="icon" aria-hidden="true"><use href="#i-calendar"></use></svg>Календарь <span class="count" id="calendarCount">0</span></button>
+        <button class="tab" type="button" role="tab" aria-selected="false" data-tab="notes"><svg class="icon" aria-hidden="true"><use href="#i-note"></use></svg>Заметки <span class="count" id="notesCount">0</span></button>
       </nav>
       <aside class="sidebar-agenda" id="sidebarAgenda" aria-label="События на ближайшие семь дней"></aside>
     </header>
@@ -79,6 +80,7 @@
   <input id="restoreInput" type="file" accept="application/json" hidden>
 <script src="app-core.js?v=20260831-calendar"></script>
 <script src="calendar-core.js?v=20260831-calendar-simple-2"></script>
+<script src="workspace-2026.js?v=20260901-workspace-2026"></script>
 <script src="sync.js?v=20260831-calendar-cloud-1"></script>
 </body>
 </html>
