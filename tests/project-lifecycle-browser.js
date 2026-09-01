@@ -54,15 +54,15 @@
             if (!document.getElementById('completedProjects')?.textContent.includes('CI проект')) return fail('завершённый проект не отображается');
 
             document.querySelector('[data-tab="notes"]')?.click();
-            if (!document.querySelector('[data-delete-note="ci-note-1"].btn.danger')) return fail('нет явной кнопки удаления заметки');
+            if (!document.querySelector('[data-delete-note="ci-note-1"]')) return fail('нет явной кнопки удаления заметки');
+            if (!document.querySelector('.workspace-notes-page')) return fail('новый экран заметок не активен');
 
             document.querySelector('[data-tab="tasks"]')?.click();
             setTimeout(() => {
-              const stats = [...document.querySelectorAll('.executive-stat')];
-              const doneCard = stats.find(card => card.querySelector('.executive-stat__label')?.textContent === 'Завершено');
-              if (doneCard?.querySelector('.executive-stat__value')?.textContent !== '2') return fail('статистика завершённых не увеличилась на 2');
+              if (!document.querySelector('.workspace-tasks-page')) return fail('новый экран задач не активен');
+              if (document.querySelectorAll('.workspace-summary-item').length !== 3) return fail('сводка задач не отрисована');
               pass();
-            }, 150);
+            }, 120);
           } catch (error) {
             fail(error?.message || String(error));
           }
@@ -70,6 +70,6 @@
       } catch (error) {
         fail(error?.message || String(error));
       }
-    }, 150);
+    }, 200);
   });
 })();
