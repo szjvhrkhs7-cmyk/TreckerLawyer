@@ -42,24 +42,84 @@
   const fail = message => finish(`FAIL: ${message}`);
   const pass = () => finish('INTERACTION_REGRESSION_PASS');
 
+  const mouse = (type, target, clientX, clientY) => target.dispatchEvent(new MouseEvent(type, {
+    bubbles: true,
+    cancelable: true,
+    button: 0,
+    buttons: type === 'mouseup' ? 0 : 1,
+    clientX,
+    clientY
+  }));
+
   window.addEventListener('load', async () => {
     try {
       const taskTab = await waitFor(() => document.querySelector('[data-tab="tasks"]'), 'вкладка задач');
+      await waitFor(() => typeof globalThis.bindSortable === 'function', 'bindSortable');
       taskTab.click();
 
       await waitFor(() => document.querySelector('.workspace-tasks-page'), 'новая страница задач');
+      await waitFor(() => {
+        const handles = [...document.querySelectorAll('.workspace-task-row:not(.is-done) [data-drag-handle]')];
+        return handles.length >= 2 && handles.every(handle => handle.dataset.safeDragBound === '1');
+      }, 'привязка drag handles');
+
       const rows = [...document.querySelectorAll('.workspace-task-row:not(.is-done)')];
-      if (rows.length < 2) return fail('недостаточно карточек задач');
+      if (rows.length < 2) return fail('недостаточно карточек для drag test');
       for (const row of rows) {
         const handle = row.querySelector(':scope > [data-drag-handle]');
         const priority = row.querySelector('.workspace-priority');
         const overflow = row.querySelector('.workspace-icon-button');
-        if (!handle || getComputedStyle(handle).display !== 'none') return fail('левая drag-иконка задачи отображается');
+        if (!handle || getComputedStyle(handle).display === 'none') return fail('левая drag-иконка задачи скрыта');
         if (!priority || getComputedStyle(priority).display === 'none') return fail('степень срочности задачи скрыта');
         if (priority.textContent.trim() !== 'Обычная') return fail(`неверный текст срочности: ${priority.textContent.trim()}`);
-        if (!overflow || overflow.getBoundingClientRect().width < 44 || overflow.getBoundingClientRect().height < 44) {
-          return fail('правое меню задачи слишком маленькое');
-        }
+        if (!overflow || getComputedStyle(overflow).display !== 'none') return fail('правое меню с тремя точками отображается');
+      }
+
+      const first = rows[0];
+      const second = rows[1];
+      const draggedId = first.dataset.sortId;
+      const otherId = second.dataset.sortId;
+      const handle = first.querySelector('[data-drag-handle]');
+      if (handle.dataset.safeDragInput !== 'touch-mouse') return fail(`неверная схема drag input: ${handle.dataset.safeDragInput || 'нет'}`);
+      if (getComputedStyle(handle).touchAction !== 'none') return fail(`drag handle допускает browser pan: ${getComputedStyle(handle).touchAction}`);
+
+      let pointerCaptureCalls = 0;
+      handle.setPointerCapture = () => { pointerCaptureCalls += 1; };
+
+      const handleRect = handle.getBoundingClientRect();
+      const secondRect = second.getBoundingClientRect();
+      const startX = handleRect.left + handleRect.width / 2;
+      const startY = handleRect.top + handleRect.height / 2;
+      const endX = startX + 8;
+      const endY = secondRect.bottom - Math.min(14, secondRect.height * .12);
+
+      mouse('mousedown', handle, startX, startY);
+      const floating = await waitFor(() => document.querySelector('.drag-floating'), 'floating card', 1200);
+      if (pointerCaptureCalls !== 0) return fail('drag использует setPointerCapture');
+
+      const floatingStyle = getComputedStyle(floating);
+      if (floatingStyle.transitionProperty !== 'none' && floatingStyle.transitionDuration !== '0s') {
+        return fail(`floating card имеет transform-transition: ${floatingStyle.transitionProperty}/${floatingStyle.transitionDuration}`);
+      }
+      if (!floatingStyle.transform || floatingStyle.transform === 'none') return fail('floating card не использует compositor transform');
+
+      for (let step = 1; step <= 8; step += 1) {
+        const progress = step / 8;
+        mouse('mousemove', window, startX + (endX - startX) * progress, startY + (endY - startY) * progress);
+        await wait(24);
+      }
+
+      await waitFor(() => {
+        const order = [...document.querySelectorAll('.workspace-task-row:not(.is-done)')].map(row => row.dataset.sortId);
+        return order[1] === draggedId;
+      }, 'перемещение точки вставки', 1500);
+
+      mouse('mouseup', window, endX, endY);
+      await waitFor(() => !document.querySelector('.drag-floating'), 'завершение drop', 1500);
+
+      const savedOrder = JSON.parse(localStorage.getItem('lawyerTaskOrder') || '[]').map(String);
+      if (savedOrder.indexOf(otherId) < 0 || savedOrder.indexOf(draggedId) < 0 || savedOrder.indexOf(otherId) > savedOrder.indexOf(draggedId)) {
+        return fail(`новый порядок не сохранён: ${savedOrder.join(',')}`);
       }
 
       document.querySelector('[data-tab="projects"]')?.click();
