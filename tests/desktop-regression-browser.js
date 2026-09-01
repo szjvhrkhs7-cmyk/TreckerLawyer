@@ -9,9 +9,11 @@
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   const timestamp = new Date().toISOString();
+  const fullExtra = 'Сверить ответственность, порядок возврата оборудования и ограничения ответственности по договору эквайринга.';
+  const fullNotes = 'Проверить редакцию приложения к договору и отдельно отметить спорные условия для продуктовой команды.';
 
   localStorage.setItem('lawyerTasks', JSON.stringify([
-    { id: 'desktop-overdue', title: 'Проверить договор эквайринга', status: 'inwork', priority: 'high', dueDate: dateKey(yesterday), extra: 'Сверить ответственность и порядок возврата оборудования', createdAt: timestamp, updatedAt: timestamp },
+    { id: 'desktop-overdue', title: 'Проверить договор эквайринга и подготовить подробные рекомендации для продуктовой команды', status: 'inwork', priority: 'high', dueDate: dateKey(yesterday), extra: fullExtra, notes: fullNotes, createdAt: timestamp, updatedAt: timestamp },
     { id: 'desktop-today', title: 'Согласовать условия нового вклада', status: 'inwork', priority: 'normal', dueDate: dateKey(today), createdAt: timestamp, updatedAt: timestamp },
     { id: 'desktop-waiting', title: 'Дождаться ответа продуктовой команды', status: 'waiting', priority: 'low', dueDate: dateKey(tomorrow), createdAt: timestamp, updatedAt: timestamp },
     { id: 'desktop-done', title: 'Подготовить правовое заключение', status: 'done', priority: 'normal', completedAt: timestamp, createdAt: timestamp, updatedAt: timestamp }
@@ -46,7 +48,7 @@
   window.addEventListener('load', async () => {
     document.documentElement.dataset.theme = 'light';
     localStorage.setItem('theme', 'light');
-    await wait(1200);
+    await wait(1300);
 
     try {
       if (window.innerWidth < 1200) return fail(`viewport слишком узкий: ${window.innerWidth}`);
@@ -79,23 +81,15 @@
 
       const tabs = [...document.querySelectorAll('#tabs .tab')];
       const tabRects = tabs.map(tab => tab.getBoundingClientRect());
-      if (tabs.length !== 5) return fail(`ожидалось 5 вкладок, получено ${tabs.length}`);
+      if (tabs.length !== 4) return fail(`ожидалось 4 вкладки, получено ${tabs.length}`);
+      if (document.querySelector('[data-tab="today"]')) return fail('раздел Сегодня остался в desktop-навигации');
+      if (!document.querySelector('[data-tab="tasks"]')?.classList.contains('active')) return fail('задачи не активны при запуске');
       if (tabRects.some(item => item.width < 190 || item.height < 42)) return fail(`слишком маленькая desktop-вкладка ${Math.min(...tabRects.map(item => item.width))}×${Math.min(...tabRects.map(item => item.height))}`);
       if (tabRects[1].top <= tabRects[0].top) return fail('desktop-навигация не вертикальная');
 
-      const mainColumn = document.querySelector('.today-main-column');
-      const sideColumn = document.querySelector('.today-side-column');
-      if (!mainColumn || !sideColumn) return fail('экран Сегодня не отрисован');
-      const mainRect = mainColumn.getBoundingClientRect();
-      const sideRect = sideColumn.getBoundingClientRect();
-      if (sideRect.left < mainRect.right - 4) return fail(`колонки Сегодня пересекаются: ${mainRect.right}/${sideRect.left}`);
-      if (mainRect.width < 430 || sideRect.width < 290) return fail(`неудачные ширины Сегодня: ${mainRect.width}/${sideRect.width}`);
-
-      document.querySelector('[data-tab="tasks"]')?.click();
-      await wait(180);
       const taskRow = document.querySelector('.workspace-task-row:not(.is-done)');
       const taskSearch = document.getElementById('taskSearch');
-      if (!document.querySelector('.workspace-tasks-page') || !taskRow || !taskSearch) return fail('экран задач не работает');
+      if (!document.querySelector('.workspace-tasks-page') || !taskRow || !taskSearch) return fail('экран задач не является главным или не работает');
       if (taskRow.getBoundingClientRect().width < 700) return fail(`desktop-строка задачи слишком узкая: ${taskRow.getBoundingClientRect().width}`);
       const taskMain = taskRow.querySelector('.workspace-task-main')?.getBoundingClientRect();
       const status = taskRow.querySelector('.workspace-status')?.getBoundingClientRect();
@@ -103,6 +97,15 @@
       if (!taskMain || !status || !actions) return fail('неполная структура строки задачи');
       if (taskMain.right > status.left + 2) return fail(`текст задачи перекрывает статус: ${taskMain.right}/${status.left}`);
       if (actions.right > taskRow.getBoundingClientRect().right + 1) return fail('действия задачи выходят за карточку');
+
+      const detailedRow = document.querySelector('[data-sort-id="desktop-overdue"]');
+      const extra = detailedRow?.querySelector('.workspace-task-detail-block--extra .workspace-task-detail-text');
+      const notes = detailedRow?.querySelector('.workspace-task-detail-block--notes .workspace-task-detail-text');
+      const taskTitle = detailedRow?.querySelector('.workspace-task-main strong');
+      if (extra?.textContent !== fullExtra) return fail('поле «Что требуется» не показано полностью');
+      if (notes?.textContent !== fullNotes) return fail('заметки задачи не показаны полностью');
+      if (!taskTitle || getComputedStyle(taskTitle).whiteSpace === 'nowrap') return fail('длинное название задачи не переносится');
+      if (getComputedStyle(extra).whiteSpace !== 'pre-wrap') return fail('подробный текст задачи может обрезаться');
 
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', ctrlKey: true, bubbles: true }));
       await wait(30);
@@ -134,9 +137,9 @@
 
       document.querySelector('[data-tab="notes"]')?.click();
       await wait(100);
-      const notes = [...document.querySelectorAll('.workspace-note-card')];
-      if (notes.length < 2) return fail('заметки не отображаются');
-      if (Math.abs(notes[0].getBoundingClientRect().top - notes[1].getBoundingClientRect().top) > 3) return fail('заметки не образуют desktop-сетку');
+      const notesCards = [...document.querySelectorAll('.workspace-note-card')];
+      if (notesCards.length < 2) return fail('заметки не отображаются');
+      if (Math.abs(notesCards[0].getBoundingClientRect().top - notesCards[1].getBoundingClientRect().top) > 3) return fail('заметки не образуют desktop-сетку');
 
       document.querySelector('[data-tab="calendar"]')?.click();
       await wait(100);
@@ -150,8 +153,6 @@
       if (document.documentElement.dataset.theme !== 'dark') return fail(`тёмная тема не включилась: ${document.documentElement.dataset.theme}`);
       if (!getComputedStyle(brandmark).backgroundImage.includes('linear-gradient')) return fail('логомарка ломается в тёмной теме');
       themeButton?.click();
-      document.querySelector('[data-tab="today"]')?.click();
-      await wait(80);
 
       pass();
     } catch (error) {

@@ -16,7 +16,8 @@
   <link rel="apple-touch-icon-precomposed" sizes="180x180" href="tracker-icon-graphite-180.png?v=20260901-graphite">
   <link rel="manifest" href="manifest.webmanifest?v=20260901-workspace-2026">
   <link rel="stylesheet" href="legacy-inline.css?v=20260831-security">
-  <link rel="stylesheet" href="app.css?v=20260901-task-controls-3">
+  <link rel="stylesheet" href="app.css?v=20260901-task-home-1">
+  <link rel="stylesheet" href="task-home.css?v=20260901-task-home-1">
   <script src="theme-init.js?v=20260831-security"></script>
 </head>
 <body>
@@ -50,11 +51,10 @@
         </button>
       </div>
       <div id="navline" class="navline hidden"><button class="back" id="backBtn" type="button"><svg class="icon" aria-hidden="true"><use href="#i-arrow-left"></use></svg>Назад</button><h1 class="title" id="contextTitle"></h1></div>
-      <h1 id="mainTitle" class="title">Сегодня</h1>
+      <h1 id="mainTitle" class="title">Задачи</h1>
       <p class="stats" id="stats"></p>
       <nav class="tabs" id="tabs" role="tablist" aria-label="Разделы приложения">
-        <button class="tab active" type="button" role="tab" aria-selected="true" data-tab="today"><svg class="icon" aria-hidden="true"><use href="#i-home"></use></svg>Сегодня</button>
-        <button class="tab" type="button" role="tab" aria-selected="false" data-tab="tasks"><svg class="icon" aria-hidden="true"><use href="#i-tasks"></use></svg>Задачи <span class="count" id="tasksCount">0</span></button>
+        <button class="tab active" type="button" role="tab" aria-selected="true" data-tab="tasks"><svg class="icon" aria-hidden="true"><use href="#i-tasks"></use></svg>Задачи <span class="count" id="tasksCount">0</span></button>
         <button class="tab" type="button" role="tab" aria-selected="false" data-tab="projects"><svg class="icon" aria-hidden="true"><use href="#i-folder"></use></svg>Проекты <span class="count" id="projectsCount">0</span></button>
         <button class="tab" type="button" role="tab" aria-selected="false" data-tab="calendar"><svg class="icon" aria-hidden="true"><use href="#i-calendar"></use></svg>Календарь <span class="count" id="calendarCount">0</span></button>
         <button class="tab" type="button" role="tab" aria-selected="false" data-tab="notes"><svg class="icon" aria-hidden="true"><use href="#i-note"></use></svg>Заметки <span class="count" id="notesCount">0</span></button>
@@ -81,6 +81,7 @@
 <script src="app-core.js?v=20260831-calendar"></script>
 <script src="calendar-core.js?v=20260831-calendar-simple-2"></script>
 <script src="workspace-2026.js?v=20260901-workspace-2026"></script>
+<script src="task-home.js?v=20260901-task-home-1"></script>
 <script src="sync.js?v=20260901-ios-drag-3"></script>
 <script src="desktop-ux.js?v=20260901-desktop-ux-1"></script>
 </body>
