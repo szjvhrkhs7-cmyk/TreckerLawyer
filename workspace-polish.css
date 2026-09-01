@@ -1,4 +1,29 @@
-/* Final interaction and accessibility polish. */
+/* Final interaction, mobile layout and accessibility polish. */
+
+html,
+body {
+  touch-action: manipulation;
+  -webkit-text-size-adjust: 100%;
+}
+
+button,
+a,
+input,
+textarea,
+select,
+[contenteditable="true"] {
+  touch-action: manipulation;
+}
+
+.workspace-status,
+.workspace-priority,
+.today-status {
+  min-height: 30px;
+  padding-right: 12px;
+  padding-left: 12px;
+  font-size: 11px;
+  line-height: 1.1;
+}
 
 .workspace-project-card .drag-handle {
   position: static !important;
@@ -13,6 +38,7 @@
   place-items: center;
   opacity: .45;
   transform: none !important;
+  overflow: visible !important;
 }
 
 .workspace-project-card .drag-handle:hover,
@@ -35,6 +61,14 @@
 .workspace-note-main h3,
 .workspace-note-main p {
   pointer-events: none;
+}
+
+.workspace-restore-inline {
+  white-space: nowrap;
+}
+
+.workspace-restore-detail {
+  white-space: nowrap;
 }
 
 .today-focus-check {
@@ -73,9 +107,180 @@
 }
 
 @media (max-width: 899px) {
+  body {
+    padding-top: 0 !important;
+    overflow-x: hidden;
+  }
+
+  .top {
+    min-height: calc(62px + env(safe-area-inset-top));
+    padding-top: calc(8px + env(safe-area-inset-top)) !important;
+    padding-right: 14px !important;
+    padding-bottom: 8px !important;
+    padding-left: 14px !important;
+    overflow: visible !important;
+  }
+
+  .brandbar {
+    min-height: 46px;
+    overflow: visible;
+  }
+
+  .brandmark,
+  .sync-button,
+  .theme-toggle {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+
+  .sync-button,
+  .theme-toggle {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+
+  .sync-button .icon,
+  .theme-toggle .icon {
+    width: 21px;
+    height: 21px;
+    overflow: visible;
+  }
+
+  .tabs {
+    min-height: calc(70px + var(--safe-bottom));
+    padding-top: 7px !important;
+    padding-right: 5px !important;
+    padding-bottom: calc(7px + var(--safe-bottom)) !important;
+    padding-left: 5px !important;
+    overflow: visible !important;
+  }
+
+  .tab {
+    min-width: 0;
+    min-height: 58px;
+    padding: 5px 1px !important;
+    overflow: visible !important;
+    line-height: 1.15;
+  }
+
+  .tab .icon {
+    display: block !important;
+    width: 23px !important;
+    min-width: 23px;
+    height: 23px !important;
+    min-height: 23px;
+    flex: 0 0 23px;
+    overflow: visible !important;
+  }
+
+  .tab .count {
+    top: 0 !important;
+    left: calc(50% + 7px) !important;
+    min-width: 17px !important;
+    height: 17px !important;
+    padding: 0 4px !important;
+    line-height: 13px;
+  }
+
+  .page {
+    overflow-x: hidden;
+  }
+
   .workspace-page-add,
   .today-page-header__actions .btn.primary {
     display: none;
+  }
+
+  .workspace-task-row {
+    grid-template-columns: 44px minmax(0, 1fr) 44px !important;
+    grid-template-rows: auto auto;
+    align-items: center;
+    gap: 5px 8px !important;
+    min-height: 100px !important;
+    padding: 10px 9px !important;
+    overflow: hidden;
+  }
+
+  .workspace-task-row > .drag-handle,
+  .workspace-task-row__done-mark {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+    align-self: center;
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 52px !important;
+    min-height: 52px !important;
+    overflow: visible !important;
+  }
+
+  .workspace-task-row > .drag-handle .drag-grip {
+    overflow: visible !important;
+  }
+
+  .workspace-task-main {
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    min-height: 50px;
+    overflow: hidden;
+  }
+
+  .workspace-task-main strong {
+    width: 100%;
+    font-size: 14px;
+  }
+
+  .workspace-task-meta {
+    width: 100%;
+    overflow: hidden;
+  }
+
+  .workspace-task-row > .workspace-status {
+    grid-column: 2;
+    grid-row: 2;
+    justify-self: start;
+    max-width: 100% !important;
+    min-height: 32px;
+    padding: 0 13px;
+    overflow: visible !important;
+    font-size: 11px;
+    text-overflow: clip !important;
+  }
+
+  .workspace-task-row .workspace-priority {
+    display: none;
+  }
+
+  .workspace-task-row .workspace-row-actions {
+    grid-column: 3 !important;
+    grid-row: 1 / span 2 !important;
+    align-self: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    width: 44px;
+    min-width: 44px;
+  }
+
+  .workspace-task-row .workspace-row-actions .btn {
+    display: none;
+  }
+
+  .workspace-task-row .workspace-icon-button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    overflow: visible;
+  }
+
+  .workspace-completed .completed-link,
+  .workspace-utilities summary {
+    min-height: 48px;
+    font-size: 13px;
   }
 
   .today-focus-task {
@@ -85,10 +290,57 @@
   .today-complete {
     grid-column: 2 / -1;
   }
+
+  .today-status {
+    max-width: none !important;
+    overflow: visible !important;
+    text-overflow: clip !important;
+  }
+
+  input,
+  textarea,
+  select,
+  .search,
+  .field input,
+  .field textarea,
+  .field select,
+  .note-editor,
+  [contenteditable="true"] {
+    font-size: 16px !important;
+  }
+
+  .sheet .field input,
+  .sheet .field textarea,
+  .sheet .field select,
+  .sheet .note-editor {
+    font-size: 16px !important;
+    line-height: 1.4;
+  }
 }
 
 @media (max-width: 520px) {
-  .today-status {
-    max-width: 92px;
+  .brandname {
+    max-width: min(46vw, 190px) !important;
+  }
+
+  .workspace-summary-strip {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .workspace-summary-item {
+    min-height: 70px;
+    padding: 9px 7px;
+  }
+
+  .workspace-summary-item span {
+    overflow: hidden;
+    font-size: 9.5px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .workspace-project-card__top,
+  .workspace-note-card__top {
+    min-width: 0;
   }
 }
