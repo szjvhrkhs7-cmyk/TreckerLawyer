@@ -1,0 +1,83 @@
+/* Desktop-only alignment fix for the compact sidebar header. */
+
+@media (min-width: 900px) {
+  .brandbar {
+    align-items: center !important;
+  }
+
+  .brandbar > * {
+    box-sizing: border-box;
+  }
+
+  .brandmark,
+  .sync-button,
+  .theme-toggle {
+    align-self: center !important;
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    margin: 0 !important;
+    border-radius: 12px !important;
+  }
+
+  .brandmark {
+    justify-self: start !important;
+  }
+
+  .brandname {
+    display: flex !important;
+    min-width: 0;
+    height: 40px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    line-height: 1.2 !important;
+  }
+
+  .sync-button,
+  .theme-toggle {
+    display: grid !important;
+    padding: 0 !important;
+    place-items: center !important;
+    border: 1px solid rgba(255, 255, 255, .10) !important;
+    background: rgba(255, 255, 255, .035) !important;
+    box-shadow: none !important;
+    line-height: 1 !important;
+  }
+
+  .sync-button:hover,
+  .theme-toggle:hover {
+    border-color: rgba(255, 255, 255, .18) !important;
+    background: rgba(255, 255, 255, .07) !important;
+  }
+
+  .sync-button:focus-visible,
+  .theme-toggle:focus-visible {
+    outline: none !important;
+    box-shadow: inset 0 0 0 2px rgba(110, 168, 255, .72) !important;
+  }
+
+  .sync-button .icon,
+  .theme-toggle .icon {
+    width: 18px !important;
+    height: 18px !important;
+    margin: 0 !important;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1160px) {
+  .brandmark,
+  .sync-button,
+  .theme-toggle {
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+  }
+
+  .brandname {
+    height: 38px !important;
+  }
+}
