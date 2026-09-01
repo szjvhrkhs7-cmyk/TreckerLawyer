@@ -12,7 +12,7 @@ permissions:
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 7
+    timeout-minutes: 8
     steps:
       - uses: actions/checkout@v4
       - name: Verify cloud sync logic
@@ -70,6 +70,8 @@ jobs:
           grep -F 'workspace-task-restore.js' sync.js
           grep -F 'workspace-pages.css' app.css
           grep -F 'workspace-polish.css' app.css
+          grep -F 'desktop-polish.css' app.css
+          grep -F 'desktop-ux.js' index.html
           grep -F 'legacy-inline.css' index.html
           grep -F 'maximum-scale=1' index.html
           grep -F 'user-scalable=no' index.html
@@ -93,6 +95,37 @@ jobs:
             echo 'Workspace browser test reported a failure.' >&2
             exit 1
           fi
+      - name: Verify desktop layout and UX in Chrome
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path('index.html').read_text(encoding='utf-8')
+          app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
+          if app_tag not in html:
+              raise SystemExit('Expected application script tag was not found')
+          html = html.replace(app_tag, '<script src="tests/desktop-regression-browser.js"></script>\n' + app_tag, 1)
+          Path('desktop-regression-test.html').write_text(html, encoding='utf-8')
+          preview = Path('index.html').read_text(encoding='utf-8').replace(app_tag, '<script src="tests/desktop-preview-data.js"></script>\n' + app_tag, 1)
+          Path('desktop-preview.html').write_text(preview, encoding='utf-8')
+          PY
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          "$CHROME" --headless --no-sandbox --disable-gpu --window-size=1440,900 --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8765/desktop-regression-test.html > /tmp/desktop-regression.html
+          grep -F 'DESKTOP_REGRESSION_PASS' /tmp/desktop-regression.html
+          if grep -F 'FAIL:' /tmp/desktop-regression.html; then
+            echo 'Desktop regression browser test reported a failure.' >&2
+            exit 1
+          fi
+          "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,900 --virtual-time-budget=7000 --screenshot=/tmp/desktop-workspace.png http://127.0.0.1:8765/desktop-preview.html
+          test -s /tmp/desktop-workspace.png
+      - name: Upload desktop visual preview
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-workspace-preview
+          path: /tmp/desktop-workspace.png
+          if-no-files-found: ignore
+          retention-days: 3
       - name: Verify mobile layout and completed task restore
         run: |
           set -euo pipefail
