@@ -1,0 +1,156 @@
+/* Tasks are the primary workspace screen. Keep task context visible without opening the drawer. */
+
+.workspace-task-row {
+  align-items: start;
+  min-height: 84px;
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.workspace-task-main {
+  align-content: start;
+  gap: 7px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+
+.workspace-task-main strong {
+  overflow: visible;
+  font-size: 14.5px;
+  line-height: 1.38;
+  text-overflow: clip;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.workspace-task-meta {
+  flex-wrap: wrap;
+  row-gap: 5px;
+  line-height: 1.35;
+}
+
+.workspace-task-description {
+  display: none !important;
+}
+
+.workspace-task-details {
+  display: grid;
+  gap: 7px;
+  width: 100%;
+  margin-top: 2px;
+  padding-top: 9px;
+  border-top: 1px solid var(--workspace-line-soft);
+}
+
+.workspace-task-detail-block {
+  display: grid;
+  grid-template-columns: minmax(92px, auto) minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 78%, var(--workspace-accent-soft));
+}
+
+.workspace-task-detail-block--notes {
+  background: color-mix(in srgb, var(--surface) 88%, var(--workspace-line-soft));
+}
+
+.workspace-task-detail-label {
+  color: var(--workspace-accent);
+  font-size: 10.5px;
+  font-weight: 760;
+  line-height: 1.45;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+.workspace-task-detail-block--notes .workspace-task-detail-label {
+  color: var(--muted);
+}
+
+.workspace-task-detail-text {
+  min-width: 0;
+  color: var(--text);
+  font-size: 12.5px;
+  font-weight: 470;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.workspace-task-row > .workspace-status,
+.workspace-task-row > .workspace-priority,
+.workspace-task-row > .workspace-row-actions {
+  margin-top: 2px;
+}
+
+@media (max-width: 899px) {
+  #tabs.tabs {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+
+  .workspace-task-row {
+    grid-template-columns: 44px auto auto minmax(0, 1fr);
+    grid-template-areas:
+      "handle main main main"
+      "handle status priority actions";
+    align-items: start;
+    column-gap: 8px;
+    row-gap: 9px;
+    min-height: 96px;
+    padding: 12px 12px 12px 8px;
+  }
+
+  .workspace-task-row > .drag-handle,
+  .workspace-task-row > .workspace-task-row__done-mark {
+    grid-area: handle;
+    align-self: start;
+  }
+
+  .workspace-task-main {
+    grid-area: main;
+    width: 100%;
+    min-height: 44px;
+  }
+
+  .workspace-task-main strong {
+    font-size: 15px;
+    line-height: 1.42;
+  }
+
+  .workspace-task-row > .workspace-status {
+    grid-area: status;
+    justify-self: start;
+    margin: 0;
+  }
+
+  .workspace-task-row > .workspace-priority {
+    grid-area: priority;
+    justify-self: start;
+    margin: 0;
+  }
+
+  .workspace-task-row > .workspace-row-actions {
+    grid-area: actions;
+    align-self: center;
+    justify-self: end;
+    margin: 0;
+  }
+
+  .workspace-task-detail-block {
+    grid-template-columns: 1fr;
+    gap: 4px;
+    padding: 9px 10px;
+  }
+
+  .workspace-task-detail-label {
+    font-size: 10px;
+  }
+
+  .workspace-task-detail-text {
+    font-size: 13px;
+    line-height: 1.52;
+  }
+}
