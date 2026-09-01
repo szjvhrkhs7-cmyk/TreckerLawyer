@@ -71,16 +71,27 @@
     align-items: center !important;
     gap: 7px !important;
     min-width: 0;
+    min-height: 44px !important;
     margin: 0 3px 28px !important;
   }
 
+  .brandbar > * {
+    position: static !important;
+    align-self: center !important;
+    margin-top: 0 !important;
+    margin-bottom: 0 !important;
+    transform: none !important;
+  }
+
   .brandmark {
+    justify-self: start !important;
     width: 40px !important;
     height: 40px !important;
     border-radius: 12px !important;
   }
 
   .brandname {
+    display: block !important;
     min-width: 0;
     overflow: hidden;
     color: #fff !important;
@@ -91,6 +102,7 @@
   }
 
   .brandname span {
+    display: block !important;
     overflow: hidden;
     margin-top: 4px !important;
     color: rgba(232, 241, 250, .56) !important;
@@ -102,6 +114,8 @@
 
   .sync-button,
   .theme-toggle {
+    align-self: center !important;
+    justify-self: center !important;
     width: 36px !important;
     min-width: 36px !important;
     height: 36px !important;
