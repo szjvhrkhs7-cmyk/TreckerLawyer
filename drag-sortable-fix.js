@@ -8,7 +8,7 @@
     document.body.classList.remove('drag-reordering');
   };
 
-  function safeBindSortable(root, kind) {
+  function smoothBindSortable(root, kind) {
     const list = root?.matches?.('.list') ? root : root?.querySelector?.('.list');
     if (!list || list.querySelectorAll('[data-sort-id]').length < 2) return;
 
@@ -21,6 +21,61 @@
       [...list.querySelectorAll('[data-sort-id]')].map(item => item.dataset.sortId)
     );
 
+    const sortableChildren = () => [...list.children].filter(element => element.matches?.('[data-sort-id]'));
+
+    const stopLayoutAnimation = element => {
+      const animation = layoutAnimations.get(element);
+      animation?.cancel?.();
+      layoutAnimations.delete(element);
+      element.style.transform = '';
+      element.style.transition = '';
+    };
+
+    const snapshotPositions = activeItem => {
+      const positions = new Map();
+      sortableChildren().forEach(element => {
+        if (element === activeItem) return;
+        stopLayoutAnimation(element);
+        positions.set(element, element.getBoundingClientRect().top);
+      });
+      return positions;
+    };
+
+    const animateLayout = (activeItem, before) => {
+      sortableChildren().forEach(element => {
+        if (element === activeItem) return;
+        const oldTop = before.get(element);
+        const newTop = element.getBoundingClientRect().top;
+        const delta = oldTop === undefined ? 0 : oldTop - newTop;
+        if (Math.abs(delta) < 0.5) return;
+
+        if (typeof element.animate === 'function') {
+          const animation = element.animate(
+            [{ transform: `translate3d(0,${delta}px,0)` }, { transform: 'translate3d(0,0,0)' }],
+            { duration: 175, easing: 'cubic-bezier(.2,.8,.2,1)' }
+          );
+          layoutAnimations.set(element, animation);
+          animation.onfinish = () => {
+            if (layoutAnimations.get(element) === animation) layoutAnimations.delete(element);
+          };
+          animation.oncancel = () => {
+            if (layoutAnimations.get(element) === animation) layoutAnimations.delete(element);
+          };
+          return;
+        }
+
+        element.style.transition = 'none';
+        element.style.transform = `translate3d(0,${delta}px,0)`;
+        void element.offsetHeight;
+        element.style.transition = 'transform 175ms cubic-bezier(.2,.8,.2,1)';
+        element.style.transform = '';
+        setTimeout(() => {
+          element.style.transition = '';
+          element.style.transform = '';
+        }, 195);
+      });
+    };
+
     list.querySelectorAll('[data-drag-handle]').forEach(handle => {
       const item = handle.closest('[data-sort-id]');
       if (!item || handle.dataset.safeDragBound === '1') return;
@@ -31,85 +86,72 @@
       let moved = false;
       let startX = 0;
       let startY = 0;
-      let floating = null;
       let originRect = null;
       let originNextSibling = null;
       let originIndex = -1;
+      let floating = null;
       let frameId = 0;
       let pendingPoint = null;
       let lastPoint = null;
-
-      const animateLayout = before => {
-        [...list.children].forEach(element => {
-          if (element === item || !element.matches('[data-sort-id]')) return;
-          const oldTop = before.get(element);
-          const previous = layoutAnimations.get(element);
-          previous?.cancel?.();
-          layoutAnimations.delete(element);
-          const newTop = element.getBoundingClientRect().top;
-          const delta = oldTop === undefined ? 0 : oldTop - newTop;
-          if (!delta) return;
-          if (typeof element.animate === 'function') {
-            const animation = element.animate(
-              [{ transform: `translate3d(0,${delta}px,0)` }, { transform: 'translate3d(0,0,0)' }],
-              { duration: 240, easing: 'cubic-bezier(.16,1,.3,1)' }
-            );
-            layoutAnimations.set(element, animation);
-            animation.onfinish = () => {
-              if (layoutAnimations.get(element) === animation) layoutAnimations.delete(element);
-            };
-          } else {
-            element.style.transition = 'none';
-            element.style.transform = `translate3d(0,${delta}px,0)`;
-            void element.offsetHeight;
-            element.style.transition = 'transform 240ms cubic-bezier(.16,1,.3,1)';
-            element.style.transform = '';
-            setTimeout(() => {
-              element.style.transition = '';
-              element.style.transform = '';
-            }, 260);
-          }
-        });
-      };
+      let suppressClick = false;
 
       const positionFloating = (clientX, clientY) => {
-        if (!floating) return;
+        if (!floating || !originRect) return;
         const dx = clientX - startX;
         const dy = clientY - startY;
-        const rotation = Math.max(-2.4, Math.min(2.4, dx / 35));
-        floating.style.transform = `translate3d(${dx}px,${dy}px,0) rotate(${rotation}deg) scale(1.025)`;
+        floating.style.transform = `translate3d(${dx}px,${dy}px,0) scale(1.012)`;
       };
 
-      const moveItem = (clientX, clientY) => {
-        if (!dragging) return false;
-        if (Math.hypot(clientX - startX, clientY - startY) > 6) moved = true;
+      const maybeReorder = (clientX, clientY) => {
+        if (!dragging || !originRect) return false;
+
+        const dx = clientX - startX;
+        const dy = clientY - startY;
+        if (Math.hypot(dx, dy) > 4) {
+          moved = true;
+          suppressClick = true;
+        }
         positionFloating(clientX, clientY);
 
-        const edge = 88;
+        const edge = 82;
         let scrollSpeed = 0;
-        if (clientY < edge) scrollSpeed = -Math.ceil((edge - clientY) / 5);
-        else if (clientY > window.innerHeight - edge) scrollSpeed = Math.ceil((clientY - (window.innerHeight - edge)) / 5);
-        scrollSpeed = Math.max(-18, Math.min(18, scrollSpeed));
+        if (clientY < edge) scrollSpeed = -Math.ceil((edge - clientY) / 7);
+        else if (clientY > window.innerHeight - edge) scrollSpeed = Math.ceil((clientY - (window.innerHeight - edge)) / 7);
+        scrollSpeed = Math.max(-12, Math.min(12, scrollSpeed));
         if (scrollSpeed) window.scrollBy(0, scrollSpeed);
 
-        const siblings = [...list.children].filter(element => element !== item && element.matches('[data-sort-id]'));
-        const rects = siblings.map(element => [element, element.getBoundingClientRect()]);
-        const before = rects.find(([, rect]) => clientY < rect.top + rect.height / 2)?.[0];
+        const items = sortableChildren();
+        const index = items.indexOf(item);
+        if (index < 0) return scrollSpeed !== 0;
+
+        const dragCenterY = originRect.top + dy + originRect.height / 2;
+        const previous = items[index - 1];
+        const next = items[index + 1];
+        const hysteresis = 8;
         let changed = false;
 
-        if (before) {
-          if (item.nextElementSibling !== before) {
-            const positions = new Map(rects.map(([element, rect]) => [element, rect.top]));
-            list.insertBefore(item, before);
-            animateLayout(positions);
+        if (previous) {
+          const rect = previous.getBoundingClientRect();
+          const threshold = rect.top + rect.height / 2 - hysteresis;
+          if (dragCenterY < threshold) {
+            const before = snapshotPositions(item);
+            list.insertBefore(item, previous);
+            animateLayout(item, before);
             changed = true;
           }
-        } else if (item !== list.lastElementChild) {
-          const positions = new Map(rects.map(([element, rect]) => [element, rect.top]));
-          list.append(item);
-          animateLayout(positions);
-          changed = true;
         }
+
+        if (!changed && next) {
+          const rect = next.getBoundingClientRect();
+          const threshold = rect.top + rect.height / 2 + hysteresis;
+          if (dragCenterY > threshold) {
+            const before = snapshotPositions(item);
+            list.insertBefore(item, next.nextSibling);
+            animateLayout(item, before);
+            changed = true;
+          }
+        }
+
         return scrollSpeed !== 0 || changed;
       };
 
@@ -120,7 +162,7 @@
         pendingPoint = null;
         if (!point) return;
         lastPoint = point;
-        const keepAnimating = moveItem(point.clientX, point.clientY);
+        const keepAnimating = maybeReorder(point.clientX, point.clientY);
         if (keepAnimating && dragging) frameId = requestFrame(drawFrame);
       };
 
@@ -143,14 +185,16 @@
       const pointInsideList = point => {
         if (!point) return false;
         const rect = list.getBoundingClientRect();
-        const tolerance = 12;
+        const tolerance = 24;
         return point.clientX >= rect.left - tolerance && point.clientX <= rect.right + tolerance &&
           point.clientY >= rect.top - tolerance && point.clientY <= rect.bottom + tolerance;
       };
 
       const restoreOriginal = () => {
+        const before = snapshotPositions(item);
         if (originNextSibling && originNextSibling.parentNode === list) list.insertBefore(item, originNextSibling);
         else list.append(item);
+        animateLayout(item, before);
       };
 
       const onPointerMove = event => {
@@ -161,10 +205,12 @@
         }
         queueMove(event.clientX, event.clientY, event);
       };
+
       const onTouchMove = event => {
         const touch = event.touches[0];
         if (touch) queueMove(touch.clientX, touch.clientY, event);
       };
+
       const onWindowBlur = () => finish({ type: 'blur' }, true);
       const onVisibilityChange = () => {
         if (document.visibilityState === 'hidden') finish({ type: 'visibilitychange' }, true);
@@ -208,7 +254,7 @@
         if (!hardCancel && pendingPoint) {
           const point = pendingPoint;
           pendingPoint = null;
-          moveItem(point.clientX, point.clientY);
+          maybeReorder(point.clientX, point.clientY);
         } else {
           pendingPoint = null;
         }
@@ -217,7 +263,7 @@
         const validDrop = !hardCancel && moved && pointInsideList(point);
         if (!validDrop) restoreOriginal();
 
-        const currentIndex = [...list.querySelectorAll('[data-sort-id]')].indexOf(item);
+        const currentIndex = sortableChildren().indexOf(item);
         const changed = validDrop && currentIndex !== originIndex;
 
         dragging = false;
@@ -235,14 +281,14 @@
           const dx = target.left - originRect.left;
           const dy = target.top - originRect.top;
           const stale = floating;
-          stale.style.transition = 'transform 190ms cubic-bezier(.2,.8,.2,1),opacity 190ms ease';
-          stale.style.transform = `translate3d(${dx}px,${dy}px,0) rotate(0deg) scale(1)`;
-          stale.style.opacity = '0.9';
+          stale.style.transition = 'transform 145ms cubic-bezier(.2,.8,.2,1), opacity 145ms ease';
+          stale.style.transform = `translate3d(${dx}px,${dy}px,0) scale(1)`;
+          stale.style.opacity = '0.92';
           setTimeout(() => {
             stale.remove();
             if (floating === stale) floating = null;
             item.classList.remove('dragging', 'drag-placeholder');
-          }, 205);
+          }, 165);
         } else {
           floating?.remove();
           floating = null;
@@ -261,11 +307,12 @@
         dragging = true;
         pointerId = id ?? null;
         moved = false;
+        suppressClick = false;
         startX = clientX;
         startY = clientY;
         originRect = item.getBoundingClientRect();
         originNextSibling = item.nextElementSibling;
-        originIndex = [...list.querySelectorAll('[data-sort-id]')].indexOf(item);
+        originIndex = sortableChildren().indexOf(item);
         lastPoint = { clientX, clientY };
         pendingPoint = null;
 
@@ -277,6 +324,10 @@
         floating.style.top = `${originRect.top}px`;
         floating.style.width = `${originRect.width}px`;
         floating.style.height = `${originRect.height}px`;
+        floating.style.transform = 'translate3d(0,0,0) scale(1.012)';
+        floating.style.transformOrigin = 'center center';
+        floating.style.transition = 'none';
+        floating.style.willChange = 'transform';
         document.body.append(floating);
 
         item.classList.add('dragging', 'drag-placeholder');
@@ -311,22 +362,24 @@
       }
 
       handle.addEventListener('click', event => {
-        if (moved) {
+        if (suppressClick) {
           event.preventDefault();
           event.stopPropagation();
         }
-        moved = false;
+        suppressClick = false;
       });
 
       handle.addEventListener('keydown', event => {
         if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
         event.preventDefault();
-        const items = [...list.querySelectorAll('[data-sort-id]')];
+        const items = sortableChildren();
         const index = items.indexOf(item);
         const target = items[index + (event.key === 'ArrowUp' ? -1 : 1)];
         if (!target) return;
+        const before = snapshotPositions(item);
         if (event.key === 'ArrowUp') list.insertBefore(item, target);
         else list.insertBefore(item, target.nextSibling);
+        animateLayout(item, before);
         persist();
         handle.focus();
       });
@@ -334,6 +387,6 @@
   }
 
   cleanupStaleDragUi();
-  globalThis.bindSortable = safeBindSortable;
+  globalThis.bindSortable = smoothBindSortable;
   if (typeof globalThis.render === 'function') globalThis.render();
 })();
