@@ -14,14 +14,13 @@
 
     const requestFrame = window.requestAnimationFrame?.bind(window) || (callback => setTimeout(callback, 16));
     const cancelFrame = window.cancelAnimationFrame?.bind(window) || clearTimeout;
-    const supportsPointer = typeof window.PointerEvent === 'function';
     const layoutAnimations = new WeakMap();
-    const persist = () => globalThis.persistSortableOrder?.(
-      kind,
-      [...list.querySelectorAll('[data-sort-id]')].map(item => item.dataset.sortId)
-    );
 
     const sortableChildren = () => [...list.children].filter(element => element.matches?.('[data-sort-id]'));
+    const persist = () => globalThis.persistSortableOrder?.(
+      kind,
+      sortableChildren().map(item => item.dataset.sortId)
+    );
 
     const stopLayoutAnimation = element => {
       const animation = layoutAnimations.get(element);
@@ -52,27 +51,26 @@
         if (typeof element.animate === 'function') {
           const animation = element.animate(
             [{ transform: `translate3d(0,${delta}px,0)` }, { transform: 'translate3d(0,0,0)' }],
-            { duration: 175, easing: 'cubic-bezier(.2,.8,.2,1)' }
+            { duration: 165, easing: 'cubic-bezier(.2,.8,.2,1)' }
           );
           layoutAnimations.set(element, animation);
-          animation.onfinish = () => {
+          const clear = () => {
             if (layoutAnimations.get(element) === animation) layoutAnimations.delete(element);
           };
-          animation.oncancel = () => {
-            if (layoutAnimations.get(element) === animation) layoutAnimations.delete(element);
-          };
+          animation.onfinish = clear;
+          animation.oncancel = clear;
           return;
         }
 
         element.style.transition = 'none';
         element.style.transform = `translate3d(0,${delta}px,0)`;
         void element.offsetHeight;
-        element.style.transition = 'transform 175ms cubic-bezier(.2,.8,.2,1)';
+        element.style.transition = 'transform 165ms cubic-bezier(.2,.8,.2,1)';
         element.style.transform = '';
         setTimeout(() => {
           element.style.transition = '';
           element.style.transform = '';
-        }, 195);
+        }, 185);
       });
     };
 
@@ -80,9 +78,11 @@
       const item = handle.closest('[data-sort-id]');
       if (!item || handle.dataset.safeDragBound === '1') return;
       handle.dataset.safeDragBound = '1';
+      handle.dataset.safeDragInput = 'touch-mouse';
 
       let dragging = false;
-      let pointerId = null;
+      let inputType = null;
+      let touchId = null;
       let moved = false;
       let startX = 0;
       let startY = 0;
@@ -94,12 +94,11 @@
       let pendingPoint = null;
       let lastPoint = null;
       let suppressClick = false;
+      let lastTouchAt = 0;
 
       const positionFloating = (clientX, clientY) => {
         if (!floating || !originRect) return;
-        const dx = clientX - startX;
-        const dy = clientY - startY;
-        floating.style.transform = `translate3d(${dx}px,${dy}px,0) scale(1.012)`;
+        floating.style.transform = `translate3d(${clientX - startX}px,${clientY - startY}px,0) scale(1.012)`;
       };
 
       const maybeReorder = (clientX, clientY) => {
@@ -115,44 +114,42 @@
 
         const edge = 82;
         let scrollSpeed = 0;
-        if (clientY < edge) scrollSpeed = -Math.ceil((edge - clientY) / 7);
-        else if (clientY > window.innerHeight - edge) scrollSpeed = Math.ceil((clientY - (window.innerHeight - edge)) / 7);
-        scrollSpeed = Math.max(-12, Math.min(12, scrollSpeed));
+        if (clientY < edge) scrollSpeed = -Math.ceil((edge - clientY) / 8);
+        else if (clientY > window.innerHeight - edge) scrollSpeed = Math.ceil((clientY - (window.innerHeight - edge)) / 8);
+        scrollSpeed = Math.max(-10, Math.min(10, scrollSpeed));
         if (scrollSpeed) window.scrollBy(0, scrollSpeed);
 
         const items = sortableChildren();
         const index = items.indexOf(item);
         if (index < 0) return scrollSpeed !== 0;
 
-        const dragCenterY = originRect.top + dy + originRect.height / 2;
+        const grabOffsetFromCenter = startY - (originRect.top + originRect.height / 2);
+        const dragCenterY = clientY - grabOffsetFromCenter;
         const previous = items[index - 1];
         const next = items[index + 1];
-        const hysteresis = 8;
-        let changed = false;
+        const hysteresis = 7;
 
         if (previous) {
           const rect = previous.getBoundingClientRect();
-          const threshold = rect.top + rect.height / 2 - hysteresis;
-          if (dragCenterY < threshold) {
+          if (dragCenterY < rect.top + rect.height / 2 - hysteresis) {
             const before = snapshotPositions(item);
             list.insertBefore(item, previous);
             animateLayout(item, before);
-            changed = true;
+            return true;
           }
         }
 
-        if (!changed && next) {
+        if (next) {
           const rect = next.getBoundingClientRect();
-          const threshold = rect.top + rect.height / 2 + hysteresis;
-          if (dragCenterY > threshold) {
+          if (dragCenterY > rect.top + rect.height / 2 + hysteresis) {
             const before = snapshotPositions(item);
             list.insertBefore(item, next.nextSibling);
             animateLayout(item, before);
-            changed = true;
+            return true;
           }
         }
 
-        return scrollSpeed !== 0 || changed;
+        return scrollSpeed !== 0;
       };
 
       const drawFrame = () => {
@@ -168,16 +165,25 @@
 
       const queueMove = (clientX, clientY, event) => {
         if (!dragging) return;
-        event?.preventDefault?.();
+        if (event?.cancelable) event.preventDefault();
         pendingPoint = { clientX, clientY };
         if (!frameId) frameId = requestFrame(drawFrame);
+      };
+
+      const findTouch = touches => {
+        if (!touches) return null;
+        for (let index = 0; index < touches.length; index += 1) {
+          const touch = touches[index];
+          if (touchId === null || touch.identifier === touchId) return touch;
+        }
+        return null;
       };
 
       const releasePoint = event => {
         if (Number.isFinite(event?.clientX) && Number.isFinite(event?.clientY)) {
           return { clientX: event.clientX, clientY: event.clientY };
         }
-        const touch = event?.changedTouches?.[0];
+        const touch = findTouch(event?.changedTouches);
         if (touch) return { clientX: touch.clientX, clientY: touch.clientY };
         return lastPoint;
       };
@@ -185,7 +191,7 @@
       const pointInsideList = point => {
         if (!point) return false;
         const rect = list.getBoundingClientRect();
-        const tolerance = 24;
+        const tolerance = 40;
         return point.clientX >= rect.left - tolerance && point.clientX <= rect.right + tolerance &&
           point.clientY >= rect.top - tolerance && point.clientY <= rect.bottom + tolerance;
       };
@@ -197,18 +203,17 @@
         animateLayout(item, before);
       };
 
-      const onPointerMove = event => {
-        if (pointerId !== null && event.pointerId !== pointerId) return;
-        if (event.pointerType === 'mouse' && event.buttons === 0) {
-          finish({ type: 'pointercancel', pointerId: event.pointerId }, true);
+      const onTouchMove = event => {
+        const touch = findTouch(event.touches);
+        if (touch) queueMove(touch.clientX, touch.clientY, event);
+      };
+
+      const onMouseMove = event => {
+        if (event.buttons === 0) {
+          finish({ type: 'mousecancel', clientX: event.clientX, clientY: event.clientY }, true);
           return;
         }
         queueMove(event.clientX, event.clientY, event);
-      };
-
-      const onTouchMove = event => {
-        const touch = event.touches[0];
-        if (touch) queueMove(touch.clientX, touch.clientY, event);
       };
 
       const onWindowBlur = () => finish({ type: 'blur' }, true);
@@ -221,36 +226,28 @@
           finish({ type: 'escape' }, true);
         }
       };
-      const onLostPointerCapture = event => {
-        if (pointerId !== null && event?.pointerId !== undefined && event.pointerId !== pointerId) return;
-        setTimeout(() => {
-          if (dragging) finish({ type: 'lostpointercapture' }, true);
-        }, 0);
-      };
 
       const removeGlobalListeners = () => {
-        window.removeEventListener('pointermove', onPointerMove, true);
-        window.removeEventListener('pointerup', finish, true);
-        window.removeEventListener('pointercancel', finish, true);
         window.removeEventListener('touchmove', onTouchMove, true);
         window.removeEventListener('touchend', finish, true);
         window.removeEventListener('touchcancel', finish, true);
+        window.removeEventListener('mousemove', onMouseMove, true);
+        window.removeEventListener('mouseup', finish, true);
         window.removeEventListener('blur', onWindowBlur, true);
         document.removeEventListener('visibilitychange', onVisibilityChange);
         document.removeEventListener('keydown', onEscape, true);
-        handle.removeEventListener('lostpointercapture', onLostPointerCapture);
       };
 
       function finish(event, forceCancel = false) {
         if (!dragging) return;
-        if (pointerId !== null && event?.pointerId !== undefined && event.pointerId !== pointerId) return;
+        if (inputType === 'touch' && event?.changedTouches && !findTouch(event.changedTouches)) return;
 
         if (frameId) {
           cancelFrame(frameId);
           frameId = 0;
         }
 
-        const hardCancel = forceCancel || ['pointercancel', 'touchcancel', 'blur', 'visibilitychange', 'lostpointercapture', 'escape'].includes(event?.type);
+        const hardCancel = forceCancel || ['touchcancel', 'mousecancel', 'blur', 'visibilitychange', 'escape'].includes(event?.type);
         if (!hardCancel && pendingPoint) {
           const point = pendingPoint;
           pendingPoint = null;
@@ -267,7 +264,8 @@
         const changed = validDrop && currentIndex !== originIndex;
 
         dragging = false;
-        pointerId = null;
+        inputType = null;
+        touchId = null;
         lastPoint = null;
         removeGlobalListeners();
         list.classList.remove('is-sorting');
@@ -278,17 +276,15 @@
 
         if (floating && originRect && !hardCancel) {
           const target = item.getBoundingClientRect();
-          const dx = target.left - originRect.left;
-          const dy = target.top - originRect.top;
           const stale = floating;
-          stale.style.transition = 'transform 145ms cubic-bezier(.2,.8,.2,1), opacity 145ms ease';
-          stale.style.transform = `translate3d(${dx}px,${dy}px,0) scale(1)`;
+          stale.style.transition = 'transform 140ms cubic-bezier(.2,.8,.2,1), opacity 140ms ease';
+          stale.style.transform = `translate3d(${target.left - originRect.left}px,${target.top - originRect.top}px,0) scale(1)`;
           stale.style.opacity = '0.92';
           setTimeout(() => {
             stale.remove();
             if (floating === stale) floating = null;
             item.classList.remove('dragging', 'drag-placeholder');
-          }, 165);
+          }, 160);
         } else {
           floating?.remove();
           floating = null;
@@ -296,16 +292,17 @@
         }
       }
 
-      const begin = (clientX, clientY, id, event) => {
+      const begin = (clientX, clientY, source, event, identifier = null) => {
         if (dragging) {
-          event.preventDefault();
+          if (event.cancelable) event.preventDefault();
           return;
         }
-        if (event.type === 'pointerdown' && event.button !== undefined && event.button !== 0) return;
+        if (source === 'mouse' && event.button !== 0) return;
 
-        event.preventDefault();
+        if (event.cancelable) event.preventDefault();
         dragging = true;
-        pointerId = id ?? null;
+        inputType = source;
+        touchId = identifier;
         moved = false;
         suppressClick = false;
         startX = clientX;
@@ -339,27 +336,27 @@
         document.addEventListener('visibilitychange', onVisibilityChange);
         document.addEventListener('keydown', onEscape, true);
 
-        if (supportsPointer) {
-          try { handle.setPointerCapture?.(id); } catch {}
-          handle.addEventListener('lostpointercapture', onLostPointerCapture);
-          window.addEventListener('pointermove', onPointerMove, { passive: false, capture: true });
-          window.addEventListener('pointerup', finish, true);
-          window.addEventListener('pointercancel', finish, true);
-        } else {
+        if (source === 'touch') {
           window.addEventListener('touchmove', onTouchMove, { passive: false, capture: true });
           window.addEventListener('touchend', finish, true);
           window.addEventListener('touchcancel', finish, true);
+        } else {
+          window.addEventListener('mousemove', onMouseMove, { passive: false, capture: true });
+          window.addEventListener('mouseup', finish, true);
         }
       };
 
-      if (supportsPointer) {
-        handle.addEventListener('pointerdown', event => begin(event.clientX, event.clientY, event.pointerId, event));
-      } else {
-        handle.addEventListener('touchstart', event => {
-          const touch = event.touches[0];
-          if (touch) begin(touch.clientX, touch.clientY, null, event);
-        }, { passive: false });
-      }
+      handle.addEventListener('touchstart', event => {
+        const touch = event.changedTouches?.[0] || event.touches?.[0];
+        if (!touch) return;
+        lastTouchAt = Date.now();
+        begin(touch.clientX, touch.clientY, 'touch', event, touch.identifier);
+      }, { passive: false });
+
+      handle.addEventListener('mousedown', event => {
+        if (Date.now() - lastTouchAt < 750) return;
+        begin(event.clientX, event.clientY, 'mouse', event);
+      });
 
       handle.addEventListener('click', event => {
         if (suppressClick) {
