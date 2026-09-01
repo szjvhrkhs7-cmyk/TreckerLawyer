@@ -108,8 +108,13 @@
             if (!status || parseFloat(getComputedStyle(status).minHeight) < 30) return fail('овал статуса слишком маленький');
             if (getComputedStyle(status).overflow === 'hidden') return fail('текст статуса может обрезаться');
 
-            const grip = document.querySelector('.workspace-task-row:not(.is-done) .drag-grip');
-            if (!grip || parseFloat(getComputedStyle(grip).width) < 18 || parseFloat(getComputedStyle(grip).height) < 28) return fail('drag-иконка слишком маленькая или обрезана');
+            const activeRow = document.querySelector('.workspace-task-row:not(.is-done)');
+            const taskHandle = activeRow?.querySelector(':scope > [data-drag-handle]');
+            const priority = activeRow?.querySelector('.workspace-priority');
+            if (!taskHandle || getComputedStyle(taskHandle).display !== 'none') return fail('левая drag-иконка задачи не скрыта');
+            if (!priority || getComputedStyle(priority).display === 'none') return fail('степень срочности задачи скрыта');
+            if (priority.textContent.trim() !== 'Обычная') return fail(`неверный текст срочности: ${priority.textContent.trim()}`);
+            if (parseFloat(getComputedStyle(priority).minHeight) < 30) return fail('индикатор срочности слишком маленький');
 
             const input = document.createElement('input');
             input.className = 'search';
