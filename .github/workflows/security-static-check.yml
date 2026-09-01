@@ -18,7 +18,7 @@ jobs:
       - name: Reject server-side Supabase secrets in application source
         run: |
           set -euo pipefail
-          files=(index.html app-core.js calendar-core.js calendar-cloud-bridge.js workspace-2026.js workspace-pages.js theme-init.js sync.js sync-core.js qwen-enhancements.js dashboard-stats.js project-lifecycle.js drag-sortable-fix.js)
+          files=(index.html app-core.js calendar-core.js calendar-cloud-bridge.js workspace-2026.js workspace-pages.js workspace-task-restore.js theme-init.js sync.js sync-core.js qwen-enhancements.js dashboard-stats.js project-lifecycle.js drag-sortable-fix.js)
           present=()
           for file in "${files[@]}"; do
             [ -f "$file" ] && present+=("$file")
@@ -61,7 +61,7 @@ jobs:
       - name: Reject dynamic code execution primitives
         run: |
           set -euo pipefail
-          files=(index.html app-core.js calendar-core.js calendar-cloud-bridge.js workspace-2026.js workspace-pages.js theme-init.js sync.js sync-core.js qwen-enhancements.js dashboard-stats.js project-lifecycle.js drag-sortable-fix.js)
+          files=(index.html app-core.js calendar-core.js calendar-cloud-bridge.js workspace-2026.js workspace-pages.js workspace-task-restore.js theme-init.js sync.js sync-core.js qwen-enhancements.js dashboard-stats.js project-lifecycle.js drag-sortable-fix.js)
           present=()
           for file in "${files[@]}"; do
             [ -f "$file" ] && present+=("$file")
