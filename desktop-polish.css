@@ -47,7 +47,7 @@
   }
 
   .app {
-    grid-template-columns: 252px minmax(0, 1fr) !important;
+    grid-template-columns: 276px minmax(0, 1fr) !important;
     width: min(1440px, calc(100% - 40px)) !important;
     min-height: calc(100dvh - 40px) !important;
     margin: 20px auto !important;
@@ -94,7 +94,7 @@
 
   .brandname {
     display: flex !important;
-    flex-direction: column;
+    align-items: flex-start;
     justify-content: center;
     min-width: 0;
     height: 40px !important;
@@ -107,14 +107,7 @@
   }
 
   .brandname span {
-    display: block !important;
-    overflow: hidden;
-    margin-top: 4px !important;
-    color: rgba(232, 241, 250, .56) !important;
-    font-size: 8.5px !important;
-    line-height: 1.2;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    display: none !important;
   }
 
   .sync-button,
@@ -167,6 +160,10 @@
   .sidebar-agenda {
     margin-top: 30px !important;
     padding-top: 2px;
+  }
+
+  .sidebar-agenda__title {
+    color: rgba(232, 240, 250, .58) !important;
   }
 
   .sidebar-event {
@@ -343,7 +340,7 @@
 
 @media (min-width: 900px) and (max-width: 1160px) {
   .app {
-    grid-template-columns: 232px minmax(0, 1fr) !important;
+    grid-template-columns: 248px minmax(0, 1fr) !important;
     width: calc(100% - 24px) !important;
     margin: 12px auto !important;
     min-height: calc(100dvh - 24px) !important;
@@ -376,13 +373,21 @@
     min-width: 38px !important;
   }
 
+  .brandname {
+    font-size: 12.5px !important;
+  }
+
   .page {
     padding: 32px 26px 70px !important;
   }
 
   .today-grid {
-    grid-template-columns: minmax(0, 1fr) 300px !important;
+    grid-template-columns: 1fr !important;
     gap: 14px !important;
+  }
+
+  .today-side-column {
+    display: grid !important;
   }
 
   .workspace-task-row {
