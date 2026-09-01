@@ -152,14 +152,14 @@
     const value = { date: state.calendarSelectedDate || localYmd(), ...defaults, color: 'blue', reminder: 15, ...event, ...selection };
     state.editingEvent = event.id ? event : null;
     eventTitleElement.textContent = event.id ? 'Редактирование события' : 'Новое событие';
-    eventFormElement.innerHTML = `<div class="field"><label>Название *</label><input name="title" required maxlength="160" value="${esc(value.title || '')}" placeholder="Например, встреча по проекту"></div>
+    eventFormElement.innerHTML = `<div class="sheet-fields"><div class="field"><label>Название *</label><input name="title" required maxlength="160" value="${esc(value.title || '')}" placeholder="Например, встреча по проекту"></div>
       <div class="field"><label>Дата</label><input type="date" name="date" required value="${esc(value.date)}"></div>
       <div class="grid2"><div class="field"><label>Начало</label><input type="time" name="startTime" step="1800" required value="${esc(value.startTime)}"></div><div class="field"><label>Окончание</label><input type="time" name="endTime" step="1800" required value="${esc(value.endTime)}"></div></div>
       <div class="field"><label>Место</label><input name="location" maxlength="240" value="${esc(value.location || '')}" placeholder="Офис, суд или ссылка на встречу"></div>
       <div class="grid2"><div class="field"><label>Цвет</label><select name="color"><option value="blue">Синий</option><option value="green">Зелёный</option><option value="orange">Оранжевый</option><option value="purple">Фиолетовый</option><option value="red">Красный</option></select></div><div class="field"><label>Напомнить</label><select name="reminder"><option value="0">Не напоминать</option><option value="5">За 5 минут</option><option value="10">За 10 минут</option><option value="15">За 15 минут</option><option value="30">За 30 минут</option><option value="60">За 1 час</option><option value="1440">За 1 день</option></select></div></div>
       <div class="field"><label>Заметка</label><textarea name="notes" data-autogrow="true">${esc(value.notes || '')}</textarea></div>
-      ${event.id ? `<div class="event-utility-actions"><button type="button" class="btn" data-export-current-event>Добавить в календарь iPhone</button><button type="button" class="btn danger" data-delete-current-event>Удалить</button></div>` : ''}
-      <div class="sheet-actions"><button type="button" class="btn" data-cancel-event>Отмена</button><button class="btn primary">Сохранить</button></div>`;
+      ${event.id ? `<div class="event-utility-actions"><button type="button" class="btn" data-export-current-event>Добавить в календарь iPhone</button><button type="button" class="btn danger" data-delete-current-event>Удалить</button></div>` : ''}</div>
+      <div class="sheet-actions"><button type="button" class="btn" data-cancel-event>Отмена</button><button type="submit" class="btn primary">${event.id ? 'Сохранить' : 'Создать'}</button></div>`;
     eventFormElement.color.value = COLORS.has(value.color) ? value.color : 'blue';
     eventFormElement.reminder.value = String(value.reminder ?? 15);
     showOverlay(eventOverlay);
