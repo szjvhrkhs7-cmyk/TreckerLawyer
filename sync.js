@@ -23,7 +23,7 @@
   }
 
   // Local UX enhancements must remain available even when the cloud is offline.
-  loadScript('drag-sortable-fix.js?v=20260901-smooth-drag-1')
+  loadScript('drag-sortable-fix.js?v=20260901-ios-drag-2')
     .catch(error => console.error('Drag recovery module loading failed', error));
 
   loadScript('project-lifecycle.js?v=20260901-workspace-final')
