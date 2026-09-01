@@ -58,8 +58,11 @@
       const page = document.querySelector('.page');
       const brandbar = document.querySelector('.brandbar');
       const brandmark = document.querySelector('.brandmark');
+      const brandname = document.querySelector('.brandname');
+      const syncButton = document.getElementById('syncButton');
+      const themeButton = document.getElementById('themeToggle');
       const brandIcon = brandmark?.querySelector('.icon');
-      if (!app || !sidebar || !page || !brandbar || !brandmark || !brandIcon) return fail('не найдена базовая desktop-компоновка');
+      if (!app || !sidebar || !page || !brandbar || !brandmark || !brandname || !syncButton || !themeButton || !brandIcon) return fail('не найдена базовая desktop-компоновка');
 
       const appRect = app.getBoundingClientRect();
       const sidebarRect = sidebar.getBoundingClientRect();
@@ -72,12 +75,21 @@
 
       if (!getComputedStyle(brandmark).backgroundImage.includes('linear-gradient')) return fail('логомарка не использует цветной градиент');
       if (Number.parseFloat(getComputedStyle(brandIcon).opacity) < .9) return fail('иконка внутри логомарки скрыта');
-      const brandItems = [...brandbar.children].map(node => node.getBoundingClientRect());
-      const centers = brandItems.map(item => item.top + item.height / 2);
-      if (Math.max(...centers) - Math.min(...centers) > 6) return fail('brandbar не выровнен в одну строку');
-      for (let index = 1; index < brandItems.length; index += 1) {
-        if (brandItems[index - 1].right > brandItems[index].left + 1) return fail(`brandbar перекрывается на элементе ${index}`);
-      }
+      const brandRect = brandbar.getBoundingClientRect();
+      const markRect = brandmark.getBoundingClientRect();
+      const nameRect = brandname.getBoundingClientRect();
+      const syncRect = syncButton.getBoundingClientRect();
+      const themeRect = themeButton.getBoundingClientRect();
+      const identityCenterDelta = Math.abs((markRect.top + markRect.height / 2) - (nameRect.top + nameRect.height / 2));
+      const controlsCenterDelta = Math.abs((syncRect.top + syncRect.height / 2) - (themeRect.top + themeRect.height / 2));
+      if (brandRect.height < 100) return fail(`brandbar слишком сжат: ${brandRect.height}`);
+      if (identityCenterDelta > 7) return fail(`логотип и название не выровнены: ${identityCenterDelta}`);
+      if (controlsCenterDelta > 4) return fail(`системные кнопки не выровнены: ${controlsCenterDelta}`);
+      if (syncRect.top <= markRect.bottom + 3) return fail('системные кнопки не отделены от бренда второй строкой');
+      if (syncRect.width < themeRect.width + 35) return fail(`кнопка синхронизации слишком узкая: ${syncRect.width}/${themeRect.width}`);
+      if (syncRect.right > themeRect.left - 5) return fail('кнопки синхронизации и темы перекрываются');
+      if (getComputedStyle(syncButton.querySelector('span')).display === 'none') return fail('desktop-статус синхронизации скрыт');
+      if (markRect.left < brandRect.left - 1 || themeRect.right > brandRect.right + 1) return fail('элементы brandbar выходят за контейнер');
 
       const tabs = [...document.querySelectorAll('#tabs .tab')];
       const tabRects = tabs.map(tab => tab.getBoundingClientRect());
@@ -147,7 +159,6 @@
       if (!calendar) return fail('календарь не открывается');
       if (calendar.getBoundingClientRect().width < 700) return fail(`desktop-календарь слишком узкий: ${calendar.getBoundingClientRect().width}`);
 
-      const themeButton = document.getElementById('themeToggle');
       themeButton?.click();
       await wait(60);
       if (document.documentElement.dataset.theme !== 'dark') return fail(`тёмная тема не включилась: ${document.documentElement.dataset.theme}`);
