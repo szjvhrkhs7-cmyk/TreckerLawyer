@@ -47,7 +47,7 @@
     cancelable: true,
     pointerId: values.pointerId,
     pointerType: 'touch',
-    button: type === 'pointerup' ? 0 : 0,
+    button: 0,
     buttons: type === 'pointerup' ? 0 : 1,
     clientX: values.clientX,
     clientY: values.clientY
@@ -76,6 +76,9 @@
       if (!handle) return fail('drag handle не найден');
       if (getComputedStyle(handle).touchAction !== 'none') return fail(`drag handle допускает browser pan: ${getComputedStyle(handle).touchAction}`);
 
+      let pointerCaptureCalls = 0;
+      handle.setPointerCapture = () => { pointerCaptureCalls += 1; };
+
       const handleRect = handle.getBoundingClientRect();
       const secondRect = second.getBoundingClientRect();
       const pointerId = 73;
@@ -86,11 +89,21 @@
 
       pointer('pointerdown', handle, { pointerId, clientX: startX, clientY: startY });
       const floating = await waitFor(() => document.querySelector('.drag-floating'), 'floating card', 1500);
+      if (pointerCaptureCalls !== 0) return fail('drag всё ещё использует setPointerCapture');
+
       const floatingStyle = getComputedStyle(floating);
       if (floatingStyle.transitionProperty !== 'none' && floatingStyle.transitionDuration !== '0s') {
         return fail(`floating card имеет transform-transition: ${floatingStyle.transitionProperty}/${floatingStyle.transitionDuration}`);
       }
       if (!floatingStyle.transform || floatingStyle.transform === 'none') return fail('floating card не использует compositor transform');
+
+      handle.dispatchEvent(new PointerEvent('lostpointercapture', {
+        bubbles: true,
+        pointerId,
+        pointerType: 'touch'
+      }));
+      await wait(40);
+      if (!document.querySelector('.drag-floating')) return fail('lostpointercapture отменяет drag');
 
       for (let step = 1; step <= 6; step += 1) {
         const progress = step / 6;
