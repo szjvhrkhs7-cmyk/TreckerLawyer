@@ -68,9 +68,11 @@ jobs:
           grep -F 'workspace-2026.js' index.html
           grep -F 'workspace-pages.js' sync.js
           grep -F 'workspace-task-restore.js' sync.js
+          grep -F 'drag-sortable-fix.js?v=20260901-smooth-drag-1' sync.js
           grep -F 'workspace-pages.css' app.css
           grep -F 'workspace-polish.css' app.css
           grep -F 'desktop-polish.css' app.css
+          grep -F 'interaction-polish.css' app.css
           grep -F 'desktop-ux.js' index.html
           grep -F 'legacy-inline.css' index.html
           grep -F 'maximum-scale=1' index.html
@@ -145,6 +147,25 @@ jobs:
             echo 'Mobile regression browser test reported a failure.' >&2
             exit 1
           fi
+      - name: Verify smooth card drag and mobile controls
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path('index.html').read_text(encoding='utf-8')
+          app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
+          if app_tag not in html:
+              raise SystemExit('Expected application script tag was not found')
+          html = html.replace(app_tag, '<script src="tests/interaction-regression-browser.js"></script>\n' + app_tag, 1)
+          Path('interaction-regression-test.html').write_text(html, encoding='utf-8')
+          PY
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          "$CHROME" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=10000 --dump-dom http://127.0.0.1:8765/interaction-regression-test.html > /tmp/interaction-regression.html
+          grep -F 'INTERACTION_REGRESSION_PASS' /tmp/interaction-regression.html
+          if grep -F 'FAIL:' /tmp/interaction-regression.html; then
+            echo 'Interaction regression browser test reported a failure.' >&2
+            exit 1
+          fi
       - name: Verify project completion lifecycle in Chrome
         run: |
           set -euo pipefail
@@ -152,7 +173,7 @@ jobs:
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
           app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
-          sync_tag = '<script src="sync.js?v=20260901-mobile-fix"></script>'
+          sync_tag = '<script src="sync.js?v=20260901-smooth-drag-1"></script>'
           if app_tag not in html or sync_tag not in html:
               raise SystemExit('Expected application script tags were not found')
           html = html.replace(app_tag, '<script src="tests/project-lifecycle-browser.js"></script>\n' + app_tag, 1)
