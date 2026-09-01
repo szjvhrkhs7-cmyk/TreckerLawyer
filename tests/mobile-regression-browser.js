@@ -111,10 +111,13 @@
             const activeRow = document.querySelector('.workspace-task-row:not(.is-done)');
             const taskHandle = activeRow?.querySelector(':scope > [data-drag-handle]');
             const priority = activeRow?.querySelector('.workspace-priority');
-            if (!taskHandle || getComputedStyle(taskHandle).display !== 'none') return fail('левая drag-иконка задачи не скрыта');
+            const grip = taskHandle?.querySelector('.drag-grip');
+            const overflow = activeRow?.querySelector('.workspace-icon-button');
+            if (!grip || parseFloat(getComputedStyle(grip).width) < 18 || parseFloat(getComputedStyle(grip).height) < 28) return fail('drag-иконка слишком маленькая или обрезана');
             if (!priority || getComputedStyle(priority).display === 'none') return fail('степень срочности задачи скрыта');
             if (priority.textContent.trim() !== 'Обычная') return fail(`неверный текст срочности: ${priority.textContent.trim()}`);
             if (parseFloat(getComputedStyle(priority).minHeight) < 30) return fail('индикатор срочности слишком маленький');
+            if (!overflow || getComputedStyle(overflow).display !== 'none') return fail('правое меню с тремя точками не скрыто');
 
             const input = document.createElement('input');
             input.className = 'search';
