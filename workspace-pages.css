@@ -756,6 +756,11 @@
   gap: 15px;
 }
 
+.sheet-fields {
+  display: grid;
+  gap: 15px;
+}
+
 .sheet .grid2 {
   gap: 10px;
 }
