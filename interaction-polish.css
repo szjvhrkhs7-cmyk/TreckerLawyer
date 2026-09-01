@@ -126,8 +126,7 @@ body.drag-reordering * {
   }
 
   .workspace-project-card .drag-grip,
-  .workspace-note-card .drag-grip,
-  .workspace-task-row .drag-grip {
+  .workspace-note-card .drag-grip {
     display: block;
     width: 20px !important;
     height: 30px !important;
@@ -170,13 +169,12 @@ body.drag-reordering * {
   }
 
   .workspace-task-row {
-    grid-template-columns: 48px minmax(0, 1fr) 48px !important;
+    grid-template-columns: minmax(0, 1fr) auto 48px !important;
   }
 
   .workspace-task-row > .drag-handle,
   .workspace-task-row__done-mark {
-    width: 48px !important;
-    min-width: 48px !important;
+    display: none !important;
   }
 
   .workspace-task-row .workspace-row-actions,
