@@ -14,7 +14,6 @@
 
     const requestFrame = window.requestAnimationFrame?.bind(window) || (callback => setTimeout(callback, 16));
     const cancelFrame = window.cancelAnimationFrame?.bind(window) || clearTimeout;
-    const supportsPointer = typeof window.PointerEvent === 'function';
     const layoutAnimations = new WeakMap();
 
     const sortableChildren = () => [...list.children].filter(element => element.matches?.('[data-sort-id]'));
@@ -79,9 +78,11 @@
       const item = handle.closest('[data-sort-id]');
       if (!item || handle.dataset.safeDragBound === '1') return;
       handle.dataset.safeDragBound = '1';
+      handle.dataset.safeDragInput = 'touch-mouse';
 
       let dragging = false;
-      let pointerId = null;
+      let inputType = null;
+      let touchId = null;
       let moved = false;
       let startX = 0;
       let startY = 0;
@@ -93,12 +94,11 @@
       let pendingPoint = null;
       let lastPoint = null;
       let suppressClick = false;
+      let lastTouchAt = 0;
 
       const positionFloating = (clientX, clientY) => {
         if (!floating || !originRect) return;
-        const dx = clientX - startX;
-        const dy = clientY - startY;
-        floating.style.transform = `translate3d(${dx}px,${dy}px,0) scale(1.012)`;
+        floating.style.transform = `translate3d(${clientX - startX}px,${clientY - startY}px,0) scale(1.012)`;
       };
 
       const maybeReorder = (clientX, clientY) => {
@@ -123,7 +123,8 @@
         const index = items.indexOf(item);
         if (index < 0) return scrollSpeed !== 0;
 
-        const dragCenterY = originRect.top + dy + originRect.height / 2;
+        const grabOffsetFromCenter = startY - (originRect.top + originRect.height / 2);
+        const dragCenterY = clientY - grabOffsetFromCenter;
         const previous = items[index - 1];
         const next = items[index + 1];
         const hysteresis = 7;
@@ -169,11 +170,20 @@
         if (!frameId) frameId = requestFrame(drawFrame);
       };
 
+      const findTouch = touches => {
+        if (!touches) return null;
+        for (let index = 0; index < touches.length; index += 1) {
+          const touch = touches[index];
+          if (touchId === null || touch.identifier === touchId) return touch;
+        }
+        return null;
+      };
+
       const releasePoint = event => {
         if (Number.isFinite(event?.clientX) && Number.isFinite(event?.clientY)) {
           return { clientX: event.clientX, clientY: event.clientY };
         }
-        const touch = event?.changedTouches?.[0];
+        const touch = findTouch(event?.changedTouches);
         if (touch) return { clientX: touch.clientX, clientY: touch.clientY };
         return lastPoint;
       };
@@ -193,18 +203,17 @@
         animateLayout(item, before);
       };
 
-      const onPointerMove = event => {
-        if (pointerId !== null && event.pointerId !== pointerId) return;
-        if (event.pointerType === 'mouse' && event.buttons === 0) {
-          finish({ type: 'pointercancel', pointerId: event.pointerId }, true);
+      const onTouchMove = event => {
+        const touch = findTouch(event.touches);
+        if (touch) queueMove(touch.clientX, touch.clientY, event);
+      };
+
+      const onMouseMove = event => {
+        if (event.buttons === 0) {
+          finish({ type: 'mousecancel', clientX: event.clientX, clientY: event.clientY }, true);
           return;
         }
         queueMove(event.clientX, event.clientY, event);
-      };
-
-      const onTouchMove = event => {
-        const touch = event.touches[0];
-        if (touch) queueMove(touch.clientX, touch.clientY, event);
       };
 
       const onWindowBlur = () => finish({ type: 'blur' }, true);
@@ -219,12 +228,11 @@
       };
 
       const removeGlobalListeners = () => {
-        window.removeEventListener('pointermove', onPointerMove, true);
-        window.removeEventListener('pointerup', finish, true);
-        window.removeEventListener('pointercancel', finish, true);
         window.removeEventListener('touchmove', onTouchMove, true);
         window.removeEventListener('touchend', finish, true);
         window.removeEventListener('touchcancel', finish, true);
+        window.removeEventListener('mousemove', onMouseMove, true);
+        window.removeEventListener('mouseup', finish, true);
         window.removeEventListener('blur', onWindowBlur, true);
         document.removeEventListener('visibilitychange', onVisibilityChange);
         document.removeEventListener('keydown', onEscape, true);
@@ -232,14 +240,14 @@
 
       function finish(event, forceCancel = false) {
         if (!dragging) return;
-        if (pointerId !== null && event?.pointerId !== undefined && event.pointerId !== pointerId) return;
+        if (inputType === 'touch' && event?.changedTouches && !findTouch(event.changedTouches)) return;
 
         if (frameId) {
           cancelFrame(frameId);
           frameId = 0;
         }
 
-        const hardCancel = forceCancel || ['pointercancel', 'touchcancel', 'blur', 'visibilitychange', 'escape'].includes(event?.type);
+        const hardCancel = forceCancel || ['touchcancel', 'mousecancel', 'blur', 'visibilitychange', 'escape'].includes(event?.type);
         if (!hardCancel && pendingPoint) {
           const point = pendingPoint;
           pendingPoint = null;
@@ -256,7 +264,8 @@
         const changed = validDrop && currentIndex !== originIndex;
 
         dragging = false;
-        pointerId = null;
+        inputType = null;
+        touchId = null;
         lastPoint = null;
         removeGlobalListeners();
         list.classList.remove('is-sorting');
@@ -267,11 +276,9 @@
 
         if (floating && originRect && !hardCancel) {
           const target = item.getBoundingClientRect();
-          const dx = target.left - originRect.left;
-          const dy = target.top - originRect.top;
           const stale = floating;
           stale.style.transition = 'transform 140ms cubic-bezier(.2,.8,.2,1), opacity 140ms ease';
-          stale.style.transform = `translate3d(${dx}px,${dy}px,0) scale(1)`;
+          stale.style.transform = `translate3d(${target.left - originRect.left}px,${target.top - originRect.top}px,0) scale(1)`;
           stale.style.opacity = '0.92';
           setTimeout(() => {
             stale.remove();
@@ -285,16 +292,17 @@
         }
       }
 
-      const begin = (clientX, clientY, id, event) => {
+      const begin = (clientX, clientY, source, event, identifier = null) => {
         if (dragging) {
           if (event.cancelable) event.preventDefault();
           return;
         }
-        if (event.type === 'pointerdown' && event.button !== undefined && event.button !== 0) return;
+        if (source === 'mouse' && event.button !== 0) return;
 
         if (event.cancelable) event.preventDefault();
         dragging = true;
-        pointerId = id ?? null;
+        inputType = source;
+        touchId = identifier;
         moved = false;
         suppressClick = false;
         startX = clientX;
@@ -328,27 +336,27 @@
         document.addEventListener('visibilitychange', onVisibilityChange);
         document.addEventListener('keydown', onEscape, true);
 
-        // Pointer capture is deliberately not used here. On iOS Safari moving the
-        // captured card inside the DOM can emit lostpointercapture and cancel drag.
-        if (supportsPointer) {
-          window.addEventListener('pointermove', onPointerMove, { passive: false, capture: true });
-          window.addEventListener('pointerup', finish, true);
-          window.addEventListener('pointercancel', finish, true);
-        } else {
+        if (source === 'touch') {
           window.addEventListener('touchmove', onTouchMove, { passive: false, capture: true });
           window.addEventListener('touchend', finish, true);
           window.addEventListener('touchcancel', finish, true);
+        } else {
+          window.addEventListener('mousemove', onMouseMove, { passive: false, capture: true });
+          window.addEventListener('mouseup', finish, true);
         }
       };
 
-      if (supportsPointer) {
-        handle.addEventListener('pointerdown', event => begin(event.clientX, event.clientY, event.pointerId, event));
-      } else {
-        handle.addEventListener('touchstart', event => {
-          const touch = event.touches[0];
-          if (touch) begin(touch.clientX, touch.clientY, null, event);
-        }, { passive: false });
-      }
+      handle.addEventListener('touchstart', event => {
+        const touch = event.changedTouches?.[0] || event.touches?.[0];
+        if (!touch) return;
+        lastTouchAt = Date.now();
+        begin(touch.clientX, touch.clientY, 'touch', event, touch.identifier);
+      }, { passive: false });
+
+      handle.addEventListener('mousedown', event => {
+        if (Date.now() - lastTouchAt < 750) return;
+        begin(event.clientX, event.clientY, 'mouse', event);
+      });
 
       handle.addEventListener('click', event => {
         if (suppressClick) {
