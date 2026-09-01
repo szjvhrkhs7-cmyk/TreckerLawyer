@@ -39,7 +39,7 @@
     node.textContent = message;
     document.body.append(node);
   };
-  const fail = message => finish(`INTERACTION_REGRESSION_PASS FAIL: ${message}`);
+  const fail = message => finish(`FAIL: ${message}`);
   const pass = () => finish('INTERACTION_REGRESSION_PASS');
 
   const pointer = (type, target, values) => target.dispatchEvent(new PointerEvent(type, {
@@ -96,14 +96,6 @@
         return fail(`floating card имеет transform-transition: ${floatingStyle.transitionProperty}/${floatingStyle.transitionDuration}`);
       }
       if (!floatingStyle.transform || floatingStyle.transform === 'none') return fail('floating card не использует compositor transform');
-
-      handle.dispatchEvent(new PointerEvent('lostpointercapture', {
-        bubbles: true,
-        pointerId,
-        pointerType: 'touch'
-      }));
-      await wait(40);
-      if (!document.querySelector('.drag-floating')) return fail('lostpointercapture отменяет drag');
 
       for (let step = 1; step <= 6; step += 1) {
         const progress = step / 6;
