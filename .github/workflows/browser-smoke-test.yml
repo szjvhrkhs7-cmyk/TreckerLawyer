@@ -154,9 +154,11 @@ jobs:
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
           app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
-          if app_tag not in html:
-              raise SystemExit('Expected application script tag was not found')
+          sync_tag = '<script src="sync.js?v=20260901-ios-drag-2"></script>'
+          if app_tag not in html or sync_tag not in html:
+              raise SystemExit('Expected application script tags were not found')
           html = html.replace(app_tag, '<script src="tests/interaction-regression-browser.js"></script>\n' + app_tag, 1)
+          html = html.replace(sync_tag, '<script src="drag-sortable-fix.js?v=ci"></script>\n<script src="project-lifecycle.js?v=ci"></script>\n<script src="workspace-pages.js?v=ci"></script>\n<script src="workspace-task-restore.js?v=ci"></script>', 1)
           Path('interaction-regression-test.html').write_text(html, encoding='utf-8')
           PY
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
