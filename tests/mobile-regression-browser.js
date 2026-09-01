@@ -28,20 +28,31 @@
   window.addEventListener('load', () => {
     setTimeout(() => {
       try {
+        const viewport = document.querySelector('meta[name="viewport"]')?.content || '';
+        if (!viewport.includes('maximum-scale=1') || !viewport.includes('user-scalable=no')) return fail('масштабирование не отключено');
+
+        const tabs = document.getElementById('tabs');
+        const firstTabIcon = tabs?.querySelector('.tab .icon');
+        if (!tabs || getComputedStyle(tabs).position !== 'fixed') return fail('мобильная навигация не закреплена снизу');
+        if (getComputedStyle(tabs).bottom !== '0px') return fail('мобильная навигация смещена от нижней границы');
+        if (!firstTabIcon || parseFloat(getComputedStyle(firstTabIcon).width) < 22) return fail('иконки навигации слишком маленькие');
+        if (getComputedStyle(firstTabIcon).overflow !== 'visible') return fail('иконки навигации могут обрезаться');
+
         document.querySelector('[data-tab="tasks"]')?.click();
         document.getElementById('toggleCompleted')?.click();
         setTimeout(() => {
           try {
+            const completedRow = document.querySelector('.workspace-task-row.is-done');
             const restore = document.querySelector('[data-restore-task="mobile-done-1"]');
-            if (!restore) return fail('нет кнопки возврата завершённой задачи');
-            restore.click();
-            const tasks = JSON.parse(localStorage.getItem('lawyerTasks') || '[]');
-            const restored = tasks.find(task => task.id === 'mobile-done-1');
-            if (restored?.status !== 'new') return fail('задача не возвращена в статус new');
-            if (restored?.completedAt) return fail('completedAt не очищен');
+            if (!completedRow || !restore) return fail('нет кнопки возврата завершённой задачи');
+            if (getComputedStyle(restore).display === 'none') return fail('кнопка возврата завершённой задачи скрыта на мобильном');
 
-            const viewport = document.querySelector('meta[name="viewport"]')?.content || '';
-            if (!viewport.includes('maximum-scale=1') || !viewport.includes('user-scalable=no')) return fail('масштабирование не отключено');
+            const status = completedRow.querySelector('.workspace-status');
+            if (!status || parseFloat(getComputedStyle(status).minHeight) < 30) return fail('овал статуса слишком маленький');
+            if (getComputedStyle(status).overflow === 'hidden') return fail('текст статуса может обрезаться');
+
+            const grip = document.querySelector('.workspace-task-row:not(.is-done) .drag-grip');
+            if (!grip || parseFloat(getComputedStyle(grip).width) < 18 || parseFloat(getComputedStyle(grip).height) < 28) return fail('drag-иконка слишком маленькая или обрезана');
 
             const input = document.createElement('input');
             input.className = 'search';
@@ -49,6 +60,12 @@
             const inputSize = parseFloat(getComputedStyle(input).fontSize);
             input.remove();
             if (inputSize < 16) return fail(`размер мобильного input меньше 16px: ${inputSize}`);
+
+            restore.click();
+            const tasks = JSON.parse(localStorage.getItem('lawyerTasks') || '[]');
+            const restored = tasks.find(task => task.id === 'mobile-done-1');
+            if (restored?.status !== 'new') return fail('задача не возвращена в статус new');
+            if (restored?.completedAt) return fail('completedAt не очищен');
 
             pass();
           } catch (error) {
