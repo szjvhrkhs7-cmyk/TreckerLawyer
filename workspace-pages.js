@@ -2,29 +2,41 @@
   'use strict';
 
   const baseOpenTask = openTask;
-
   const projectIsDone = project => project?.status === 'done' || Boolean(project?.completedAt);
-  const formatDateTime = value => {
+
+  function localDateKey(value = new Date()) {
+    const pad = number => String(number).padStart(2, '0');
+    return `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+  }
+
+  function formatDateTime(value) {
     if (!value || Number.isNaN(Date.parse(value))) return '';
     return new Date(value).toLocaleString('ru-RU', {
       day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit'
     }).replace('.', '');
-  };
-  const taskStorageKey = task => task?.projectId ? LS.projectTasks : LS.tasks;
-  const taskProject = task => task?.projectId ? allProjects().find(project => sameId(project.id, task.projectId)) : null;
-  const taskDueLabel = task => {
+  }
+
+  function taskProject(task) {
+    return task?.projectId ? allProjects().find(project => sameId(project.id, task.projectId)) : null;
+  }
+
+  function taskDueLabel(task) {
     if (!task?.dueDate) return 'Без срока';
     if (overdue(task)) return `Просрочено · ${fmtDate(task.dueDate)}`;
-    const today = new Date();
-    const todayKey = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
-    const tomorrow = new Date(today);
+    if (task.dueDate === localDateKey()) return 'Сегодня';
+    const tomorrow = new Date();
     tomorrow.setDate(tomorrow.getDate() + 1);
-    const tomorrowKey = `${tomorrow.getFullYear()}-${String(tomorrow.getMonth() + 1).padStart(2, '0')}-${String(tomorrow.getDate()).padStart(2, '0')}`;
-    if (task.dueDate === todayKey) return 'Сегодня';
-    if (task.dueDate === tomorrowKey) return 'Завтра';
+    if (task.dueDate === localDateKey(tomorrow)) return 'Завтра';
     return fmtDate(task.dueDate);
-  };
-  const taskTone = task => overdue(task) ? 'danger' : task.priority === 'high' ? 'warning' : task.status === 'waiting' ? 'purple' : task.status === 'inwork' ? 'blue' : 'neutral';
+  }
+
+  function taskTone(task) {
+    if (overdue(task)) return 'danger';
+    if (task.priority === 'high') return 'warning';
+    if (task.status === 'waiting') return 'purple';
+    if (task.status === 'inwork') return 'blue';
+    return 'neutral';
+  }
 
   function ensureToast() {
     let toast = document.getElementById('workspaceToast');
@@ -47,9 +59,13 @@
     toastTimer = setTimeout(() => toast.classList.remove('show'), 2600);
   }
 
+  function storedTaskKey(task) {
+    return task?.projectId ? LS.projectTasks : LS.tasks;
+  }
+
   function updateStoredTask(task, patch) {
     if (!task?.id) return false;
-    const key = taskStorageKey(task);
+    const key = storedTaskKey(task);
     const items = load(key);
     const index = items.findIndex(item => sameId(item.id, task.id));
     if (index < 0) return false;
@@ -60,7 +76,7 @@
 
   function deleteStoredTask(task) {
     if (!task?.id) return false;
-    const key = taskStorageKey(task);
+    const key = storedTaskKey(task);
     const items = load(key);
     const next = items.filter(item => !sameId(item.id, task.id));
     if (next.length === items.length) return false;
@@ -88,24 +104,20 @@
         </div>
         <button type="button" class="workspace-icon-button" id="cancelTask" aria-label="Закрыть детали задачи">×</button>
       </header>
-
       <dl class="task-detail__facts">
         <div><dt>Срок</dt><dd class="${overdue(current) ? 'is-danger' : ''}">${esc(taskDueLabel(current))}</dd></div>
         <div><dt>Статус</dt><dd>${esc(statusText[current.status] || current.status)}</dd></div>
         <div><dt>Приоритет</dt><dd>${esc(priorityText[current.priority] || current.priority)}</dd></div>
         ${project ? `<div><dt>Проект</dt><dd>${esc(project.title)}</dd></div>` : ''}
       </dl>
-
       ${current.extra ? `<section class="task-detail__section"><h4>Описание</h4><p>${esc(current.extra)}</p></section>` : ''}
       ${current.notes ? `<section class="task-detail__section"><h4>Заметки</h4><p>${esc(stripHtml(current.notes))}</p></section>` : ''}
-
       <div class="task-detail__history">
         ${current.updatedAt ? `<span>Изменено ${esc(formatDateTime(current.updatedAt))}</span>` : ''}
         ${current.createdAt ? `<span>Создано ${esc(formatDateTime(current.createdAt))}</span>` : ''}
       </div>
-
       <div class="task-detail__actions">
-        ${current.status !== 'done' ? `<button type="button" class="btn primary" data-task-detail-done>Завершить задачу</button>` : ''}
+        ${current.status !== 'done' ? '<button type="button" class="btn primary" data-task-detail-done>Завершить задачу</button>' : ''}
         <button type="button" class="btn" data-task-detail-edit>Изменить</button>
         <button type="button" class="btn" data-task-detail-calendar>В календарь</button>
         <button type="button" class="btn danger" data-task-detail-delete>Удалить</button>
@@ -143,11 +155,10 @@
     if (event.target.closest('[data-task-detail-delete]')) {
       event.preventDefault();
       askConfirm('Задача будет удалена без возможности восстановления.', () => {
-        if (deleteStoredTask(task)) {
-          hideOverlay(taskSheet);
-          render();
-          showToast('Задача удалена');
-        }
+        if (!deleteStoredTask(task)) return;
+        hideOverlay(taskSheet);
+        render();
+        showToast('Задача удалена');
       });
     }
   });
@@ -156,30 +167,28 @@
     const id = esc(String(task.id));
     const tone = taskTone(task);
     const project = taskProject(task);
-    const title = esc(task.title || 'Без названия');
-    const description = task.extra ? esc(task.extra) : '';
     return `<article class="workspace-task-row workspace-task-row--${tone} ${done ? 'is-done' : ''}" data-sort-id="${id}">
       ${done ? '<span class="workspace-task-row__done-mark" aria-hidden="true">✓</span>' : dragHandle(`задачу ${task.title}`)}
       <button type="button" class="workspace-task-main" data-edit-task="${id}">
-        <strong>${title}</strong>
+        <strong>${esc(task.title || 'Без названия')}</strong>
         <span class="workspace-task-meta">
           <span class="workspace-due ${overdue(task) ? 'is-danger' : ''}">${esc(taskDueLabel(task))}</span>
           ${project ? `<span>${esc(project.title)}</span>` : ''}
-          ${description ? `<span class="workspace-task-description">${description}</span>` : ''}
+          ${task.extra ? `<span class="workspace-task-description">${esc(task.extra)}</span>` : ''}
         </span>
       </button>
       <span class="workspace-status workspace-status--${tone}">${esc(overdue(task) ? 'Просрочено' : statusText[task.status] || task.status)}</span>
       <span class="workspace-priority workspace-priority--${esc(task.priority)}">${esc(priorityText[task.priority] || task.priority)}</span>
       <div class="workspace-row-actions">
         ${!done && task.status !== 'done' ? `<button type="button" class="btn ok" data-done-task="${id}">Завершить</button>` : ''}
-        <button type="button" class="workspace-icon-button" data-edit-task="${id}" aria-label="Открыть задачу ${title}">•••</button>
+        <button type="button" class="workspace-icon-button" data-edit-task="${id}" aria-label="Открыть задачу ${esc(task.title)}">•••</button>
       </div>
     </article>`;
   }
 
   function workspaceTaskList(items) {
     if (!items.length) return '<div class="workspace-empty"><svg class="icon" aria-hidden="true"><use href="#i-inbox"></use></svg><strong>Задач нет</strong><span>Здесь появятся задачи, соответствующие выбранному фильтру.</span></div>';
-    return `<div class="workspace-task-list">${orderedFor('task', items).map(task => workspaceTaskRow(task, task.status === 'done')).join('')}</div>`;
+    return `<div class="workspace-task-list list">${orderedFor('task', items).map(task => workspaceTaskRow(task, task.status === 'done')).join('')}</div>`;
   }
 
   function enhancedRenderTasks() {
@@ -195,22 +204,17 @@
         <div><p class="workspace-page-eyebrow">Рабочий список</p><h2>${heading}</h2><p>${activeCount} активных задач</p></div>
         <button type="button" class="btn primary workspace-page-add" data-workspace-new-task><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>Новая задача</button>
       </header>
-
       <section class="workspace-summary-strip" aria-label="Статистика задач">
         <article class="workspace-summary-item ${overdueCount ? 'is-danger' : ''}"><strong>${overdueCount}</strong><span>Просрочено</span></article>
         <article class="workspace-summary-item"><strong>${inWorkCount}</strong><span>В работе</span></article>
         <article class="workspace-summary-item"><strong>${waitingCount}</strong><span>Ожидают</span></article>
       </section>
-
       <div class="workspace-toolbar">
         <div class="search-wrap"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg><input class="search" id="taskSearch" type="search" autocomplete="off" placeholder="Поиск задач" value="${esc(state.query)}" aria-label="Поиск по задачам"></div>
         ${renderFilters()}
       </div>
-
       <div id="activeTasks"></div>
-
-      ${!state.projectId ? `<details class="workspace-utilities"><summary>Экспорт и резервные копии</summary><div><button type="button" class="btn" id="csvBtn">Экспорт CSV</button><button type="button" class="btn" id="backupBtn">Резервная копия</button><button type="button" class="btn" id="restoreBtn">Восстановить</button></div></details>` : ''}
-
+      ${!state.projectId ? '<details class="workspace-utilities"><summary>Экспорт и резервные копии</summary><div><button type="button" class="btn" id="csvBtn">Экспорт CSV</button><button type="button" class="btn" id="backupBtn">Резервная копия</button><button type="button" class="btn" id="restoreBtn">Восстановить</button></div></details>' : ''}
       <section class="completed-section workspace-completed"><button type="button" class="completed-link" id="toggleCompleted" aria-expanded="${state.showCompleted}"></button><div id="completedTasks"></div></section>
     </section>`;
 
@@ -235,21 +239,21 @@
     draw();
   }
 
-  function projectProgress(project, projectTasks) {
-    const tasksForProject = projectTasks.filter(task => sameId(task.projectId, project.id));
-    const done = tasksForProject.filter(task => task.status === 'done').length;
+  function projectSummary(project, projectTasks) {
+    const projectItems = projectTasks.filter(task => sameId(task.projectId, project.id));
+    const done = projectItems.filter(task => task.status === 'done').length;
     return {
-      tasks: tasksForProject,
+      tasks: projectItems,
       done,
-      active: tasksForProject.length - done,
-      progress: tasksForProject.length ? Math.round(done / tasksForProject.length * 100) : 0,
-      overdue: tasksForProject.filter(task => overdue(task)).length
+      active: projectItems.length - done,
+      progress: projectItems.length ? Math.round(done / projectItems.length * 100) : 0,
+      overdue: projectItems.filter(task => overdue(task)).length
     };
   }
 
   function workspaceProjectCard(project, projectTasks, completed = false) {
     const id = esc(String(project.id));
-    const summary = projectProgress(project, projectTasks);
+    const summary = projectSummary(project, projectTasks);
     const completedLabel = project.completedAt ? new Date(project.completedAt).toLocaleDateString('ru-RU') : '';
     return `<article class="workspace-project-card ${completed ? 'is-completed' : ''}" data-sort-id="${id}">
       <div class="workspace-project-card__top">
@@ -262,6 +266,7 @@
       <div class="workspace-project-footer">
         <span>${completedLabel ? `Завершён ${esc(completedLabel)}` : summary.tasks.length ? `${summary.tasks.length} задач` : 'Задач пока нет'}</span>
         <div class="workspace-row-actions">
+          ${completed ? '' : dragHandle(`проект ${project.title}`)}
           <button type="button" class="btn" data-open-project="${id}">Открыть</button>
           <button type="button" class="workspace-icon-button" data-edit-project="${id}" aria-label="Изменить проект ${esc(project.title)}">✎</button>
           ${completed ? '' : `<button type="button" class="workspace-icon-button workspace-icon-button--success" data-complete-project="${id}" aria-label="Завершить проект ${esc(project.title)}">✓</button>`}
@@ -281,8 +286,8 @@
         <button type="button" class="btn primary workspace-page-add" data-workspace-new-project><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>Новый проект</button>
       </header>
       <div class="search-wrap workspace-page-search"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg><input class="search" id="projectSearch" type="search" autocomplete="off" placeholder="Поиск проектов" value="${esc(state.query)}" aria-label="Поиск проектов"></div>
-      <div class="workspace-project-grid" id="projectsList"></div>
-      <section class="completed-section workspace-completed"><button type="button" class="completed-link" id="toggleCompletedProjects" aria-expanded="${Boolean(state.showCompletedProjects)}"></button><div class="workspace-project-grid" id="completedProjects"></div></section>
+      <div class="workspace-project-grid list" id="projectsList"></div>
+      <section class="completed-section workspace-completed"><button type="button" class="completed-link" id="toggleCompletedProjects" aria-expanded="${Boolean(state.showCompletedProjects)}"></button><div class="workspace-project-grid list" id="completedProjects"></div></section>
     </section>`;
 
     const input = $('#projectSearch');
@@ -321,7 +326,7 @@
         <button type="button" class="btn primary workspace-page-add" data-workspace-new-note><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>Новая заметка</button>
       </header>
       <div class="search-wrap workspace-page-search"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg><input class="search" id="noteSearch" type="search" autocomplete="off" placeholder="Поиск заметок" value="${esc(state.query)}" aria-label="Поиск заметок"></div>
-      <div class="workspace-notes-grid" id="notesList"></div>
+      <div class="workspace-notes-grid list" id="notesList"></div>
     </section>`;
 
     const input = $('#noteSearch');
@@ -337,10 +342,9 @@
         const preview = esc(cleanNotePreview(note.body).slice(0, 240) || 'Пустая заметка');
         return `<div class="swipe-row workspace-note-row" data-note-row="${id}" data-sort-id="${id}">
           <div class="swipe-action"><button type="button" class="swipe-delete" data-delete-note="${id}" aria-label="Удалить заметку">Удалить</button></div>
-          <article class="workspace-note-card" data-open-note="${id}" tabindex="0" role="button" aria-label="Открыть заметку ${title}">
+          <article class="workspace-note-card note-card">
             <div class="workspace-note-card__top">${dragHandle(`заметку ${note.title || 'Без заголовка'}`)}<span>${esc(noteUpdatedLabel(note))}</span><button type="button" class="workspace-icon-button workspace-icon-button--danger" data-delete-note="${id}" aria-label="Удалить заметку ${title}">×</button></div>
-            <h3>${title}</h3>
-            <p>${preview}</p>
+            <button type="button" class="workspace-note-main" data-open-note="${id}" aria-label="Открыть заметку ${title}"><h3>${title}</h3><p>${preview}</p></button>
           </article>
         </div>`;
       }).join('') || '<div class="workspace-empty"><svg class="icon" aria-hidden="true"><use href="#i-note"></use></svg><strong>Заметок не найдено</strong><span>Создайте запись или измените поисковый запрос.</span></div>';
@@ -360,6 +364,14 @@
   globalThis.renderNotes = enhancedRenderNotes;
 
   page.addEventListener('click', event => {
+    const editTaskButton = event.target.closest('[data-edit-task]');
+    if (editTaskButton) {
+      event.preventDefault();
+      event.stopPropagation();
+      const task = tasks().find(item => sameId(item.id, editTaskButton.dataset.editTask));
+      if (task) workspaceOpenTask(task);
+      return;
+    }
     if (event.target.closest('[data-workspace-new-task]')) {
       event.preventDefault();
       event.stopPropagation();
@@ -376,6 +388,13 @@
       event.preventDefault();
       event.stopPropagation();
       openNote();
+      return;
+    }
+    if (event.target.closest('#toggleCompletedProjects')) {
+      event.preventDefault();
+      event.stopPropagation();
+      state.showCompletedProjects = !state.showCompletedProjects;
+      enhancedRenderProjects();
     }
   }, true);
 
