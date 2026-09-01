@@ -1,0 +1,94 @@
+/* Final interaction and accessibility polish. */
+
+.workspace-project-card .drag-handle {
+  position: static !important;
+  inset: auto !important;
+  display: grid !important;
+  width: 44px !important;
+  min-width: 44px !important;
+  height: 44px !important;
+  min-height: 44px !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  place-items: center;
+  opacity: .45;
+  transform: none !important;
+}
+
+.workspace-project-card .drag-handle:hover,
+.workspace-project-card .drag-handle:focus-visible {
+  opacity: 1;
+}
+
+.workspace-note-main {
+  display: grid;
+  width: 100%;
+  min-height: 86px;
+  align-content: start;
+  gap: 9px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.workspace-note-main h3,
+.workspace-note-main p {
+  pointer-events: none;
+}
+
+.today-focus-check {
+  width: 44px;
+  min-width: 44px;
+  height: 44px;
+  min-height: 44px;
+}
+
+.today-complete,
+.today-panel-heading > button {
+  min-height: 44px;
+}
+
+.today-focus-task {
+  grid-template-columns: 44px minmax(0, 1fr) auto auto;
+}
+
+@media (min-width: 900px) {
+  .fab {
+    display: none;
+  }
+
+  #taskSheet {
+    align-items: stretch;
+    justify-content: flex-end;
+    padding: 16px;
+  }
+
+  #taskSheet .sheet {
+    width: min(540px, 46vw);
+    max-height: calc(100vh - 32px);
+    margin: 0;
+    border-radius: 18px;
+  }
+}
+
+@media (max-width: 899px) {
+  .workspace-page-add,
+  .today-page-header__actions .btn.primary {
+    display: none;
+  }
+
+  .today-focus-task {
+    grid-template-columns: 44px minmax(0, 1fr) auto;
+  }
+
+  .today-complete {
+    grid-column: 2 / -1;
+  }
+}
+
+@media (max-width: 520px) {
+  .today-status {
+    max-width: 92px;
+  }
+}
