@@ -9,9 +9,11 @@
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   const timestamp = new Date().toISOString();
+  const fullExtra = 'Сверить договор, проверить ответственность сторон и подготовить итоговые рекомендации без сокращения текста.';
+  const fullNotes = 'Созвон с продуктом во вторник. Отдельно проверить порядок уведомления клиента и форму согласия.';
 
   localStorage.setItem('lawyerTasks', JSON.stringify([
-    { id: 'ci-workspace-overdue', title: 'Просроченная задача', status: 'inwork', priority: 'high', dueDate: key(yesterday), createdAt: timestamp, updatedAt: timestamp },
+    { id: 'ci-workspace-overdue', title: 'Просроченная задача с длинным названием, которое должно отображаться полностью без обрезки', status: 'inwork', priority: 'high', dueDate: key(yesterday), extra: fullExtra, notes: fullNotes, createdAt: timestamp, updatedAt: timestamp },
     { id: 'ci-workspace-today', title: 'Задача на сегодня', status: 'inwork', priority: 'normal', dueDate: key(today), createdAt: timestamp, updatedAt: timestamp },
     { id: 'ci-workspace-waiting', title: 'Ожидаем ответ', status: 'waiting', priority: 'low', dueDate: key(tomorrow), createdAt: timestamp, updatedAt: timestamp }
   ]));
@@ -38,17 +40,23 @@
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
 
   window.addEventListener('load', async () => {
-    await wait(900);
+    await wait(1100);
     try {
-      if (!document.querySelector('.today-dashboard')) return finish('FAIL: стартовый экран Сегодня не отрисован');
-      if (!document.body.textContent.includes('Требуют внимания')) return finish('FAIL: отсутствует фокусный блок');
-      if (!document.body.textContent.includes('Проектный комитет')) return finish('FAIL: событие дня не показано');
-
-      document.querySelector('[data-tab="tasks"]')?.click();
-      await wait(100);
-      if (!document.querySelector('.workspace-tasks-page')) return finish('FAIL: новый экран задач не открылся');
+      if (document.querySelector('[data-tab="today"]')) return finish('FAIL: раздел Сегодня остался в навигации');
+      if (!document.querySelector('[data-tab="tasks"]')?.classList.contains('active')) return finish('FAIL: задачи не являются главным экраном');
+      if (!document.querySelector('.workspace-tasks-page')) return finish('FAIL: экран задач не открылся по умолчанию');
+      if (document.querySelectorAll('#tabs .tab').length !== 4) return finish('FAIL: навигация не сокращена до четырёх разделов');
       if (document.querySelectorAll('.workspace-task-row').length < 3) return finish('FAIL: задачи не отображаются новым списком');
       if (document.querySelectorAll('.workspace-summary-item').length !== 3) return finish('FAIL: сводка задач не отображается');
+
+      const detailedRow = document.querySelector('[data-sort-id="ci-workspace-overdue"]');
+      const extra = detailedRow?.querySelector('.workspace-task-detail-block--extra .workspace-task-detail-text');
+      const notes = detailedRow?.querySelector('.workspace-task-detail-block--notes .workspace-task-detail-text');
+      const title = detailedRow?.querySelector('.workspace-task-main strong');
+      if (extra?.textContent !== fullExtra) return finish('FAIL: поле «Что требуется» не показано полностью в карточке');
+      if (notes?.textContent !== fullNotes) return finish('FAIL: заметки не показаны полностью в карточке');
+      if (!title || getComputedStyle(title).whiteSpace === 'nowrap' || getComputedStyle(title).textOverflow === 'ellipsis') return finish('FAIL: название задачи всё ещё обрезается');
+      if (getComputedStyle(extra).whiteSpace !== 'pre-wrap') return finish('FAIL: подробный текст не настроен на полный перенос строк');
 
       document.querySelector('[data-edit-task="ci-workspace-overdue"]')?.click();
       await wait(50);
