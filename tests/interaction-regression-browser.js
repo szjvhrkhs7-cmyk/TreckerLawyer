@@ -41,6 +41,8 @@
 
       const first = rows[0];
       const second = rows[1];
+      const draggedId = first.dataset.sortId;
+      const otherId = second.dataset.sortId;
       const handle = first.querySelector('[data-drag-handle]');
       if (!handle) return fail('drag handle не найден');
       if (getComputedStyle(handle).touchAction !== 'none') return fail(`drag handle допускает browser pan: ${getComputedStyle(handle).touchAction}`);
@@ -84,8 +86,8 @@
       await wait(120);
 
       const orderDuringDrag = [...document.querySelectorAll('.workspace-task-row:not(.is-done)')].map(row => row.dataset.sortId);
-      if (orderDuringDrag[0] !== 'drag-task-1' && orderDuringDrag[1] !== 'drag-task-1') return fail('dragged card потерялась из списка');
-      if (orderDuringDrag[0] === 'drag-task-1') return fail('точка вставки не переместилась за следующую карточку');
+      if (!orderDuringDrag.includes(draggedId)) return fail('dragged card потерялась из списка');
+      if (orderDuringDrag[1] !== draggedId) return fail(`точка вставки не переместилась: ${orderDuringDrag.join(',')}`);
 
       window.dispatchEvent(new PointerEvent('pointerup', {
         bubbles: true,
@@ -100,7 +102,9 @@
       await wait(230);
       if (document.querySelector('.drag-floating')) return fail('floating card остаётся после drop');
       const savedOrder = JSON.parse(localStorage.getItem('lawyerTaskOrder') || '[]').map(String);
-      if (savedOrder.indexOf('drag-task-2') > savedOrder.indexOf('drag-task-1')) return fail('новый порядок не сохранён');
+      if (savedOrder.indexOf(otherId) < 0 || savedOrder.indexOf(draggedId) < 0 || savedOrder.indexOf(otherId) > savedOrder.indexOf(draggedId)) {
+        return fail(`новый порядок не сохранён: ${savedOrder.join(',')}`);
+      }
 
       document.querySelector('[data-tab="projects"]')?.click();
       await wait(180);
