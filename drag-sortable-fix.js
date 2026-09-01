@@ -205,7 +205,15 @@
 
       const onTouchMove = event => {
         const touch = findTouch(event.touches);
-        if (touch) queueMove(touch.clientX, touch.clientY, event);
+        if (!touch || !dragging) return;
+        if (event.cancelable) event.preventDefault();
+        if (frameId) {
+          cancelFrame(frameId);
+          frameId = 0;
+        }
+        pendingPoint = null;
+        lastPoint = { clientX: touch.clientX, clientY: touch.clientY };
+        maybeReorder(touch.clientX, touch.clientY);
       };
 
       const onMouseMove = event => {

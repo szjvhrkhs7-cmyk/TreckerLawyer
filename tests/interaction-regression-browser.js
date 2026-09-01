@@ -21,12 +21,12 @@
   localStorage.removeItem('lawyerTaskOrder');
 
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
-  const waitFor = async (predicate, label, timeout = 6000) => {
+  const waitFor = async (predicate, label, timeout = 4000) => {
     const started = performance.now();
     while (performance.now() - started < timeout) {
       const value = predicate();
       if (value) return value;
-      await wait(60);
+      await wait(40);
     }
     throw new Error(`таймаут ожидания: ${label}`);
   };
@@ -42,22 +42,19 @@
   const fail = message => finish(`FAIL: ${message}`);
   const pass = () => finish('INTERACTION_REGRESSION_PASS');
 
-  const mouse = (type, target, clientX, clientY) => target.dispatchEvent(new MouseEvent(type, {
-    bubbles: true,
-    cancelable: true,
-    button: 0,
-    buttons: type === 'mouseup' ? 0 : 1,
-    clientX,
-    clientY
-  }));
+  const dispatchTouch = (type, target, touches, changedTouches) => {
+    const event = new Event(type, { bubbles: true, cancelable: true });
+    Object.defineProperty(event, 'touches', { value: touches });
+    Object.defineProperty(event, 'changedTouches', { value: changedTouches });
+    return target.dispatchEvent(event);
+  };
 
   window.addEventListener('load', async () => {
     try {
       const taskTab = await waitFor(() => document.querySelector('[data-tab="tasks"]'), 'вкладка задач');
-      await waitFor(() => typeof globalThis.bindSortable === 'function', 'bindSortable');
       taskTab.click();
 
-      await waitFor(() => document.querySelector('.workspace-tasks-page'), 'новая страница задач');
+      await waitFor(() => document.querySelector('.workspace-tasks-page'), 'страница задач');
       await waitFor(() => {
         const handles = [...document.querySelectorAll('.workspace-task-row:not(.is-done) [data-drag-handle]')];
         return handles.length >= 2 && handles.every(handle => handle.dataset.safeDragBound === '1');
@@ -80,13 +77,15 @@
 
       const handleRect = handle.getBoundingClientRect();
       const secondRect = second.getBoundingClientRect();
+      const identifier = 17;
       const startX = handleRect.left + handleRect.width / 2;
       const startY = handleRect.top + handleRect.height / 2;
       const endX = startX + 8;
       const endY = secondRect.bottom - Math.min(14, secondRect.height * .12);
+      const startTouch = { identifier, clientX: startX, clientY: startY };
 
-      mouse('mousedown', handle, startX, startY);
-      const floating = await waitFor(() => document.querySelector('.drag-floating'), 'floating card', 1200);
+      dispatchTouch('touchstart', handle, [startTouch], [startTouch]);
+      const floating = await waitFor(() => document.querySelector('.drag-floating'), 'floating card', 1000);
       if (pointerCaptureCalls !== 0) return fail('drag использует setPointerCapture');
 
       const floatingStyle = getComputedStyle(floating);
@@ -95,24 +94,25 @@
       }
       if (!floatingStyle.transform || floatingStyle.transform === 'none') return fail('floating card не использует compositor transform');
 
+      let finalTouch = startTouch;
       for (let step = 1; step <= 8; step += 1) {
         const progress = step / 8;
-        mouse(
-          'mousemove',
-          window,
-          startX + (endX - startX) * progress,
-          startY + (endY - startY) * progress
-        );
+        finalTouch = {
+          identifier,
+          clientX: startX + (endX - startX) * progress,
+          clientY: startY + (endY - startY) * progress
+        };
+        dispatchTouch('touchmove', window, [finalTouch], [finalTouch]);
         await wait(24);
       }
 
       await waitFor(() => {
         const order = [...document.querySelectorAll('.workspace-task-row:not(.is-done)')].map(row => row.dataset.sortId);
         return order[1] === draggedId;
-      }, 'перемещение точки вставки', 1500);
+      }, 'перемещение точки вставки', 1200);
 
-      mouse('mouseup', window, endX, endY);
-      await waitFor(() => !document.querySelector('.drag-floating'), 'завершение drop', 1500);
+      dispatchTouch('touchend', window, [], [finalTouch]);
+      await waitFor(() => !document.querySelector('.drag-floating'), 'завершение drop', 1200);
 
       const savedOrder = JSON.parse(localStorage.getItem('lawyerTaskOrder') || '[]').map(String);
       if (savedOrder.indexOf(otherId) < 0 || savedOrder.indexOf(draggedId) < 0 || savedOrder.indexOf(otherId) > savedOrder.indexOf(draggedId)) {

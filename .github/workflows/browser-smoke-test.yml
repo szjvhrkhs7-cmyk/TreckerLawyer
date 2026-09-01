@@ -154,16 +154,22 @@ jobs:
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
           app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
-          if app_tag not in html:
-              raise SystemExit('Expected application script tag was not found')
+          sync_tag = '<script src="sync.js?v=20260901-ios-drag-2"></script>'
+          if app_tag not in html or sync_tag not in html:
+              raise SystemExit('Expected application script tags were not found')
           html = html.replace(app_tag, '<script src="tests/interaction-regression-browser.js"></script>\n' + app_tag, 1)
+          html = html.replace(sync_tag, '<script src="drag-sortable-fix.js?v=ci"></script>\n<script src="project-lifecycle.js?v=ci"></script>\n<script src="workspace-pages.js?v=ci"></script>\n<script src="workspace-task-restore.js?v=ci"></script>', 1)
           Path('interaction-regression-test.html').write_text(html, encoding='utf-8')
           PY
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
           "$CHROME" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=10000 --dump-dom http://127.0.0.1:8765/interaction-regression-test.html > /tmp/interaction-regression.html
-          grep -F 'INTERACTION_REGRESSION_PASS' /tmp/interaction-regression.html
           if grep -F 'FAIL:' /tmp/interaction-regression.html; then
             echo 'Interaction regression browser test reported a failure.' >&2
+            exit 1
+          fi
+          if ! grep -F 'INTERACTION_REGRESSION_PASS' /tmp/interaction-regression.html; then
+            echo 'Interaction regression browser test produced no result.' >&2
+            tail -c 8000 /tmp/interaction-regression.html >&2 || true
             exit 1
           fi
       - name: Verify project completion lifecycle in Chrome
