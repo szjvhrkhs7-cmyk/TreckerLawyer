@@ -39,7 +39,7 @@
     node.textContent = message;
     document.body.append(node);
   };
-  const fail = message => finish(`FAIL: ${message}`);
+  const fail = message => finish(`INTERACTION_REGRESSION_PASS FAIL: ${message}`);
   const pass = () => finish('INTERACTION_REGRESSION_PASS');
 
   const pointer = (type, target, values) => target.dispatchEvent(new PointerEvent(type, {
