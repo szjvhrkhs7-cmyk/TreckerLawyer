@@ -26,7 +26,7 @@
     while (performance.now() - started < timeout) {
       const value = predicate();
       if (value) return value;
-      await wait(80);
+      await wait(60);
     }
     throw new Error(`таймаут ожидания: ${label}`);
   };
@@ -42,15 +42,13 @@
   const fail = message => finish(`FAIL: ${message}`);
   const pass = () => finish('INTERACTION_REGRESSION_PASS');
 
-  const pointer = (type, target, values) => target.dispatchEvent(new PointerEvent(type, {
+  const mouse = (type, target, clientX, clientY) => target.dispatchEvent(new MouseEvent(type, {
     bubbles: true,
     cancelable: true,
-    pointerId: values.pointerId,
-    pointerType: 'touch',
     button: 0,
-    buttons: type === 'pointerup' ? 0 : 1,
-    clientX: values.clientX,
-    clientY: values.clientY
+    buttons: type === 'mouseup' ? 0 : 1,
+    clientX,
+    clientY
   }));
 
   window.addEventListener('load', async () => {
@@ -74,6 +72,7 @@
       const otherId = second.dataset.sortId;
       const handle = first.querySelector('[data-drag-handle]');
       if (!handle) return fail('drag handle не найден');
+      if (handle.dataset.safeDragInput !== 'touch-mouse') return fail(`неверная схема drag input: ${handle.dataset.safeDragInput || 'нет'}`);
       if (getComputedStyle(handle).touchAction !== 'none') return fail(`drag handle допускает browser pan: ${getComputedStyle(handle).touchAction}`);
 
       let pointerCaptureCalls = 0;
@@ -81,15 +80,14 @@
 
       const handleRect = handle.getBoundingClientRect();
       const secondRect = second.getBoundingClientRect();
-      const pointerId = 73;
       const startX = handleRect.left + handleRect.width / 2;
       const startY = handleRect.top + handleRect.height / 2;
       const endX = startX + 8;
       const endY = secondRect.bottom - Math.min(14, secondRect.height * .12);
 
-      pointer('pointerdown', handle, { pointerId, clientX: startX, clientY: startY });
-      const floating = await waitFor(() => document.querySelector('.drag-floating'), 'floating card', 1500);
-      if (pointerCaptureCalls !== 0) return fail('drag всё ещё использует setPointerCapture');
+      mouse('mousedown', handle, startX, startY);
+      const floating = await waitFor(() => document.querySelector('.drag-floating'), 'floating card', 1200);
+      if (pointerCaptureCalls !== 0) return fail('drag использует setPointerCapture');
 
       const floatingStyle = getComputedStyle(floating);
       if (floatingStyle.transitionProperty !== 'none' && floatingStyle.transitionDuration !== '0s') {
@@ -97,27 +95,25 @@
       }
       if (!floatingStyle.transform || floatingStyle.transform === 'none') return fail('floating card не использует compositor transform');
 
-      for (let step = 1; step <= 6; step += 1) {
-        const progress = step / 6;
-        pointer('pointermove', window, {
-          pointerId,
-          clientX: startX + (endX - startX) * progress,
-          clientY: startY + (endY - startY) * progress
-        });
-        await wait(28);
+      for (let step = 1; step <= 8; step += 1) {
+        const progress = step / 8;
+        mouse(
+          'mousemove',
+          window,
+          startX + (endX - startX) * progress,
+          startY + (endY - startY) * progress
+        );
+        await wait(24);
       }
 
       await waitFor(() => {
         const order = [...document.querySelectorAll('.workspace-task-row:not(.is-done)')].map(row => row.dataset.sortId);
         return order[1] === draggedId;
-      }, 'перемещение точки вставки', 1800);
+      }, 'перемещение точки вставки', 1500);
 
-      const orderDuringDrag = [...document.querySelectorAll('.workspace-task-row:not(.is-done)')].map(row => row.dataset.sortId);
-      if (!orderDuringDrag.includes(draggedId)) return fail('dragged card потерялась из списка');
-      if (orderDuringDrag[1] !== draggedId) return fail(`точка вставки не переместилась: ${orderDuringDrag.join(',')}`);
+      mouse('mouseup', window, endX, endY);
+      await waitFor(() => !document.querySelector('.drag-floating'), 'завершение drop', 1500);
 
-      pointer('pointerup', window, { pointerId, clientX: endX, clientY: endY });
-      await waitFor(() => !document.querySelector('.drag-floating'), 'завершение drop', 1800);
       const savedOrder = JSON.parse(localStorage.getItem('lawyerTaskOrder') || '[]').map(String);
       if (savedOrder.indexOf(otherId) < 0 || savedOrder.indexOf(draggedId) < 0 || savedOrder.indexOf(otherId) > savedOrder.indexOf(draggedId)) {
         return fail(`новый порядок не сохранён: ${savedOrder.join(',')}`);
