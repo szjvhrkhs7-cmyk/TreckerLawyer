@@ -1,0 +1,384 @@
+/* Desktop UX and visual polish. Loaded last to keep the existing data and component logic intact. */
+
+/* The in-app brand tile should feel native to the workspace instead of looking like a black app icon. */
+.brandmark {
+  background: linear-gradient(145deg, #4f7a9c 0%, #315f86 100%) !important;
+  color: #fff !important;
+  border: 1px solid rgba(255, 255, 255, .18) !important;
+  box-shadow: 0 8px 20px rgba(13, 40, 63, .20) !important;
+}
+
+.brandmark::after {
+  display: none !important;
+}
+
+.brandmark .icon {
+  width: 20px !important;
+  height: 20px !important;
+  opacity: 1 !important;
+  stroke-width: 2 !important;
+}
+
+:root[data-theme="dark"] .brandmark {
+  background: linear-gradient(145deg, #527f9f 0%, #315f86 100%) !important;
+  color: #fff !important;
+  border-color: rgba(255, 255, 255, .16) !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .28) !important;
+}
+
+.workspace-task-main,
+.workspace-project-title,
+.workspace-note-main,
+.today-focus-main,
+.today-event,
+.today-project,
+.today-waiting-row {
+  cursor: pointer;
+}
+
+@media (min-width: 900px) {
+  html,
+  body {
+    min-width: 900px;
+  }
+
+  body {
+    min-height: 100dvh;
+  }
+
+  .app {
+    grid-template-columns: 252px minmax(0, 1fr) !important;
+    width: min(1440px, calc(100% - 40px)) !important;
+    min-height: calc(100dvh - 40px) !important;
+    margin: 20px auto !important;
+    overflow: clip;
+    border-radius: 22px !important;
+  }
+
+  .top {
+    top: 20px !important;
+    height: calc(100dvh - 40px) !important;
+    padding: 22px 14px 18px !important;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    scrollbar-width: thin;
+  }
+
+  .brandbar {
+    display: grid !important;
+    grid-template-columns: 40px minmax(0, 1fr) 36px 36px !important;
+    align-items: center !important;
+    gap: 7px !important;
+    min-width: 0;
+    margin: 0 3px 28px !important;
+  }
+
+  .brandmark {
+    width: 40px !important;
+    height: 40px !important;
+    border-radius: 12px !important;
+  }
+
+  .brandname {
+    min-width: 0;
+    overflow: hidden;
+    color: #fff !important;
+    font-size: 14px !important;
+    line-height: 1.15;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .brandname span {
+    overflow: hidden;
+    margin-top: 4px !important;
+    color: rgba(232, 241, 250, .56) !important;
+    font-size: 8.5px !important;
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .sync-button,
+  .theme-toggle {
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: 10px !important;
+  }
+
+  .sync-button span {
+    display: none !important;
+  }
+
+  .sync-button .icon,
+  .theme-toggle .icon {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .tabs {
+    gap: 5px !important;
+    margin-top: 0 !important;
+  }
+
+  .tab {
+    min-height: 44px !important;
+    padding: 0 11px !important;
+    border-radius: 10px !important;
+    font-size: 12.5px !important;
+  }
+
+  .tab .icon {
+    width: 18px !important;
+    height: 18px !important;
+  }
+
+  .tab .count {
+    min-width: 22px;
+    height: 22px;
+    padding: 0 7px;
+    font-size: 10px;
+  }
+
+  .sidebar-agenda {
+    margin-top: 30px !important;
+    padding-top: 2px;
+  }
+
+  .sidebar-event {
+    min-height: 48px !important;
+  }
+
+  .page {
+    width: 100% !important;
+    max-width: none !important;
+    padding: 40px clamp(30px, 3.2vw, 46px) 80px !important;
+    overflow-x: hidden;
+  }
+
+  .workspace-page,
+  .today-dashboard {
+    max-width: 1180px;
+    margin-right: auto;
+    margin-left: auto;
+  }
+
+  .workspace-page-head,
+  .today-page-header {
+    margin-bottom: 24px;
+  }
+
+  .workspace-page-head h2 {
+    font-size: clamp(30px, 3vw, 38px);
+  }
+
+  .workspace-summary-strip {
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .workspace-summary-item {
+    min-height: 62px;
+    padding: 13px 15px;
+    box-shadow: 0 1px 2px rgba(20, 43, 70, .02);
+  }
+
+  .workspace-toolbar {
+    grid-template-columns: minmax(300px, 520px) minmax(0, 1fr);
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+
+  .workspace-toolbar .filters {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .workspace-task-list {
+    gap: 8px;
+  }
+
+  .workspace-task-row {
+    grid-template-columns: 44px minmax(280px, 1fr) auto auto auto;
+    gap: 10px;
+    min-height: 76px;
+    padding: 10px 11px 10px 8px;
+  }
+
+  .workspace-task-row > .drag-handle,
+  .workspace-task-row__done-mark {
+    width: 44px !important;
+    min-width: 44px !important;
+  }
+
+  .workspace-task-main strong {
+    font-size: 14px;
+  }
+
+  .workspace-task-meta {
+    font-size: 11px;
+  }
+
+  .workspace-row-actions .btn {
+    min-height: 40px;
+    padding: 0 12px;
+  }
+
+  .workspace-project-grid,
+  .workspace-notes-grid {
+    gap: 12px;
+  }
+
+  .workspace-project-card,
+  .workspace-note-card {
+    border-radius: 15px;
+  }
+
+  .workspace-project-card {
+    min-height: 210px;
+    padding: 17px;
+  }
+
+  .workspace-note-card {
+    min-height: 180px;
+    padding: 15px;
+  }
+
+  .today-grid {
+    grid-template-columns: minmax(0, 1.42fr) minmax(310px, .82fr) !important;
+    gap: 18px !important;
+  }
+
+  .today-main-column,
+  .today-side-column {
+    gap: 18px !important;
+  }
+
+  .today-panel {
+    border-radius: 15px;
+  }
+
+  .today-panel-heading {
+    min-height: 60px;
+    padding: 14px 17px;
+  }
+
+  .today-focus-task {
+    min-height: 78px;
+    margin-right: 13px;
+    margin-left: 13px;
+  }
+
+  .today-kpis {
+    gap: 10px;
+  }
+
+  .today-kpi {
+    min-height: 96px;
+    padding: 16px 14px;
+  }
+
+  .calendar-month {
+    border-radius: 15px;
+  }
+
+  .calendar-date {
+    min-height: 92px;
+  }
+
+  #taskSheet {
+    padding: 18px !important;
+  }
+
+  #taskSheet .sheet {
+    width: min(520px, 44vw) !important;
+    max-height: calc(100dvh - 36px) !important;
+    border-radius: 18px !important;
+  }
+
+  .overlay:not(#taskSheet) .sheet {
+    max-width: 700px;
+  }
+
+  .workspace-icon-button,
+  .btn,
+  .tab,
+  .sync-button,
+  .theme-toggle {
+    transition: border-color 140ms ease, background-color 140ms ease, color 140ms ease, box-shadow 140ms ease, transform 140ms ease;
+  }
+
+  .workspace-icon-button:active,
+  .btn:active,
+  .tab:active,
+  .sync-button:active,
+  .theme-toggle:active {
+    transform: translateY(1px);
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1160px) {
+  .app {
+    grid-template-columns: 232px minmax(0, 1fr) !important;
+    width: calc(100% - 24px) !important;
+    margin: 12px auto !important;
+    min-height: calc(100dvh - 24px) !important;
+  }
+
+  .top {
+    top: 12px !important;
+    height: calc(100dvh - 24px) !important;
+    padding-right: 11px !important;
+    padding-left: 11px !important;
+  }
+
+  .brandbar {
+    grid-template-columns: 38px minmax(0, 1fr) 34px 34px !important;
+    gap: 5px !important;
+  }
+
+  .brandmark {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .sync-button,
+  .theme-toggle {
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+
+  .page {
+    padding: 32px 26px 70px !important;
+  }
+
+  .today-grid {
+    grid-template-columns: minmax(0, 1fr) 300px !important;
+    gap: 14px !important;
+  }
+
+  .workspace-task-row {
+    grid-template-columns: 40px minmax(220px, 1fr) auto auto !important;
+  }
+
+  .workspace-task-row .workspace-priority {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .workspace-icon-button,
+  .btn,
+  .tab,
+  .sync-button,
+  .theme-toggle {
+    transition: none !important;
+  }
+}
