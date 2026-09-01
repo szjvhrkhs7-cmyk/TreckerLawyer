@@ -161,7 +161,11 @@ jobs:
           PY
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
           "$CHROME" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=10000 --dump-dom http://127.0.0.1:8765/interaction-regression-test.html > /tmp/interaction-regression.html
-          grep -F 'INTERACTION_REGRESSION_PASS' /tmp/interaction-regression.html
+          if ! grep -F 'INTERACTION_REGRESSION_PASS' /tmp/interaction-regression.html; then
+            echo 'Interaction regression did not complete; rendered DOM follows.' >&2
+            cat /tmp/interaction-regression.html >&2
+            exit 1
+          fi
           if grep -F 'FAIL:' /tmp/interaction-regression.html; then
             echo 'Interaction regression browser test reported a failure.' >&2
             exit 1
