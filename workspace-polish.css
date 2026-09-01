@@ -171,6 +171,10 @@ select,
     align-items: stretch;
   }
 
+  .tabs.hidden {
+    display: none !important;
+  }
+
   .tab {
     min-width: 0;
     min-height: 60px;
@@ -352,6 +356,61 @@ select,
   .sheet .note-editor {
     font-size: 16px !important;
     line-height: 1.4;
+  }
+
+  /* Keep every modal and its primary action above the fixed mobile navigation. */
+  .overlay {
+    z-index: 200;
+  }
+
+  #taskSheet .sheet,
+  #projectSheet .sheet,
+  #noteSheet .sheet,
+  #eventSheet .sheet {
+    display: flex;
+    flex-direction: column;
+    max-height: min(88dvh, calc(100dvh - env(safe-area-inset-top) - 12px));
+    overflow: hidden;
+  }
+
+  #taskSheet .form,
+  #projectSheet .form,
+  #noteSheet .form,
+  #eventSheet .form {
+    display: flex;
+    min-height: 0;
+    flex: 1 1 auto;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .sheet-fields {
+    display: grid;
+    min-height: 0;
+    gap: 15px;
+    padding: 2px 3px 18px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  #taskSheet .task-detail {
+    min-height: 0;
+    padding-right: 3px;
+    overflow-x: hidden;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .sheet-actions {
+    position: relative;
+    z-index: 1;
+    flex: 0 0 auto;
+    padding: 12px 3px 0;
+    border-top: 1px solid var(--line);
+    background: var(--surface-raised);
   }
 }
 
