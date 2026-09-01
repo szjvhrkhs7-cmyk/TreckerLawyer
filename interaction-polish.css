@@ -1,0 +1,204 @@
+/* Interaction polish: smooth card dragging and consistent mobile controls. */
+
+.drag-handle {
+  touch-action: none !important;
+  cursor: grab;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+body.drag-reordering,
+body.drag-reordering * {
+  cursor: grabbing !important;
+}
+
+.drag-floating {
+  pointer-events: none !important;
+  transition: none !important;
+  transform-origin: center center !important;
+  will-change: transform !important;
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+  opacity: 1 !important;
+}
+
+.card.drag-floating,
+.workspace-task-row.drag-floating,
+.workspace-project-card.drag-floating,
+.workspace-note-row.drag-floating,
+.workspace-note-card.drag-floating,
+.drag-floating > .card {
+  border-color: color-mix(in srgb, var(--workspace-accent, var(--focus)) 42%, var(--line)) !important;
+  background: var(--surface-raised, var(--surface)) !important;
+  box-shadow: 0 22px 54px rgba(16, 39, 67, .20), 0 8px 20px rgba(16, 39, 67, .10) !important;
+}
+
+:root[data-theme="dark"] .card.drag-floating,
+:root[data-theme="dark"] .workspace-task-row.drag-floating,
+:root[data-theme="dark"] .workspace-project-card.drag-floating,
+:root[data-theme="dark"] .workspace-note-row.drag-floating,
+:root[data-theme="dark"] .workspace-note-card.drag-floating,
+:root[data-theme="dark"] .drag-floating > .card {
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .48), 0 8px 22px rgba(0, 0, 0, .28) !important;
+}
+
+[data-sort-id].drag-placeholder {
+  transform: none !important;
+  box-shadow: none !important;
+  opacity: .14 !important;
+}
+
+.list.is-sorting [data-sort-id]:not(.drag-placeholder) {
+  will-change: transform;
+}
+
+@media (max-width: 899px) {
+  .workspace-page .btn,
+  .workspace-icon-button,
+  .workspace-project-card .drag-handle,
+  .workspace-note-card .drag-handle {
+    min-height: 44px;
+  }
+
+  .workspace-icon-button {
+    width: 48px !important;
+    min-width: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    border-radius: 12px !important;
+    font-size: 19px !important;
+  }
+
+  .workspace-project-card__top {
+    grid-template-columns: 48px minmax(0, 1fr) auto !important;
+    gap: 10px !important;
+  }
+
+  .workspace-project-icon {
+    width: 48px !important;
+    height: 48px !important;
+    border-radius: 13px !important;
+  }
+
+  .workspace-project-icon .icon {
+    width: 21px !important;
+    height: 21px !important;
+  }
+
+  .workspace-project-title {
+    min-height: 48px !important;
+  }
+
+  .workspace-project-footer {
+    gap: 8px !important;
+  }
+
+  .workspace-project-footer .workspace-row-actions {
+    display: flex !important;
+    width: 100% !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    gap: 6px !important;
+  }
+
+  .workspace-project-footer .workspace-row-actions .btn,
+  .workspace-project-footer .workspace-row-actions .drag-handle,
+  .workspace-project-footer .workspace-row-actions .workspace-icon-button {
+    height: 48px !important;
+    min-height: 48px !important;
+  }
+
+  .workspace-project-footer .workspace-row-actions .btn {
+    padding-right: 16px !important;
+    padding-left: 16px !important;
+    border-radius: 12px !important;
+    font-size: 13px !important;
+  }
+
+  .workspace-project-card .drag-handle,
+  .workspace-note-card .drag-handle {
+    width: 48px !important;
+    min-width: 48px !important;
+    height: 48px !important;
+    min-height: 48px !important;
+    border-radius: 12px !important;
+  }
+
+  .workspace-project-card .drag-grip,
+  .workspace-note-card .drag-grip,
+  .workspace-task-row .drag-grip {
+    display: block;
+    width: 20px !important;
+    height: 30px !important;
+    border-radius: 5px;
+    background-image: radial-gradient(circle, currentColor 1.7px, transparent 1.9px) !important;
+    background-position: 0 0;
+    background-size: 10px 10px !important;
+    color: var(--faint);
+    opacity: .9;
+  }
+
+  .workspace-project-card .workspace-icon-button,
+  .workspace-note-card .workspace-icon-button {
+    border: 1px solid var(--line) !important;
+    background: color-mix(in srgb, var(--surface) 94%, var(--bg)) !important;
+    color: var(--muted);
+  }
+
+  .workspace-project-card .workspace-icon-button--success {
+    border-color: color-mix(in srgb, var(--workspace-success) 18%, var(--line)) !important;
+    background: color-mix(in srgb, var(--workspace-success-soft) 70%, var(--surface)) !important;
+    color: var(--workspace-success) !important;
+  }
+
+  .workspace-project-card .workspace-icon-button--danger,
+  .workspace-note-card .workspace-icon-button--danger {
+    border-color: color-mix(in srgb, var(--workspace-danger) 16%, var(--line)) !important;
+    background: color-mix(in srgb, var(--workspace-danger-soft) 62%, var(--surface)) !important;
+    color: var(--workspace-danger) !important;
+  }
+
+  .workspace-note-card__top {
+    grid-template-columns: 48px minmax(0, 1fr) 48px !important;
+    gap: 8px !important;
+    min-height: 48px !important;
+  }
+
+  .workspace-note-card__top > span {
+    font-size: 11px !important;
+  }
+
+  .workspace-task-row {
+    grid-template-columns: 48px minmax(0, 1fr) 48px !important;
+  }
+
+  .workspace-task-row > .drag-handle,
+  .workspace-task-row__done-mark {
+    width: 48px !important;
+    min-width: 48px !important;
+  }
+
+  .workspace-task-row .workspace-row-actions,
+  .workspace-task-row .workspace-icon-button {
+    width: 48px !important;
+    min-width: 48px !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .workspace-project-footer .workspace-row-actions {
+    gap: 4px !important;
+  }
+
+  .workspace-project-footer .workspace-row-actions .btn {
+    padding-right: 13px !important;
+    padding-left: 13px !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .list.is-sorting [data-sort-id] {
+    animation: none !important;
+  }
+}
