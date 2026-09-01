@@ -3,13 +3,10 @@
 @media (min-width: 900px) {
   .brandbar {
     display: grid !important;
-    grid-template-columns: 48px minmax(0, 1fr) 40px !important;
+    grid-template-columns: 48px minmax(0, 1fr) !important;
     grid-template-rows: 48px 40px !important;
-    grid-template-areas:
-      "mark name name"
-      ". sync theme" !important;
     align-items: center !important;
-    column-gap: 10px !important;
+    column-gap: 12px !important;
     row-gap: 10px !important;
     min-height: 116px !important;
     margin: 0 3px 22px !important;
@@ -25,7 +22,8 @@
   }
 
   .brandmark {
-    grid-area: mark !important;
+    grid-column: 1 !important;
+    grid-row: 1 !important;
     align-self: center !important;
     justify-self: start !important;
     width: 48px !important;
@@ -42,7 +40,8 @@
   }
 
   .brandname {
-    grid-area: name !important;
+    grid-column: 2 !important;
+    grid-row: 1 !important;
     display: block !important;
     align-self: center !important;
     justify-self: stretch !important;
@@ -73,16 +72,23 @@
     white-space: nowrap;
   }
 
+  /*
+   * The second row uses the full brandbar width as one alignment system:
+   * sync starts on the exact left edge of the logo, theme is inset 8px
+   * from the right edge, and the space between both controls is always 10px.
+   */
   .sync-button {
-    grid-area: sync !important;
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
     display: inline-flex !important;
     align-items: center !important;
     justify-content: flex-start !important;
-    width: 100% !important;
+    justify-self: start !important;
+    width: calc(100% - 58px) !important;
     min-width: 0 !important;
     height: 40px !important;
     min-height: 40px !important;
-    padding: 0 11px !important;
+    padding: 0 12px !important;
     gap: 8px !important;
     border: 1px solid rgba(255, 255, 255, .10) !important;
     border-radius: 11px !important;
@@ -103,7 +109,8 @@
   }
 
   .theme-toggle {
-    grid-area: theme !important;
+    grid-column: 1 / -1 !important;
+    grid-row: 2 !important;
     display: grid !important;
     place-items: center !important;
     align-self: center !important;
@@ -112,6 +119,7 @@
     min-width: 40px !important;
     height: 40px !important;
     min-height: 40px !important;
+    margin-right: 8px !important;
     padding: 0 !important;
     border: 1px solid rgba(255, 255, 255, .10) !important;
     border-radius: 11px !important;
@@ -149,9 +157,9 @@
 
 @media (min-width: 900px) and (max-width: 1160px) {
   .brandbar {
-    grid-template-columns: 46px minmax(0, 1fr) 38px !important;
+    grid-template-columns: 46px minmax(0, 1fr) !important;
     grid-template-rows: 46px 38px !important;
-    column-gap: 9px !important;
+    column-gap: 11px !important;
     row-gap: 9px !important;
     min-height: 110px !important;
     padding-bottom: 15px !important;
@@ -178,8 +186,13 @@
     min-height: 38px !important;
   }
 
+  .sync-button {
+    width: calc(100% - 56px) !important;
+  }
+
   .theme-toggle {
     width: 38px !important;
     min-width: 38px !important;
+    margin-right: 8px !important;
   }
 }
