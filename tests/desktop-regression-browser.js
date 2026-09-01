@@ -115,6 +115,12 @@
       const sheetRect = taskSheet.getBoundingClientRect();
       if (sheetRect.width < 420 || sheetRect.width > 560) return fail(`неудачная ширина drawer: ${sheetRect.width}`);
       if (sheetRect.left < window.innerWidth / 2) return fail(`drawer не справа: ${sheetRect.left}`);
+      askConfirm('Проверка вложенного подтверждения', () => {});
+      await wait(30);
+      document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
+      await wait(30);
+      if (document.getElementById('confirmDialog')?.classList.contains('show')) return fail('Escape не закрывает верхнее подтверждение');
+      if (!document.getElementById('taskSheet')?.classList.contains('show')) return fail('Escape закрыл форму под подтверждением');
       document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true }));
       await wait(60);
       if (document.getElementById('taskSheet')?.classList.contains('show')) return fail('Escape не закрывает детали задачи');

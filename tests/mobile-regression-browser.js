@@ -53,6 +53,48 @@
           if (counterRect.top < tabsRect.top - 1) return fail('счётчик навигации выступает за верхнюю границу панели');
         }
 
+        const verifyCreateForm = (tab, sheetSelector, fieldSelector, value) => {
+          document.querySelector(`[data-tab="${tab}"]`)?.click();
+          document.getElementById('fab')?.click();
+          const overlay = document.querySelector(sheetSelector);
+          const sheet = overlay?.querySelector('.sheet');
+          const submit = overlay?.querySelector('.sheet-actions .primary');
+          const field = overlay?.querySelector(fieldSelector);
+          if (!overlay?.classList.contains('show') || !sheet || !submit || !field) return `форма раздела ${tab} не открылась`;
+
+          const overlayZ = Number.parseInt(getComputedStyle(overlay).zIndex, 10) || 0;
+          const navZ = Number.parseInt(getComputedStyle(tabs).zIndex, 10) || 0;
+          if (overlayZ <= navZ) return `форма раздела ${tab} перекрывается нижней навигацией`;
+          if (submit.textContent.trim() !== 'Создать') return `в форме раздела ${tab} нет кнопки «Создать»`;
+
+          const buttonRect = submit.getBoundingClientRect();
+          const sheetRect = sheet.getBoundingClientRect();
+          if (buttonRect.top < sheetRect.top - 1 || buttonRect.bottom > sheetRect.bottom + 1 || buttonRect.bottom > window.innerHeight) {
+            return `кнопка создания в разделе ${tab} находится вне видимой области`;
+          }
+
+          field.value = value;
+          field.dispatchEvent(new Event('input', { bubbles: true }));
+          submit.click();
+          if (overlay.classList.contains('show')) return `форма раздела ${tab} не сохранилась`;
+          return '';
+        };
+
+        const formChecks = [
+          verifyCreateForm('tasks', '#taskSheet', '[name="title"]', 'Проверка создания задачи'),
+          verifyCreateForm('projects', '#projectSheet', '[name="title"]', 'Проверка создания проекта'),
+          verifyCreateForm('notes', '#noteSheet', '[name="title"]', 'Проверка создания заметки'),
+          verifyCreateForm('calendar', '#eventSheet', '[name="title"]', 'Проверка создания события')
+        ];
+        const formFailure = formChecks.find(Boolean);
+        if (formFailure) return fail(formFailure);
+
+        document.querySelector('[data-tab="projects"]')?.click();
+        document.querySelector('[data-open-project]')?.click();
+        if (getComputedStyle(tabs).display !== 'none') return fail('нижняя навигация не скрывается внутри проекта');
+        document.getElementById('backBtn')?.click();
+        if (getComputedStyle(tabs).display === 'none') return fail('нижняя навигация не вернулась после выхода из проекта');
+
         document.querySelector('[data-tab="tasks"]')?.click();
         document.getElementById('toggleCompleted')?.click();
         setTimeout(() => {

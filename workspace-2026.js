@@ -282,8 +282,10 @@
       const items = rootTasks();
       const task = items.find(item => sameId(item.id, taskId));
       if (!task) return;
+      const completedAt = now();
       task.status = 'done';
-      task.updatedAt = now();
+      task.completedAt = task.completedAt || completedAt;
+      task.updatedAt = completedAt;
       save(LS.tasks, items);
       render();
       return;
