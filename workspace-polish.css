@@ -109,7 +109,7 @@ select,
 @media (max-width: 899px) {
   body {
     padding-top: 0 !important;
-    padding-bottom: calc(92px + var(--safe-bottom)) !important;
+    padding-bottom: calc(96px + var(--safe-bottom)) !important;
     overflow-x: hidden;
   }
 
@@ -120,6 +120,13 @@ select,
     padding-bottom: 8px !important;
     padding-left: 14px !important;
     overflow: visible !important;
+    background: var(--surface) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    filter: none !important;
+    transform: none !important;
+    perspective: none !important;
+    will-change: auto !important;
   }
 
   .brandbar {
@@ -155,10 +162,10 @@ select,
     right: 0 !important;
     bottom: 0 !important;
     left: 0 !important;
-    min-height: calc(72px + var(--safe-bottom));
-    padding-top: 7px !important;
+    min-height: calc(78px + var(--safe-bottom));
+    padding-top: 10px !important;
     padding-right: 5px !important;
-    padding-bottom: calc(7px + var(--safe-bottom)) !important;
+    padding-bottom: calc(8px + var(--safe-bottom)) !important;
     padding-left: 5px !important;
     overflow: visible !important;
     align-items: stretch;
@@ -166,8 +173,8 @@ select,
 
   .tab {
     min-width: 0;
-    min-height: 58px;
-    padding: 5px 1px !important;
+    min-height: 60px;
+    padding: 7px 1px 5px !important;
     overflow: visible !important;
     line-height: 1.15;
   }
@@ -183,8 +190,9 @@ select,
   }
 
   .tab .count {
-    top: 0 !important;
+    top: 4px !important;
     left: calc(50% + 7px) !important;
+    z-index: 2;
     min-width: 17px !important;
     height: 17px !important;
     padding: 0 4px !important;
