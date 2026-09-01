@@ -109,6 +109,7 @@ select,
 @media (max-width: 899px) {
   body {
     padding-top: 0 !important;
+    padding-bottom: calc(92px + var(--safe-bottom)) !important;
     overflow-x: hidden;
   }
 
@@ -149,12 +150,18 @@ select,
   }
 
   .tabs {
-    min-height: calc(70px + var(--safe-bottom));
+    position: fixed !important;
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    min-height: calc(72px + var(--safe-bottom));
     padding-top: 7px !important;
     padding-right: 5px !important;
     padding-bottom: calc(7px + var(--safe-bottom)) !important;
     padding-left: 5px !important;
     overflow: visible !important;
+    align-items: stretch;
   }
 
   .tab {
@@ -194,13 +201,13 @@ select,
   }
 
   .workspace-task-row {
-    grid-template-columns: 44px minmax(0, 1fr) 44px !important;
+    grid-template-columns: 44px minmax(0, 1fr) 48px !important;
     grid-template-rows: auto auto;
     align-items: center;
     gap: 5px 8px !important;
     min-height: 100px !important;
     padding: 10px 9px !important;
-    overflow: hidden;
+    overflow: visible;
   }
 
   .workspace-task-row > .drag-handle,
@@ -216,7 +223,16 @@ select,
   }
 
   .workspace-task-row > .drag-handle .drag-grip {
+    display: block;
+    width: 18px;
+    height: 28px;
     overflow: visible !important;
+    border-radius: 5px;
+    background-image: radial-gradient(circle, currentColor 1.5px, transparent 1.7px);
+    background-position: 0 0;
+    background-size: 9px 9px;
+    color: var(--faint);
+    opacity: .82;
   }
 
   .workspace-task-main {
@@ -261,17 +277,30 @@ select,
     flex-direction: column;
     justify-content: center;
     gap: 4px;
-    width: 44px;
-    min-width: 44px;
+    width: 48px;
+    min-width: 48px;
   }
 
   .workspace-task-row .workspace-row-actions .btn {
     display: none;
   }
 
+  .workspace-task-row.is-done .workspace-row-actions .workspace-restore-inline {
+    display: inline-flex;
+    width: 48px;
+    min-width: 48px;
+    min-height: 36px;
+    padding: 0 4px;
+    border-color: color-mix(in srgb, var(--workspace-accent) 24%, var(--line));
+    border-radius: 9px;
+    background: var(--workspace-accent-soft);
+    color: var(--workspace-accent);
+    font-size: 9.5px;
+  }
+
   .workspace-task-row .workspace-icon-button {
-    width: 44px;
-    min-width: 44px;
+    width: 48px;
+    min-width: 48px;
     height: 44px;
     min-height: 44px;
     overflow: visible;
@@ -342,5 +371,24 @@ select,
   .workspace-project-card__top,
   .workspace-note-card__top {
     min-width: 0;
+  }
+}
+
+@media (max-width: 390px) {
+  .tab {
+    font-size: 9px !important;
+  }
+
+  .workspace-task-row {
+    grid-template-columns: 42px minmax(0, 1fr) 44px !important;
+    padding-right: 7px !important;
+    padding-left: 7px !important;
+  }
+
+  .workspace-task-row .workspace-row-actions,
+  .workspace-task-row .workspace-icon-button,
+  .workspace-task-row.is-done .workspace-row-actions .workspace-restore-inline {
+    width: 44px;
+    min-width: 44px;
   }
 }
