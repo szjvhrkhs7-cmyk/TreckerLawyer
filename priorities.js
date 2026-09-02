@@ -95,7 +95,6 @@
       <div class="field"><label for="priorityLevel">Зона</label><select id="priorityLevel" name="priorityLevel"><option value="main">Главное</option><option value="other">Остальные задачи</option></select></div>
       <p class="priority-picker-hint">Можно выбрать только рабочий день — с понедельника по пятницу.</p>
     </div><div class="sheet-actions">
-      ${entry.task.priorityDate ? '<button type="button" class="btn danger" data-remove-priority>Убрать приоритет</button>' : ''}
       <button type="button" class="btn" data-cancel-priority>Отмена</button>
       <button type="submit" class="btn primary">Сохранить</button>
     </div>`;
@@ -144,12 +143,17 @@
     return `${formatDay(first, { day: 'numeric', month: 'long' })} — ${formatDay(last, { day: 'numeric', month: 'long', year: 'numeric' })}`;
   }
 
+  function priorityDragHandle(task) {
+    return `<button type="button" class="drag-handle priority-drag-handle" data-priority-drag aria-label="Перетащить задачу ${esc(task.title || 'Без названия')}" aria-pressed="false"><span class="drag-grip" aria-hidden="true"></span></button>`;
+  }
+
   function taskCard(entry) {
     const task = entry.task;
     const id = esc(String(task.id));
     const scope = esc(entry.scope);
     const project = projectTitle(task);
-    return `<article class="priority-card" data-priority-card="${id}" data-task-scope="${scope}">
+    return `<article class="priority-card" data-priority-card="${id}" data-task-scope="${scope}" data-priority-date="${esc(task.priorityDate || '')}" data-priority-level="${esc(task.priorityLevel === 'other' ? 'other' : 'main')}">
+      ${priorityDragHandle(task)}
       <button type="button" class="priority-card__main" data-priority-open="${id}" data-task-scope="${scope}">
         <strong>${esc(task.title || 'Без названия')}</strong>
         ${project ? `<span>${esc(project)}</span>` : ''}
@@ -157,7 +161,6 @@
       <div class="priority-card__actions">
         <button type="button" class="priority-card__done" data-priority-done="${id}" data-task-scope="${scope}">Выполнить</button>
         <button type="button" data-set-priority="${id}" data-task-scope="${scope}">Перенести</button>
-        <button type="button" data-priority-remove="${id}" data-task-scope="${scope}">Убрать</button>
         <button type="button" class="is-danger" data-priority-delete="${id}" data-task-scope="${scope}" aria-label="Удалить задачу ${esc(task.title)}">Удалить</button>
       </div>
     </article>`;
@@ -165,7 +168,158 @@
 
   function zone(entries, level, emptyText, priorityDate) {
     const matching = entries.filter(entry => (entry.task.priorityLevel === 'other' ? 'other' : 'main') === level);
-    return `<div class="priority-zone__head"><h3>${level === 'main' ? 'Главное' : 'Остальные задачи'}</h3><button type="button" class="priority-add" data-priority-add="${level}" data-priority-date="${esc(priorityDate)}" aria-label="Добавить задачу: ${level === 'main' ? 'главное' : 'остальные задачи'}">+ Добавить</button></div>${matching.length ? matching.map(taskCard).join('') : `<p class="priority-zone-empty">${emptyText}</p>`}`;
+    return `<div class="priority-zone__head"><h3>${level === 'main' ? 'Главное' : 'Остальные задачи'}</h3><button type="button" class="priority-add" data-priority-add="${level}" data-priority-date="${esc(priorityDate)}" aria-label="Добавить задачу: ${level === 'main' ? 'главное' : 'остальные задачи'}">+ Добавить</button></div><div class="priority-zone__list" data-priority-dropzone data-priority-date="${esc(priorityDate)}" data-priority-level="${level}">${matching.length ? matching.map(taskCard).join('') : `<p class="priority-zone-empty">${emptyText}</p>`}</div>`;
+  }
+
+  function bindPriorityDrag() {
+    const handles = page.querySelectorAll('[data-priority-drag]');
+    handles.forEach(handle => {
+      if (handle.dataset.priorityDragBound === '1') return;
+      handle.dataset.priorityDragBound = '1';
+      const card = handle.closest('.priority-card');
+      if (!card) return;
+
+      let dragging = false;
+      let moved = false;
+      let startX = 0;
+      let startY = 0;
+      let pointerId = null;
+      let floating = null;
+      let originZone = null;
+      let originNext = null;
+      let originRect = null;
+      const animations = new WeakMap();
+
+      const cardsIn = zone => [...zone.querySelectorAll(':scope > .priority-card')];
+      const snapshot = zone => new Map(cardsIn(zone).filter(item => item !== card).map(item => [item, item.getBoundingClientRect().top]));
+      const animate = (zone, before) => {
+        cardsIn(zone).forEach(item => {
+          if (item === card) return;
+          const oldTop = before.get(item);
+          if (oldTop === undefined) return;
+          const delta = oldTop - item.getBoundingClientRect().top;
+          if (Math.abs(delta) < 0.5) return;
+          animations.get(item)?.cancel?.();
+          const animation = item.animate?.([
+            { transform: `translate3d(0,${delta}px,0)` },
+            { transform: 'translate3d(0,0,0)' }
+          ], { duration: 165, easing: 'cubic-bezier(.2,.8,.2,1)' });
+          if (animation) animations.set(item, animation);
+        });
+      };
+
+      const placeFloating = (x, y) => {
+        if (!floating || !originRect) return;
+        floating.style.transform = `translate3d(${x - startX}px,${y - startY}px,0) scale(1.012)`;
+      };
+
+      const dropzoneAt = (x, y) => {
+        const hit = document.elementFromPoint(x, y);
+        return hit?.closest?.('[data-priority-dropzone]') || null;
+      };
+
+      const moveCard = (zone, y) => {
+        if (!zone) return;
+        const previousZone = card.parentElement;
+        const beforePrevious = previousZone?.matches?.('[data-priority-dropzone]') ? snapshot(previousZone) : null;
+        const beforeTarget = previousZone === zone ? beforePrevious : snapshot(zone);
+        const candidates = cardsIn(zone).filter(item => item !== card);
+        const target = candidates.find(item => {
+          const rect = item.getBoundingClientRect();
+          return y < rect.top + rect.height / 2;
+        });
+        if (target) zone.insertBefore(card, target);
+        else zone.append(card);
+        if (beforePrevious) animate(previousZone, beforePrevious);
+        if (zone !== previousZone) animate(zone, beforeTarget);
+        zone.querySelector('.priority-zone-empty')?.remove();
+      };
+
+      const onMove = event => {
+        if (!dragging || event.pointerId !== pointerId) return;
+        if (event.cancelable) event.preventDefault();
+        const dx = event.clientX - startX;
+        const dy = event.clientY - startY;
+        if (Math.hypot(dx, dy) > 4) moved = true;
+        placeFloating(event.clientX, event.clientY);
+        moveCard(dropzoneAt(event.clientX, event.clientY), event.clientY);
+      };
+
+      const cleanup = () => {
+        window.removeEventListener('pointermove', onMove, true);
+        window.removeEventListener('pointerup', finish, true);
+        window.removeEventListener('pointercancel', cancel, true);
+        document.body.classList.remove('drag-reordering');
+        card.classList.remove('dragging', 'drag-placeholder');
+        handle.setAttribute('aria-pressed', 'false');
+      };
+
+      const restore = () => {
+        if (!originZone) return;
+        if (originNext && originNext.parentNode === originZone) originZone.insertBefore(card, originNext);
+        else originZone.append(card);
+      };
+
+      const persistDrop = () => {
+        const zone = card.parentElement;
+        if (!zone?.matches?.('[data-priority-dropzone]')) return false;
+        const entry = findTask(card.dataset.priorityCard, card.dataset.taskScope || 'root');
+        if (!entry) return false;
+        const patch = { priorityDate: zone.dataset.priorityDate, priorityLevel: zone.dataset.priorityLevel === 'other' ? 'other' : 'main' };
+        return saveTask(entry, patch);
+      };
+
+      function finish(event) {
+        if (!dragging || event.pointerId !== pointerId) return;
+        dragging = false;
+        cleanup();
+        const changedZone = card.parentElement !== originZone || card.dataset.priorityDate !== card.parentElement?.dataset.priorityDate || card.dataset.priorityLevel !== card.parentElement?.dataset.priorityLevel;
+        if (!moved || !persistDrop()) restore();
+        floating?.remove();
+        floating = null;
+        if (moved && changedZone) render();
+      }
+
+      function cancel(event) {
+        if (!dragging || event.pointerId !== pointerId) return;
+        dragging = false;
+        restore();
+        cleanup();
+        floating?.remove();
+        floating = null;
+      }
+
+      handle.addEventListener('pointerdown', event => {
+        if (event.button !== 0 && event.pointerType !== 'touch') return;
+        event.preventDefault();
+        dragging = true;
+        moved = false;
+        pointerId = event.pointerId;
+        startX = event.clientX;
+        startY = event.clientY;
+        originZone = card.parentElement;
+        originNext = card.nextElementSibling;
+        originRect = card.getBoundingClientRect();
+        floating = card.cloneNode(true);
+        floating.classList.add('drag-floating');
+        floating.setAttribute('aria-hidden', 'true');
+        floating.style.left = `${originRect.left}px`;
+        floating.style.top = `${originRect.top}px`;
+        floating.style.width = `${originRect.width}px`;
+        floating.style.height = `${originRect.height}px`;
+        floating.style.transform = 'translate3d(0,0,0) scale(1.012)';
+        floating.style.transition = 'none';
+        floating.style.willChange = 'transform';
+        document.body.append(floating);
+        card.classList.add('dragging', 'drag-placeholder');
+        document.body.classList.add('drag-reordering');
+        handle.setAttribute('aria-pressed', 'true');
+        handle.setPointerCapture?.(pointerId);
+        window.addEventListener('pointermove', onMove, { passive: false, capture: true });
+        window.addEventListener('pointerup', finish, true);
+        window.addEventListener('pointercancel', cancel, true);
+      });
+    });
   }
 
   function renderPriorities() {
@@ -192,6 +346,7 @@
         }).join('')}
       </div>
     </section>`;
+    bindPriorityDrag();
   }
 
   priorityForm.addEventListener('submit', event => {
@@ -253,15 +408,6 @@
       selectedTask = null;
       newTaskDefaults = null;
       hideOverlay(prioritySheet);
-      return;
-    }
-    if (event.target.closest('[data-remove-priority]')) {
-      event.preventDefault();
-      if (saveTask(selectedTask, { priorityDate: undefined, priorityLevel: undefined })) {
-        selectedTask = null;
-        hideOverlay(prioritySheet);
-        render();
-      }
     }
   });
 
@@ -290,11 +436,11 @@
       return;
     }
 
-    const target = event.target.closest('[data-priority-open], [data-priority-done], [data-priority-remove], [data-priority-delete]');
+    const target = event.target.closest('[data-priority-open], [data-priority-done], [data-priority-delete]');
     if (!target) return;
     event.preventDefault();
     event.stopPropagation();
-    const id = target.dataset.priorityOpen || target.dataset.priorityDone || target.dataset.priorityRemove || target.dataset.priorityDelete;
+    const id = target.dataset.priorityOpen || target.dataset.priorityDone || target.dataset.priorityDelete;
     const entry = findTask(id, target.dataset.taskScope || 'root');
     if (!entry) return;
     if (target.dataset.priorityOpen) {
@@ -304,10 +450,6 @@
     if (target.dataset.priorityDone) {
       const completedAt = now();
       if (saveTask(entry, { status: 'done', completedAt: entry.task.completedAt || completedAt })) render();
-      return;
-    }
-    if (target.dataset.priorityRemove) {
-      if (saveTask(entry, { priorityDate: undefined, priorityLevel: undefined })) render();
       return;
     }
     askConfirm('Задача будет удалена из трекера без возможности восстановления.', () => {
@@ -326,4 +468,3 @@
   globalThis.renderPriorities = renderPriorities;
   globalThis.openPriorityPicker = openPriorityPicker;
 })();
-
