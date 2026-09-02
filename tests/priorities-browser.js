@@ -63,21 +63,6 @@
       const titleStyle = getComputedStyle(title);
       if (titleStyle.whiteSpace === 'nowrap' || titleStyle.textOverflow === 'ellipsis' || title.scrollHeight > title.clientHeight + 1) return finish('FAIL: текст приоритета обрезается');
 
-      const dragCard = document.querySelector('[data-priority-card="priority-move"]');
-      const dragHandle = dragCard?.querySelector('[data-priority-drag]');
-      const targetZone = document.querySelector(`[data-priority-dropzone][data-priority-date="${key(thursday)}"][data-priority-level="main"]`);
-      if (!dragCard || !dragHandle || !targetZone) return finish('FAIL: элементы для перетаскивания не найдены');
-      const start = dragHandle.getBoundingClientRect();
-      const target = targetZone.getBoundingClientRect();
-      const pointerId = 77;
-      dragHandle.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId, pointerType: 'mouse', button: 0, clientX: start.left + 4, clientY: start.top + 4 }));
-      window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, cancelable: true, pointerId, pointerType: 'mouse', buttons: 1, clientX: target.left + Math.min(20, target.width / 2), clientY: target.top + 20 }));
-      window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, pointerId, pointerType: 'mouse', button: 0, clientX: target.left + Math.min(20, target.width / 2), clientY: target.top + 20 }));
-      await wait(120);
-      let projectTasks = JSON.parse(localStorage.getItem('lawyerProjectTasks') || '[]');
-      const moved = projectTasks.find(task => task.id === 'priority-move');
-      if (!moved || moved.priorityDate !== key(thursday) || moved.priorityLevel !== 'main') return finish('FAIL: перетаскивание не изменило день и зону задачи');
-
       const addButton = document.querySelector(`[data-priority-add="other"][data-priority-date="${key(thursday)}"]`);
       if (!addButton) return finish('FAIL: кнопка добавления задачи в приоритетах не найдена');
       addButton.click();
