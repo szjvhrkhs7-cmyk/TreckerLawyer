@@ -243,38 +243,127 @@
     padding-inline: 8px;
   }
 
+  /* Mobile priority board is an overview of the whole working week, not a horizontal carousel. */
   .priority-board {
-    grid-template-columns: repeat(5, minmax(220px, 1fr));
-    scroll-snap-type: x proximity;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+    overflow-x: hidden;
+    scroll-snap-type: none;
   }
 
   .priority-day {
-    scroll-snap-align: start;
+    min-width: 0;
+    padding: 0 6px 10px;
+    scroll-snap-align: none;
+  }
+
+  .priority-day__head {
+    gap: 2px;
+    margin: 0 -6px;
+    padding: 12px 4px 10px;
+  }
+
+  .priority-day__head strong {
+    font-size: 9.5px;
+    letter-spacing: .02em;
+    overflow-wrap: anywhere;
+  }
+
+  .priority-day__head span {
+    font-size: 9.5px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .priority-zone {
+    gap: 7px;
+    min-height: 126px;
+    padding: 11px 0;
+  }
+
+  .priority-zone + .priority-zone {
+    min-height: 170px;
+  }
+
+  .priority-zone__head {
+    gap: 4px;
+  }
+
+  .priority-zone h3 {
+    font-size: 8.5px;
+    letter-spacing: .035em;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .priority-zone-empty {
+    padding: 9px 0;
+    font-size: 9.5px;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .priority-card {
+    gap: 7px;
+    padding: 8px 7px;
+    border-radius: 8px;
+  }
+
+  .priority-card__main {
+    gap: 3px;
+  }
+
+  .priority-card__main strong {
+    font-size: 10.5px;
+    line-height: 1.32;
+    hyphens: auto;
+  }
+
+  .priority-card__main span {
+    font-size: 8.5px;
+    line-height: 1.25;
+  }
+
+  /* The general task page keeps only the priority action visible in its mobile action slot. */
+  .workspace-task-row:not(.is-done) .workspace-row-actions {
+    display: flex !important;
+    width: auto !important;
+    min-width: 0 !important;
   }
 
   .workspace-task-row .workspace-priority-action {
     display: inline-flex !important;
-    grid-column: 2 / -1;
-    justify-self: start;
+    grid-column: auto;
+    justify-self: auto;
+    min-height: 34px;
+    padding: 0 10px;
+    font-size: 10.5px;
+    line-height: 1.15;
+    text-align: center;
+    white-space: normal;
   }
 
   .priority-card__actions {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 6px;
+    gap: 5px;
   }
 
   .priority-card__actions button {
-    min-height: 36px;
-    padding: 0 6px;
+    min-height: 32px;
+    padding: 0 4px;
     border-radius: 7px;
     background: var(--surface-hover);
+    font-size: 9px;
+    line-height: 1.15;
     text-align: center;
+    white-space: normal;
   }
 
   .priority-add {
-    min-height: 36px;
-    padding-inline: 9px;
+    min-height: 32px;
+    padding-inline: 7px;
   }
 
   .tabs {
@@ -301,3 +390,86 @@
   }
 }
 
+@media (max-width: 520px) {
+  .priority-day {
+    padding-right: 4px;
+    padding-bottom: 8px;
+    padding-left: 4px;
+  }
+
+  .priority-day__head {
+    margin-right: -4px;
+    margin-left: -4px;
+    padding: 10px 2px 9px;
+  }
+
+  .priority-day__head strong,
+  .priority-day__head span {
+    font-size: 8.5px;
+  }
+
+  .priority-zone {
+    gap: 5px;
+    min-height: 112px;
+    padding: 9px 0;
+  }
+
+  .priority-zone + .priority-zone {
+    min-height: 150px;
+  }
+
+  .priority-zone__head {
+    align-items: flex-start;
+    gap: 2px;
+  }
+
+  .priority-zone h3 {
+    font-size: 7.5px;
+    letter-spacing: .02em;
+  }
+
+  .priority-add {
+    width: 24px;
+    min-width: 24px;
+    min-height: 26px;
+    padding: 0;
+    overflow: hidden;
+    font-size: 0;
+  }
+
+  .priority-add::before {
+    content: "+";
+    font-size: 14px;
+    line-height: 1;
+  }
+
+  .priority-zone-empty {
+    font-size: 8.5px;
+    line-height: 1.3;
+  }
+
+  .priority-card {
+    gap: 5px;
+    padding: 7px 5px;
+  }
+
+  .priority-card__main strong {
+    font-size: 9.5px;
+    line-height: 1.3;
+  }
+
+  .priority-card__main span {
+    font-size: 8px;
+  }
+
+  .priority-card__actions {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 3px;
+  }
+
+  .priority-card__actions button {
+    min-height: 27px;
+    padding: 0 2px;
+    font-size: 8px;
+  }
+}
