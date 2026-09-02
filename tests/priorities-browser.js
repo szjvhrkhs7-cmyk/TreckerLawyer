@@ -23,7 +23,7 @@
     { id: 'priority-project', title: 'Проект договора', createdAt: timestamp, updatedAt: timestamp }
   ]));
   localStorage.setItem('lawyerProjectTasks', JSON.stringify([
-    { id: 'priority-remove', projectId: 'priority-project', title: 'Согласовать протокол разногласий', status: 'inwork', priority: 'normal', priorityDate: key(tuesday), priorityLevel: 'other', createdAt: timestamp, updatedAt: timestamp }
+    { id: 'priority-move', projectId: 'priority-project', title: 'Согласовать протокол разногласий', status: 'inwork', priority: 'normal', priorityDate: key(tuesday), priorityLevel: 'other', createdAt: timestamp, updatedAt: timestamp }
   ]));
 
   const wait = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -43,6 +43,7 @@
       await wait(50);
       const form = document.getElementById('priorityForm');
       if (!document.querySelector('#prioritySheet.show') || !form) return finish('FAIL: форма приоритета не открылась');
+      if (form.querySelector('[data-remove-priority]')) return finish('FAIL: кнопка «Убрать приоритет» осталась в форме');
       form.elements.priorityDate.value = key(wednesday);
       form.elements.priorityLevel.value = 'main';
       form.requestSubmit();
@@ -55,10 +56,27 @@
       await wait(120);
       if (!document.querySelector('.priority-board') || document.querySelectorAll('.priority-day').length !== 5) return finish('FAIL: недельная доска не отрисована');
       if (document.querySelectorAll('.priority-card').length !== 3) return finish('FAIL: не показаны обычные и проектные задачи');
+      if (document.querySelector('[data-priority-remove]')) return finish('FAIL: кнопка «Убрать» осталась на карточке приоритета');
+      if (document.querySelectorAll('[data-priority-drag]').length !== 3) return finish('FAIL: drag-handle отсутствует у части карточек');
       const title = [...document.querySelectorAll('.priority-card__main strong')].find(node => node.textContent === longTitle);
       if (!title) return finish('FAIL: длинное название отсутствует');
       const titleStyle = getComputedStyle(title);
       if (titleStyle.whiteSpace === 'nowrap' || titleStyle.textOverflow === 'ellipsis' || title.scrollHeight > title.clientHeight + 1) return finish('FAIL: текст приоритета обрезается');
+
+      const dragCard = document.querySelector('[data-priority-card="priority-move"]');
+      const dragHandle = dragCard?.querySelector('[data-priority-drag]');
+      const targetZone = document.querySelector(`[data-priority-dropzone][data-priority-date="${key(thursday)}"][data-priority-level="main"]`);
+      if (!dragCard || !dragHandle || !targetZone) return finish('FAIL: элементы для перетаскивания не найдены');
+      const start = dragHandle.getBoundingClientRect();
+      const target = targetZone.getBoundingClientRect();
+      const pointerId = 77;
+      dragHandle.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, cancelable: true, pointerId, pointerType: 'mouse', button: 0, clientX: start.left + 4, clientY: start.top + 4 }));
+      window.dispatchEvent(new PointerEvent('pointermove', { bubbles: true, cancelable: true, pointerId, pointerType: 'mouse', buttons: 1, clientX: target.left + Math.min(20, target.width / 2), clientY: target.top + 20 }));
+      window.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, cancelable: true, pointerId, pointerType: 'mouse', button: 0, clientX: target.left + Math.min(20, target.width / 2), clientY: target.top + 20 }));
+      await wait(120);
+      let projectTasks = JSON.parse(localStorage.getItem('lawyerProjectTasks') || '[]');
+      const moved = projectTasks.find(task => task.id === 'priority-move');
+      if (!moved || moved.priorityDate !== key(thursday) || moved.priorityLevel !== 'main') return finish('FAIL: перетаскивание не изменило день и зону задачи');
 
       const addButton = document.querySelector(`[data-priority-add="other"][data-priority-date="${key(thursday)}"]`);
       if (!addButton) return finish('FAIL: кнопка добавления задачи в приоритетах не найдена');
@@ -85,12 +103,6 @@
       if (tasks.find(task => task.id === 'priority-done')?.status !== 'done') return finish('FAIL: выполнение не отразилось в исходной задаче');
       if (document.querySelector('[data-priority-card="priority-done"]')) return finish('FAIL: выполненная задача осталась в активных приоритетах');
 
-      document.querySelector('[data-priority-remove="priority-remove"]')?.click();
-      await wait(80);
-      const projectTasks = JSON.parse(localStorage.getItem('lawyerProjectTasks') || '[]');
-      const removed = projectTasks.find(task => task.id === 'priority-remove');
-      if (!removed || removed.priorityDate) return finish('FAIL: задача не убрана из приоритетов или удалена целиком');
-
       document.querySelector('[data-priority-delete="priority-new"]')?.click();
       await wait(40);
       document.getElementById('confirmAccept')?.click();
@@ -104,4 +116,3 @@
     }
   });
 })();
-
