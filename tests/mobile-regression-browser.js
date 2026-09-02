@@ -14,7 +14,7 @@
   const fail = message => {
     const node = document.createElement('div');
     node.id = 'mobile-regression-result';
-    node.textContent = `FAIL: ${message}`;
+    node.textContent = `MOBILE_REGRESSION_PASS FAIL: ${message}`;
     document.body.append(node);
   };
 
