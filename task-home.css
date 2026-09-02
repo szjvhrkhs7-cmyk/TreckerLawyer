@@ -88,7 +88,7 @@
 
 @media (max-width: 899px) {
   #tabs.tabs {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
   }
 
   .workspace-task-row {

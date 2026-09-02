@@ -93,7 +93,7 @@
 
       const tabs = [...document.querySelectorAll('#tabs .tab')];
       const tabRects = tabs.map(tab => tab.getBoundingClientRect());
-      if (tabs.length !== 4) return fail(`ожидалось 4 вкладки, получено ${tabs.length}`);
+      if (tabs.length !== 5) return fail(`ожидалось 5 вкладок, получено ${tabs.length}`);
       if (document.querySelector('[data-tab="today"]')) return fail('раздел Сегодня остался в desktop-навигации');
       if (!document.querySelector('[data-tab="tasks"]')?.classList.contains('active')) return fail('задачи не активны при запуске');
       if (tabRects.some(item => item.width < 190 || item.height < 42)) return fail(`слишком маленькая desktop-вкладка ${Math.min(...tabRects.map(item => item.width))}×${Math.min(...tabRects.map(item => item.height))}`);
@@ -144,7 +144,10 @@
       taskTab?.focus();
       taskTab?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
       await wait(100);
-      if (!document.querySelector('[data-tab="projects"]')?.classList.contains('active')) return fail('ArrowDown не переключает desktop-вкладки');
+      if (!document.querySelector('[data-tab="priorities"]')?.classList.contains('active')) return fail('ArrowDown не переключает на приоритеты');
+      document.querySelector('[data-tab="priorities"]')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
+      await wait(100);
+      if (!document.querySelector('[data-tab="projects"]')?.classList.contains('active')) return fail('повторный ArrowDown не переключает на проекты');
       if (document.querySelectorAll('.workspace-project-card').length < 2) return fail('проекты не отображаются');
 
       document.querySelector('[data-tab="notes"]')?.click();

@@ -26,6 +26,7 @@
     <symbol id="i-home" viewBox="0 0 24 24"><path d="m3 11 9-8 9 8"/><path d="M5 10v10h14V10M9 20v-6h6v6"/></symbol>
     <symbol id="i-check-square" viewBox="0 0 24 24"><path d="M6 3h8l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M14 3v5h5"/><path d="m8 14 2.5 2.5L16 11"/></symbol>
     <symbol id="i-tasks" viewBox="0 0 24 24"><path d="M9 6h11M9 12h11M9 18h11"/><path d="m3.5 6 1 1 2-2M3.5 12l1 1 2-2M3.5 18l1 1 2-2"/></symbol>
+    <symbol id="i-flag" viewBox="0 0 24 24"><path d="M5 21V4"/><path d="M5 5h10l2 3-2 3H5"/></symbol>
     <symbol id="i-folder" viewBox="0 0 24 24"><path d="M3 6.5h6l2 2h10v9.5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></symbol>
     <symbol id="i-note" viewBox="0 0 24 24"><path d="M6 3h12a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z"/><path d="M8 8h8M8 12h8M8 16h5"/></symbol>
     <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M8 3v4M16 3v4M3 10h18"/><path d="M8 14h.01M12 14h.01M16 14h.01M8 17.5h.01M12 17.5h.01"/></symbol>
@@ -56,6 +57,7 @@
       <p class="stats" id="stats"></p>
       <nav class="tabs" id="tabs" role="tablist" aria-label="Разделы приложения">
         <button class="tab active" type="button" role="tab" aria-selected="true" data-tab="tasks"><svg class="icon" aria-hidden="true"><use href="#i-tasks"></use></svg>Задачи <span class="count" id="tasksCount">0</span></button>
+        <button class="tab" type="button" role="tab" aria-selected="false" data-tab="priorities"><svg class="icon" aria-hidden="true"><use href="#i-flag"></use></svg>Приоритеты <span class="count" id="prioritiesCount">0</span></button>
         <button class="tab" type="button" role="tab" aria-selected="false" data-tab="projects"><svg class="icon" aria-hidden="true"><use href="#i-folder"></use></svg>Проекты <span class="count" id="projectsCount">0</span></button>
         <button class="tab" type="button" role="tab" aria-selected="false" data-tab="calendar"><svg class="icon" aria-hidden="true"><use href="#i-calendar"></use></svg>Календарь <span class="count" id="calendarCount">0</span></button>
         <button class="tab" type="button" role="tab" aria-selected="false" data-tab="notes"><svg class="icon" aria-hidden="true"><use href="#i-note"></use></svg>Заметки <span class="count" id="notesCount">0</span></button>
@@ -69,6 +71,7 @@
   <section class="overlay" id="projectSheet" role="dialog" aria-modal="true" aria-labelledby="projectSheetTitle" aria-hidden="true"><div class="sheet"><div class="grab"></div><h2 id="projectSheetTitle">Проект</h2><form id="projectForm" class="form"></form></div></section>
   <section class="overlay" id="noteSheet" role="dialog" aria-modal="true" aria-labelledby="noteSheetTitle" aria-hidden="true"><div class="sheet"><div class="grab"></div><h2 id="noteSheetTitle">Заметка</h2><form id="noteForm" class="form"></form></div></section>
   <section class="overlay" id="eventSheet" role="dialog" aria-modal="true" aria-labelledby="eventSheetTitle" aria-hidden="true"><div class="sheet event-sheet"><div class="grab"></div><h2 id="eventSheetTitle">Событие</h2><form id="eventForm" class="form"></form></div></section>
+  <section class="overlay" id="prioritySheet" role="dialog" aria-modal="true" aria-labelledby="prioritySheetTitle" aria-hidden="true"><div class="sheet priority-sheet"><div class="grab"></div><h2 id="prioritySheetTitle">Поставить приоритет</h2><form id="priorityForm" class="form"></form></div></section>
   <section class="overlay" id="syncSheet" role="dialog" aria-modal="true" aria-labelledby="syncSheetTitle" aria-hidden="true"><div class="sheet sync-sheet"><div class="grab"></div><h2 id="syncSheetTitle">Синхронизация</h2><div id="syncContent"></div></div></section>
   <section class="overlay" id="confirmDialog" role="alertdialog" aria-modal="true" aria-labelledby="confirmTitle" aria-describedby="confirmMessage" aria-hidden="true">
     <div class="confirm-box">
@@ -83,6 +86,7 @@
 <script src="calendar-core.js?v=20260831-calendar-simple-2"></script>
 <script src="workspace-2026.js?v=20260901-workspace-2026"></script>
 <script src="task-home.js?v=20260901-task-home-1"></script>
+<script src="priorities.js?v=20260902-priorities-1"></script>
 <script src="sync.js?v=20260901-ios-drag-3"></script>
 <script src="desktop-ux.js?v=20260901-desktop-ux-1"></script>
 </body>

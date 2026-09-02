@@ -101,6 +101,25 @@ jobs:
             echo 'Workspace browser test reported a failure.' >&2
             exit 1
           fi
+      - name: Verify linked priorities workflow in Chrome
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path('index.html').read_text(encoding='utf-8')
+          app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
+          if app_tag not in html:
+              raise SystemExit('Expected application script tag was not found')
+          html = html.replace(app_tag, '<script src="tests/priorities-browser.js"></script>\n' + app_tag, 1)
+          Path('priorities-test.html').write_text(html, encoding='utf-8')
+          PY
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          "$CHROME" --headless --no-sandbox --disable-gpu --window-size=1440,900 --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8765/priorities-test.html > /tmp/priorities.html
+          grep -F 'PRIORITIES_PASS' /tmp/priorities.html
+          if grep -F 'FAIL:' /tmp/priorities.html; then
+            echo 'Priorities browser test reported a failure.' >&2
+            exit 1
+          fi
       - name: Verify desktop layout and UX in Chrome
         run: |
           set -euo pipefail

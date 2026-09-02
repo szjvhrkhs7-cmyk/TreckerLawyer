@@ -45,7 +45,8 @@
       if (document.querySelector('[data-tab="today"]')) return finish('FAIL: раздел Сегодня остался в навигации');
       if (!document.querySelector('[data-tab="tasks"]')?.classList.contains('active')) return finish('FAIL: задачи не являются главным экраном');
       if (!document.querySelector('.workspace-tasks-page')) return finish('FAIL: экран задач не открылся по умолчанию');
-      if (document.querySelectorAll('#tabs .tab').length !== 4) return finish('FAIL: навигация не сокращена до четырёх разделов');
+      if (document.querySelectorAll('#tabs .tab').length !== 5) return finish('FAIL: в навигации нет пяти разделов с приоритетами');
+      if (!document.querySelector('[data-tab="priorities"]')) return finish('FAIL: вкладка приоритетов отсутствует');
       if (document.querySelectorAll('.workspace-task-row').length < 3) return finish('FAIL: задачи не отображаются новым списком');
       if (document.querySelectorAll('.workspace-summary-item').length !== 3) return finish('FAIL: сводка задач не отображается');
 

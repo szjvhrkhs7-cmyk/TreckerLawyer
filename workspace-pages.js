@@ -180,6 +180,7 @@
       <span class="workspace-status workspace-status--${tone}">${esc(overdue(task) ? 'Просрочено' : statusText[task.status] || task.status)}</span>
       <span class="workspace-priority workspace-priority--${esc(task.priority)}">${esc(priorityText[task.priority] || task.priority)}</span>
       <div class="workspace-row-actions">
+        ${!done && task.status !== 'done' ? `<button type="button" class="btn workspace-priority-action" data-set-priority="${id}" data-task-scope="${task.projectId ? 'project' : 'root'}">${task.priorityDate ? 'Изменить приоритет' : 'Поставить приоритет'}</button>` : ''}
         ${!done && task.status !== 'done' ? `<button type="button" class="btn ok" data-done-task="${id}">Завершить</button>` : ''}
         <button type="button" class="workspace-icon-button" data-edit-task="${id}" aria-label="Открыть задачу ${esc(task.title)}">•••</button>
       </div>
