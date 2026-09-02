@@ -325,19 +325,29 @@
     line-height: 1.25;
   }
 
-  /* The general task page keeps only the priority action visible in its mobile action slot. */
+  /* Keep the priority action inside the task card instead of an implicit fourth grid column. */
+  .workspace-task-row:not(.is-done) {
+    grid-template-rows: auto auto auto;
+  }
+
   .workspace-task-row:not(.is-done) .workspace-row-actions {
+    grid-column: 2 / 4 !important;
+    grid-row: 3 !important;
+    align-self: stretch;
     display: flex !important;
-    width: auto !important;
+    width: 100% !important;
     min-width: 0 !important;
+    flex-direction: row;
+    justify-content: flex-end;
   }
 
   .workspace-task-row .workspace-priority-action {
     display: inline-flex !important;
-    grid-column: auto;
-    justify-self: auto;
+    width: auto;
+    max-width: 100%;
+    min-width: 44px;
     min-height: 34px;
-    padding: 0 10px;
+    padding: 0 11px;
     font-size: 10.5px;
     line-height: 1.15;
     text-align: center;
