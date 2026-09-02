@@ -364,6 +364,8 @@ body.drag-reordering .priority-drag-handle {
   }
 
   .priority-day__head {
+    grid-column: 1;
+    grid-row: 1 / span 2;
     align-content: start;
     justify-items: start;
     gap: 6px;
