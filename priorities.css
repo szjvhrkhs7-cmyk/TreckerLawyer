@@ -111,6 +111,13 @@
   text-transform: uppercase;
 }
 
+.priority-zone__list {
+  display: grid;
+  align-content: start;
+  gap: 9px;
+  min-height: 72px;
+}
+
 .priority-add {
   min-height: 28px;
   padding: 3px 7px;
@@ -140,19 +147,65 @@
 }
 
 .priority-card {
+  position: relative;
   display: grid;
-  gap: 10px;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 8px 10px;
   padding: 12px;
   border: 1px solid var(--line);
   border-radius: 10px;
   background: color-mix(in srgb, var(--surface-raised) 94%, var(--workspace-accent-soft));
+  transition: border-color 150ms ease, background-color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
 }
 
 .priority-zone--main .priority-card {
   border-left: 3px solid var(--workspace-accent, var(--blue));
 }
 
+.priority-card:hover,
+.priority-card:focus-within {
+  border-color: var(--line-strong);
+  box-shadow: var(--shadow-sm);
+}
+
+.priority-drag-handle {
+  grid-column: 1;
+  grid-row: 1 / span 2;
+  align-self: start;
+  display: grid;
+  width: 28px;
+  min-width: 28px;
+  height: 36px;
+  min-height: 36px;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--faint);
+  opacity: .62;
+  touch-action: none;
+  cursor: grab;
+}
+
+.priority-drag-handle:hover,
+.priority-drag-handle:focus-visible {
+  opacity: 1;
+  background: var(--surface-hover);
+}
+
+.priority-drag-handle .drag-grip {
+  display: block;
+  width: 14px;
+  height: 24px;
+  border-radius: 4px;
+  background-image: radial-gradient(circle, currentColor 1.35px, transparent 1.55px);
+  background-position: 0 0;
+  background-size: 7px 7px;
+}
+
 .priority-card__main {
+  grid-column: 2;
   display: grid;
   gap: 5px;
   min-width: 0;
@@ -184,6 +237,7 @@
 }
 
 .priority-card__actions {
+  grid-column: 2;
   display: flex;
   flex-wrap: wrap;
   gap: 5px 8px;
@@ -211,6 +265,33 @@
 
 .priority-card__actions .is-danger {
   color: var(--workspace-danger, var(--red));
+}
+
+.priority-card.drag-placeholder {
+  opacity: .16 !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.priority-card.drag-floating {
+  position: fixed !important;
+  z-index: 260 !important;
+  pointer-events: none !important;
+  margin: 0 !important;
+  opacity: .98 !important;
+  border-color: color-mix(in srgb, var(--workspace-accent, var(--focus)) 42%, var(--line)) !important;
+  background: var(--surface-raised, var(--surface)) !important;
+  box-shadow: 0 22px 54px rgba(16, 39, 67, .20), 0 8px 20px rgba(16, 39, 67, .10) !important;
+  transform-origin: center center !important;
+  will-change: transform !important;
+}
+
+:root[data-theme="dark"] .priority-card.drag-floating {
+  box-shadow: 0 24px 60px rgba(0, 0, 0, .48), 0 8px 22px rgba(0, 0, 0, .28) !important;
+}
+
+body.drag-reordering .priority-drag-handle {
+  cursor: grabbing;
 }
 
 @media (min-width: 900px) and (max-width: 1100px) {
@@ -243,7 +324,6 @@
     padding-inline: 8px;
   }
 
-  /* Mobile priority board is an overview of the whole working week, not a horizontal carousel. */
   .priority-board {
     grid-template-columns: repeat(5, minmax(0, 1fr));
     width: 100%;
@@ -297,6 +377,11 @@
     overflow-wrap: anywhere;
   }
 
+  .priority-zone__list {
+    gap: 7px;
+    min-height: 58px;
+  }
+
   .priority-zone-empty {
     padding: 9px 0;
     font-size: 9.5px;
@@ -305,9 +390,23 @@
   }
 
   .priority-card {
-    gap: 7px;
+    grid-template-columns: 24px minmax(0, 1fr);
+    gap: 6px 5px;
     padding: 8px 7px;
     border-radius: 8px;
+  }
+
+  .priority-drag-handle {
+    width: 24px;
+    min-width: 24px;
+    height: 32px;
+    min-height: 32px;
+  }
+
+  .priority-drag-handle .drag-grip {
+    width: 12px;
+    height: 21px;
+    background-size: 6px 7px;
   }
 
   .priority-card__main {
@@ -325,7 +424,6 @@
     line-height: 1.25;
   }
 
-  /* Keep the priority action inside the task card instead of an implicit fourth grid column. */
   .workspace-task-row:not(.is-done) {
     grid-template-rows: auto auto auto;
   }
@@ -459,8 +557,22 @@
   }
 
   .priority-card {
-    gap: 5px;
+    grid-template-columns: 20px minmax(0, 1fr);
+    gap: 5px 4px;
     padding: 7px 5px;
+  }
+
+  .priority-drag-handle {
+    width: 20px;
+    min-width: 20px;
+    height: 28px;
+    min-height: 28px;
+  }
+
+  .priority-drag-handle .drag-grip {
+    width: 10px;
+    height: 19px;
+    background-size: 5px 6px;
   }
 
   .priority-card__main strong {
