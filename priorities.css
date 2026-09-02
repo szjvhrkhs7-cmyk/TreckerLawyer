@@ -310,7 +310,7 @@ body.drag-reordering .priority-drag-handle {
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) !important;
     align-items: flex-start;
-    gap: 14px;
+    gap: 12px;
   }
 
   .priority-week-actions {
@@ -325,82 +325,111 @@ body.drag-reordering .priority-drag-handle {
   }
 
   .priority-board {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
     width: 100%;
     min-width: 0;
-    overflow-x: hidden;
-    scroll-snap-type: none;
+    gap: 10px;
+    overflow: visible;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    box-shadow: none;
   }
 
   .priority-day {
+    display: grid;
+    grid-template-columns: 86px minmax(0, 1fr);
     min-width: 0;
-    padding: 0 6px 10px;
-    scroll-snap-align: none;
+    padding: 0;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    background: var(--surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .priority-day + .priority-day {
+    border-left: 1px solid var(--line);
   }
 
   .priority-day__head {
-    gap: 2px;
-    margin: 0 -6px;
-    padding: 12px 4px 10px;
+    align-content: start;
+    justify-items: start;
+    gap: 4px;
+    margin: 0;
+    padding: 16px 12px;
+    border-right: 1px solid var(--line);
+    border-bottom: 0;
+    background: color-mix(in srgb, var(--surface-raised) 92%, var(--workspace-accent-soft));
+    text-align: left;
   }
 
   .priority-day__head strong {
-    font-size: 9.5px;
-    letter-spacing: .02em;
-    overflow-wrap: anywhere;
+    color: var(--text);
+    font-size: 10px;
+    line-height: 1.25;
+    letter-spacing: .035em;
   }
 
   .priority-day__head span {
-    font-size: 9.5px;
-    line-height: 1.25;
-    overflow-wrap: anywhere;
+    color: var(--muted);
+    font-size: 11px;
+    line-height: 1.3;
   }
 
   .priority-zone {
-    gap: 7px;
-    min-height: 126px;
-    padding: 11px 0;
+    grid-column: 2;
+    gap: 8px;
+    min-height: 0;
+    padding: 14px;
   }
 
   .priority-zone + .priority-zone {
-    min-height: 170px;
+    min-height: 0;
+    border-top: 1px solid var(--line);
   }
 
   .priority-zone__head {
-    gap: 4px;
+    gap: 8px;
   }
 
   .priority-zone h3 {
-    font-size: 8.5px;
-    letter-spacing: .035em;
-    line-height: 1.25;
-    overflow-wrap: anywhere;
+    font-size: 9px;
+    letter-spacing: .05em;
   }
 
   .priority-zone__list {
-    gap: 7px;
-    min-height: 58px;
+    gap: 8px;
+    min-height: 52px;
   }
 
   .priority-zone-empty {
-    padding: 9px 0;
-    font-size: 9.5px;
+    padding: 10px 2px 12px;
+    font-size: 10.5px;
     line-height: 1.35;
-    overflow-wrap: anywhere;
+    text-align: left;
+  }
+
+  .priority-add {
+    min-height: 30px;
+    padding: 0 9px;
+    border-radius: 8px;
+    font-size: 9.5px;
   }
 
   .priority-card {
     grid-template-columns: 24px minmax(0, 1fr);
-    gap: 6px 5px;
-    padding: 8px 7px;
-    border-radius: 8px;
+    gap: 7px 8px;
+    padding: 10px;
+    border-radius: 10px;
   }
 
   .priority-drag-handle {
     width: 24px;
     min-width: 24px;
-    height: 32px;
-    min-height: 32px;
+    height: 34px;
+    min-height: 34px;
   }
 
   .priority-drag-handle .drag-grip {
@@ -409,19 +438,31 @@ body.drag-reordering .priority-drag-handle {
     background-size: 6px 7px;
   }
 
-  .priority-card__main {
-    gap: 3px;
-  }
-
   .priority-card__main strong {
-    font-size: 10.5px;
-    line-height: 1.32;
-    hyphens: auto;
+    font-size: 13px;
+    line-height: 1.35;
   }
 
   .priority-card__main span {
-    font-size: 8.5px;
-    line-height: 1.25;
+    font-size: 10px;
+    line-height: 1.3;
+  }
+
+  .priority-card__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .priority-card__actions button {
+    min-height: 30px;
+    padding: 0 9px;
+    border-radius: 8px;
+    background: var(--surface-hover);
+    font-size: 9.5px;
+    line-height: 1.15;
+    text-align: center;
+    white-space: nowrap;
   }
 
   .workspace-task-row:not(.is-done) {
@@ -452,28 +493,6 @@ body.drag-reordering .priority-drag-handle {
     white-space: normal;
   }
 
-  .priority-card__actions {
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 5px;
-  }
-
-  .priority-card__actions button {
-    min-height: 32px;
-    padding: 0 4px;
-    border-radius: 7px;
-    background: var(--surface-hover);
-    font-size: 9px;
-    line-height: 1.15;
-    text-align: center;
-    white-space: normal;
-  }
-
-  .priority-add {
-    min-height: 32px;
-    padding-inline: 7px;
-  }
-
   .tabs {
     grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
     gap: 0 !important;
@@ -500,46 +519,34 @@ body.drag-reordering .priority-drag-handle {
 
 @media (max-width: 520px) {
   .priority-day {
-    padding-right: 4px;
-    padding-bottom: 8px;
-    padding-left: 4px;
+    grid-template-columns: 76px minmax(0, 1fr);
+    border-radius: 12px;
   }
 
   .priority-day__head {
-    margin-right: -4px;
-    margin-left: -4px;
-    padding: 10px 2px 9px;
+    padding: 14px 10px;
   }
 
-  .priority-day__head strong,
+  .priority-day__head strong {
+    font-size: 9px;
+  }
+
   .priority-day__head span {
-    font-size: 8.5px;
+    font-size: 10px;
   }
 
   .priority-zone {
-    gap: 5px;
-    min-height: 112px;
-    padding: 9px 0;
-  }
-
-  .priority-zone + .priority-zone {
-    min-height: 150px;
-  }
-
-  .priority-zone__head {
-    align-items: flex-start;
-    gap: 2px;
+    padding: 12px 10px;
   }
 
   .priority-zone h3 {
-    font-size: 7.5px;
-    letter-spacing: .02em;
+    font-size: 8.5px;
   }
 
   .priority-add {
-    width: 24px;
-    min-width: 24px;
-    min-height: 26px;
+    width: 30px;
+    min-width: 30px;
+    min-height: 30px;
     padding: 0;
     overflow: hidden;
     font-size: 0;
@@ -547,51 +554,38 @@ body.drag-reordering .priority-drag-handle {
 
   .priority-add::before {
     content: "+";
-    font-size: 14px;
+    font-size: 15px;
     line-height: 1;
   }
 
   .priority-zone-empty {
-    font-size: 8.5px;
-    line-height: 1.3;
+    font-size: 10px;
   }
 
   .priority-card {
-    grid-template-columns: 20px minmax(0, 1fr);
-    gap: 5px 4px;
-    padding: 7px 5px;
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 6px 7px;
+    padding: 9px;
   }
 
   .priority-drag-handle {
-    width: 20px;
-    min-width: 20px;
-    height: 28px;
-    min-height: 28px;
-  }
-
-  .priority-drag-handle .drag-grip {
-    width: 10px;
-    height: 19px;
-    background-size: 5px 6px;
+    width: 22px;
+    min-width: 22px;
+    height: 32px;
+    min-height: 32px;
   }
 
   .priority-card__main strong {
-    font-size: 9.5px;
-    line-height: 1.3;
+    font-size: 12px;
   }
 
   .priority-card__main span {
-    font-size: 8px;
-  }
-
-  .priority-card__actions {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 3px;
+    font-size: 9.5px;
   }
 
   .priority-card__actions button {
-    min-height: 27px;
-    padding: 0 2px;
-    font-size: 8px;
+    min-height: 29px;
+    padding: 0 8px;
+    font-size: 9px;
   }
 }
