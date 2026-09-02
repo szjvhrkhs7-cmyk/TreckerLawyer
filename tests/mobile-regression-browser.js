@@ -113,11 +113,24 @@
             const priority = activeRow?.querySelector('.workspace-priority');
             const grip = taskHandle?.querySelector('.drag-grip');
             const overflow = activeRow?.querySelector('.workspace-icon-button');
+            const priorityAction = activeRow?.querySelector('[data-set-priority]');
             if (!grip || parseFloat(getComputedStyle(grip).width) < 18 || parseFloat(getComputedStyle(grip).height) < 28) return fail('drag-иконка слишком маленькая или обрезана');
             if (!priority || getComputedStyle(priority).display === 'none') return fail('степень срочности задачи скрыта');
             if (priority.textContent.trim() !== 'Обычная') return fail(`неверный текст срочности: ${priority.textContent.trim()}`);
             if (parseFloat(getComputedStyle(priority).minHeight) < 30) return fail('индикатор срочности слишком маленький');
             if (!overflow || getComputedStyle(overflow).display !== 'none') return fail('правое меню с тремя точками не скрыто');
+            if (!priorityAction || getComputedStyle(priorityAction).display === 'none') return fail('кнопка переноса задачи в приоритет скрыта');
+            if (priorityAction.getBoundingClientRect().width < 150) return fail('кнопка переноса задачи в приоритет слишком узкая');
+
+            document.querySelector('[data-tab="priorities"]')?.click();
+            const mobileDays = [...document.querySelectorAll('.priority-mobile-day')];
+            const activePriorityDay = document.querySelectorAll('.priority-day.is-mobile-active');
+            if (mobileDays.length !== 5) return fail(`в мобильном обзоре недели показано ${mobileDays.length} дней вместо 5`);
+            if (activePriorityDay.length !== 1) return fail('в мобильном плане не выбран один рабочий день');
+            const firstDayRect = mobileDays[0].getBoundingClientRect();
+            const lastDayRect = mobileDays[4].getBoundingClientRect();
+            if (firstDayRect.left < -1 || lastDayRect.right > window.innerWidth + 1) return fail('рабочая неделя не помещается по ширине экрана');
+            document.querySelector('[data-tab="tasks"]')?.click();
 
             const input = document.createElement('input');
             input.className = 'search';

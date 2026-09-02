@@ -49,6 +49,10 @@
   box-shadow: var(--shadow-sm);
 }
 
+.priority-mobile-days {
+  display: none;
+}
+
 .priority-day {
   min-width: 0;
   padding: 0 12px 14px;
@@ -243,13 +247,91 @@
     padding-inline: 8px;
   }
 
+  .priority-mobile-days {
+    display: grid;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 5px;
+    width: 100%;
+    margin-bottom: 9px;
+  }
+
+  .priority-mobile-day {
+    position: relative;
+    display: grid;
+    min-width: 0;
+    min-height: 58px;
+    place-content: center;
+    gap: 2px;
+    padding: 6px 2px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--muted);
+    font-family: var(--workspace-ui-font, var(--font));
+  }
+
+  .priority-mobile-day span {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: .045em;
+    text-transform: uppercase;
+  }
+
+  .priority-mobile-day strong {
+    color: var(--text);
+    font-size: 16px;
+    line-height: 1;
+  }
+
+  .priority-mobile-day small {
+    position: absolute;
+    top: 4px;
+    right: 5px;
+    display: grid;
+    min-width: 15px;
+    height: 15px;
+    padding: 0 3px;
+    place-items: center;
+    border-radius: 999px;
+    background: var(--workspace-accent, var(--blue));
+    color: #fff;
+    font-size: 8px;
+    font-weight: 800;
+  }
+
+  .priority-mobile-day.is-active {
+    border-color: color-mix(in srgb, var(--workspace-accent, var(--blue)) 48%, var(--line));
+    background: var(--workspace-accent-soft, var(--accent-soft));
+    color: var(--workspace-accent, var(--blue));
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--workspace-accent, var(--blue)) 12%, transparent);
+  }
+
+  .priority-mobile-day.is-active strong {
+    color: var(--workspace-accent, var(--blue));
+  }
+
   .priority-board {
-    grid-template-columns: repeat(5, minmax(220px, 1fr));
-    scroll-snap-type: x proximity;
+    display: block;
+    overflow: visible;
   }
 
   .priority-day {
-    scroll-snap-align: start;
+    display: none;
+    padding-inline: 14px;
+  }
+
+  .priority-day.is-mobile-active {
+    display: block;
+  }
+
+  .priority-day + .priority-day {
+    border-left: 0;
+  }
+
+  .priority-day__head {
+    margin-inline: -14px;
+    padding: 13px 14px 12px;
+    text-align: left;
   }
 
   .workspace-task-row .workspace-priority-action {

@@ -7,6 +7,7 @@
   let selectedTask = null;
   let newTaskDefaults = null;
   let weekAnchor = startOfWeek(new Date());
+  let selectedDayKey = '';
 
   function pad(value) {
     return String(value).padStart(2, '0');
@@ -42,6 +43,11 @@
     const day = today.getDay();
     if (day >= 1 && day <= 5) return today;
     return addDays(today, day === 6 ? 2 : 1);
+  }
+
+  function selectedDayForWeek(days) {
+    const today = dateKey(new Date());
+    return days.some(day => dateKey(day) === today) ? today : dateKey(days[0]);
   }
 
   function taskEntries() {
@@ -170,6 +176,7 @@
 
   function renderPriorities() {
     const days = Array.from({ length: 5 }, (_, index) => addDays(weekAnchor, index));
+    if (!days.some(day => dateKey(day) === selectedDayKey)) selectedDayKey = selectedDayForWeek(days);
     const entries = taskEntries().filter(({ task }) => task.status !== 'done' && fromDateKey(task.priorityDate));
     page.innerHTML = `<section class="workspace-page priority-page">
       <header class="workspace-page-head priority-page-head">
@@ -180,11 +187,23 @@
           <button type="button" class="btn" data-priority-week="next" aria-label="Следующая неделя">›</button>
         </div>
       </header>
+      <nav class="priority-mobile-days" aria-label="Рабочие дни недели">
+        ${days.map(day => {
+          const key = dateKey(day);
+          const taskCount = entries.filter(entry => entry.task.priorityDate === key).length;
+          const active = key === selectedDayKey;
+          return `<button type="button" class="priority-mobile-day ${active ? 'is-active' : ''}" data-priority-mobile-day="${key}" aria-pressed="${active}" aria-controls="priority-day-${key}">
+            <span>${esc(formatDay(day, { weekday: 'short' }))}</span>
+            <strong>${day.getDate()}</strong>
+            ${taskCount ? `<small>${taskCount}</small>` : ''}
+          </button>`;
+        }).join('')}
+      </nav>
       <div class="priority-board" role="region" aria-label="Приоритеты на рабочую неделю" tabindex="0">
         ${days.map(day => {
           const key = dateKey(day);
           const dayEntries = entries.filter(entry => entry.task.priorityDate === key);
-          return `<section class="priority-day" data-priority-date="${key}">
+          return `<section class="priority-day ${key === selectedDayKey ? 'is-mobile-active' : ''}" id="priority-day-${key}" data-priority-date="${key}">
             <header class="priority-day__head"><strong>${esc(formatDay(day, { weekday: 'long' }))}</strong><span>${esc(formatDay(day, { day: 'numeric', month: 'long' }))}</span></header>
             <div class="priority-zone priority-zone--main">${zone(dayEntries, 'main', 'Главный приоритет не выбран', key)}</div>
             <div class="priority-zone priority-zone--other">${zone(dayEntries, 'other', 'Дополнительных задач нет', key)}</div>
@@ -234,6 +253,7 @@
       });
       save(LS.tasks, items);
       weekAnchor = startOfWeek(parsedDate);
+      selectedDayKey = priorityDate;
       newTaskDefaults = null;
       hideOverlay(prioritySheet);
       render();
@@ -242,6 +262,7 @@
     if (!selectedTask) return;
     if (!saveTask(selectedTask, { priorityDate, priorityLevel })) return;
     weekAnchor = startOfWeek(parsedDate);
+    selectedDayKey = priorityDate;
     selectedTask = null;
     hideOverlay(prioritySheet);
     render();
@@ -275,6 +296,13 @@
     }
     if (state.tab !== 'priorities' || state.projectId) return;
 
+    const mobileDayButton = event.target.closest('[data-priority-mobile-day]');
+    if (mobileDayButton) {
+      selectedDayKey = mobileDayButton.dataset.priorityMobileDay;
+      render();
+      return;
+    }
+
     const addButton = event.target.closest('[data-priority-add]');
     if (addButton) {
       event.preventDefault();
@@ -286,6 +314,7 @@
     if (weekButton) {
       const action = weekButton.dataset.priorityWeek;
       weekAnchor = action === 'today' ? startOfWeek(new Date()) : addDays(weekAnchor, action === 'prev' ? -7 : 7);
+      selectedDayKey = '';
       render();
       return;
     }
