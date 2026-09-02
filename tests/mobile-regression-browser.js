@@ -111,6 +111,7 @@
             const activeRow = document.querySelector('.workspace-task-row:not(.is-done)');
             const taskHandle = activeRow?.querySelector(':scope > [data-drag-handle]');
             const priority = activeRow?.querySelector('.workspace-priority');
+            const priorityAction = activeRow?.querySelector('[data-set-priority="mobile-new-1"]');
             const grip = taskHandle?.querySelector('.drag-grip');
             const overflow = activeRow?.querySelector('.workspace-icon-button');
             if (!grip || parseFloat(getComputedStyle(grip).width) < 18 || parseFloat(getComputedStyle(grip).height) < 28) return fail('drag-иконка слишком маленькая или обрезана');
@@ -118,6 +119,10 @@
             if (priority.textContent.trim() !== 'Обычная') return fail(`неверный текст срочности: ${priority.textContent.trim()}`);
             if (parseFloat(getComputedStyle(priority).minHeight) < 30) return fail('индикатор срочности слишком маленький');
             if (!overflow || getComputedStyle(overflow).display !== 'none') return fail('правое меню с тремя точками не скрыто');
+            if (!priorityAction || getComputedStyle(priorityAction).display === 'none') return fail('кнопка переноса задачи в приоритеты скрыта на мобильном');
+            const priorityActionRect = priorityAction.getBoundingClientRect();
+            if (priorityActionRect.width < 44 || priorityActionRect.height < 32) return fail('кнопка переноса задачи в приоритеты слишком маленькая');
+            if (priorityActionRect.right > window.innerWidth + 1) return fail('кнопка переноса задачи в приоритеты выходит за экран');
 
             const input = document.createElement('input');
             input.className = 'search';
@@ -131,6 +136,15 @@
             const restored = tasks.find(task => task.id === 'mobile-done-1');
             if (restored?.status !== 'new') return fail('задача не возвращена в статус new');
             if (restored?.completedAt) return fail('completedAt не очищен');
+
+            document.querySelector('[data-tab="priorities"]')?.click();
+            const board = document.querySelector('.priority-board');
+            const days = [...document.querySelectorAll('.priority-day')];
+            if (!board || days.length !== 5) return fail('мобильная недельная доска не показывает пять рабочих дней');
+            const boardRect = board.getBoundingClientRect();
+            const lastDayRect = days.at(-1).getBoundingClientRect();
+            if (board.scrollWidth > board.clientWidth + 1) return fail(`недельная доска требует горизонтальной прокрутки: ${board.scrollWidth}/${board.clientWidth}`);
+            if (lastDayRect.right > boardRect.right + 1 || lastDayRect.left < boardRect.left) return fail('последний день недели не помещается в мобильную доску');
 
             pass();
           } catch (error) {
