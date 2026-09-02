@@ -68,7 +68,7 @@ jobs:
             exit 1
           fi
           grep -F 'task-home.js?v=20260901-task-home-1' index.html
-          grep -F 'task-home.css?v=20260901-task-home-1' index.html
+          grep -F 'task-home.css?v=20260902-mobile-priority-1' index.html
           grep -F 'workspace-2026.js' index.html
           grep -F 'workspace-pages.js' sync.js
           grep -F 'workspace-task-restore.js' sync.js
