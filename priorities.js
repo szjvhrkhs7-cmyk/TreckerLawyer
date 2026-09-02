@@ -5,6 +5,7 @@
   const priorityForm = document.getElementById('priorityForm');
   const prioritySheetTitle = document.getElementById('prioritySheetTitle');
   let selectedTask = null;
+  let newTaskDefaults = null;
   let weekAnchor = startOfWeek(new Date());
 
   function pad(value) {
@@ -102,6 +103,31 @@
     showOverlay(prioritySheet);
   }
 
+  function openPriorityCreator(priorityDate, priorityLevel) {
+    const parsedDate = fromDateKey(priorityDate);
+    if (!parsedDate || parsedDate.getDay() === 0 || parsedDate.getDay() === 6) return;
+    selectedTask = null;
+    newTaskDefaults = { priorityDate, priorityLevel: priorityLevel === 'other' ? 'other' : 'main' };
+    prioritySheetTitle.textContent = 'Новая задача в приоритетах';
+    priorityForm.innerHTML = `<div class="sheet-fields">
+      <div class="field"><label for="priorityTaskTitle">Краткая суть задачи *</label><textarea id="priorityTaskTitle" name="title" required data-autogrow="true" autofocus></textarea></div>
+      <div class="field"><label for="priorityTaskExtra">Что требуется дополнительно</label><textarea id="priorityTaskExtra" name="extra" data-autogrow="true"></textarea></div>
+      <div class="grid2">
+        <div class="field"><label for="priorityDay">День</label><input id="priorityDay" name="priorityDate" type="date" required value="${esc(priorityDate)}"></div>
+        <div class="field"><label for="priorityLevel">Зона</label><select id="priorityLevel" name="priorityLevel"><option value="main">Главное</option><option value="other">Остальные задачи</option></select></div>
+      </div>
+      <div class="field"><label for="priorityTaskUrgency">Срочность</label><select id="priorityTaskUrgency" name="priority"><option value="normal">Обычная</option><option value="low">Низкая</option><option value="medium">Средняя</option><option value="high">Важно / срочно</option></select></div>
+      <p class="priority-picker-hint">Задача одновременно появится в общем списке задач.</p>
+    </div><div class="sheet-actions">
+      <button type="button" class="btn" data-cancel-priority>Отмена</button>
+      <button type="submit" class="btn primary">Создать задачу</button>
+    </div>`;
+    priorityForm.elements.priorityLevel.value = newTaskDefaults.priorityLevel;
+    showOverlay(prioritySheet);
+    bindAutoGrow(priorityForm);
+    requestAnimationFrame(() => priorityForm.elements.title?.focus());
+  }
+
   function formatDay(value, options) {
     return value.toLocaleDateString('ru-RU', options).replace('.', '');
   }
@@ -137,9 +163,9 @@
     </article>`;
   }
 
-  function zone(entries, level, emptyText) {
+  function zone(entries, level, emptyText, priorityDate) {
     const matching = entries.filter(entry => (entry.task.priorityLevel === 'other' ? 'other' : 'main') === level);
-    return matching.length ? matching.map(taskCard).join('') : `<p class="priority-zone-empty">${emptyText}</p>`;
+    return `<div class="priority-zone__head"><h3>${level === 'main' ? 'Главное' : 'Остальные задачи'}</h3><button type="button" class="priority-add" data-priority-add="${level}" data-priority-date="${esc(priorityDate)}" aria-label="Добавить задачу: ${level === 'main' ? 'главное' : 'остальные задачи'}">+ Добавить</button></div>${matching.length ? matching.map(taskCard).join('') : `<p class="priority-zone-empty">${emptyText}</p>`}`;
   }
 
   function renderPriorities() {
@@ -160,8 +186,8 @@
           const dayEntries = entries.filter(entry => entry.task.priorityDate === key);
           return `<section class="priority-day" data-priority-date="${key}">
             <header class="priority-day__head"><strong>${esc(formatDay(day, { weekday: 'long' }))}</strong><span>${esc(formatDay(day, { day: 'numeric', month: 'long' }))}</span></header>
-            <div class="priority-zone priority-zone--main"><h3>Главное</h3>${zone(dayEntries, 'main', 'Главный приоритет не выбран')}</div>
-            <div class="priority-zone priority-zone--other"><h3>Остальные задачи</h3>${zone(dayEntries, 'other', 'Дополнительных задач нет')}</div>
+            <div class="priority-zone priority-zone--main">${zone(dayEntries, 'main', 'Главный приоритет не выбран', key)}</div>
+            <div class="priority-zone priority-zone--other">${zone(dayEntries, 'other', 'Дополнительных задач нет', key)}</div>
           </section>`;
         }).join('')}
       </div>
@@ -170,7 +196,6 @@
 
   priorityForm.addEventListener('submit', event => {
     event.preventDefault();
-    if (!selectedTask) return;
     const data = new FormData(priorityForm);
     const priorityDate = String(data.get('priorityDate') || '');
     const parsedDate = fromDateKey(priorityDate);
@@ -182,6 +207,39 @@
       return;
     }
     const priorityLevel = data.get('priorityLevel') === 'other' ? 'other' : 'main';
+    if (newTaskDefaults) {
+      const title = String(data.get('title') || '').trim();
+      const titleControl = priorityForm.elements.title;
+      if (!title) {
+        titleControl.setCustomValidity('Укажите краткую суть задачи');
+        titleControl.reportValidity();
+        titleControl.setCustomValidity('');
+        return;
+      }
+      const timestamp = now();
+      const items = load(LS.tasks);
+      items.push({
+        id: uid(),
+        title,
+        extra: String(data.get('extra') || '').trim(),
+        dueDate: '',
+        reminder: 0,
+        priority: ['low', 'medium', 'high'].includes(data.get('priority')) ? data.get('priority') : 'normal',
+        status: 'new',
+        notes: '',
+        priorityDate,
+        priorityLevel,
+        createdAt: timestamp,
+        updatedAt: timestamp
+      });
+      save(LS.tasks, items);
+      weekAnchor = startOfWeek(parsedDate);
+      newTaskDefaults = null;
+      hideOverlay(prioritySheet);
+      render();
+      return;
+    }
+    if (!selectedTask) return;
     if (!saveTask(selectedTask, { priorityDate, priorityLevel })) return;
     weekAnchor = startOfWeek(parsedDate);
     selectedTask = null;
@@ -193,6 +251,7 @@
     if (event.target.closest('[data-cancel-priority]')) {
       event.preventDefault();
       selectedTask = null;
+      newTaskDefaults = null;
       hideOverlay(prioritySheet);
       return;
     }
@@ -215,6 +274,13 @@
       return;
     }
     if (state.tab !== 'priorities' || state.projectId) return;
+
+    const addButton = event.target.closest('[data-priority-add]');
+    if (addButton) {
+      event.preventDefault();
+      openPriorityCreator(addButton.dataset.priorityDate, addButton.dataset.priorityAdd);
+      return;
+    }
 
     const weekButton = event.target.closest('[data-priority-week]');
     if (weekButton) {
@@ -250,10 +316,14 @@
   }, true);
 
   document.addEventListener('click', event => {
-    if (event.target.id === 'prioritySheet' || event.target.closest('#prioritySheet [data-cancel-priority]')) selectedTask = null;
+    if (event.target.id === 'prioritySheet' || event.target.closest('#prioritySheet [data-cancel-priority]')) {
+      selectedTask = null;
+      newTaskDefaults = null;
+    }
   });
 
   globalThis.priorityTaskCount = priorityTaskCount;
   globalThis.renderPriorities = renderPriorities;
   globalThis.openPriorityPicker = openPriorityPicker;
 })();
+

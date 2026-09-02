@@ -10,6 +10,8 @@
   tuesday.setDate(tuesday.getDate() + 1);
   const wednesday = new Date(monday);
   wednesday.setDate(wednesday.getDate() + 2);
+  const thursday = new Date(monday);
+  thursday.setDate(thursday.getDate() + 3);
   const timestamp = new Date().toISOString();
   const longTitle = 'Подготовить подробное правовое заключение по проекту реструктуризации без сокращения текста';
 
@@ -58,6 +60,25 @@
       const titleStyle = getComputedStyle(title);
       if (titleStyle.whiteSpace === 'nowrap' || titleStyle.textOverflow === 'ellipsis' || title.scrollHeight > title.clientHeight + 1) return finish('FAIL: текст приоритета обрезается');
 
+      const addButton = document.querySelector(`[data-priority-add="other"][data-priority-date="${key(thursday)}"]`);
+      if (!addButton) return finish('FAIL: кнопка добавления задачи в приоритетах не найдена');
+      addButton.click();
+      await wait(50);
+      if (!document.querySelector('#prioritySheet.show')) return finish('FAIL: форма новой задачи из приоритетов не открылась');
+      form.elements.title.value = 'Новая задача прямо из приоритетов';
+      form.elements.extra.value = 'Проверить синхронное появление в общем списке';
+      form.requestSubmit();
+      await wait(100);
+      tasks = JSON.parse(localStorage.getItem('lawyerTasks') || '[]');
+      const created = tasks.find(task => task.title === 'Новая задача прямо из приоритетов');
+      if (!created || created.priorityDate !== key(thursday) || created.priorityLevel !== 'other' || created.status !== 'new') return finish('FAIL: новая задача из приоритетов сохранена неверно');
+      if (!document.querySelector(`[data-priority-card="${created.id}"]`)) return finish('FAIL: новая задача не появилась на доске');
+      document.querySelector('[data-tab="tasks"]')?.click();
+      await wait(100);
+      if (!document.querySelector(`[data-task-row="${created.id}"]`) && !document.body.textContent.includes('Новая задача прямо из приоритетов')) return finish('FAIL: новая задача не появилась во вкладке задач');
+      document.querySelector('[data-tab="priorities"]')?.click();
+      await wait(100);
+
       document.querySelector('[data-priority-done="priority-done"]')?.click();
       await wait(80);
       tasks = JSON.parse(localStorage.getItem('lawyerTasks') || '[]');
@@ -83,3 +104,4 @@
     }
   });
 })();
+
