@@ -14,7 +14,7 @@
   const fail = message => {
     const node = document.createElement('div');
     node.id = 'mobile-regression-result';
-    node.textContent = `MOBILE_REGRESSION_PASS FAIL: ${message}`;
+    node.textContent = `FAIL: ${message}`;
     document.body.append(node);
   };
 
@@ -108,12 +108,13 @@
             if (!status || parseFloat(getComputedStyle(status).minHeight) < 30) return fail('овал статуса слишком маленький');
             if (getComputedStyle(status).overflow === 'hidden') return fail('текст статуса может обрезаться');
 
-            const activeRow = document.querySelector('.workspace-task-row:not(.is-done)');
+            const priorityAction = document.querySelector('[data-set-priority="mobile-new-1"]');
+            const activeRow = priorityAction?.closest('.workspace-task-row');
             const taskHandle = activeRow?.querySelector(':scope > [data-drag-handle]');
             const priority = activeRow?.querySelector('.workspace-priority');
-            const priorityAction = activeRow?.querySelector('[data-set-priority="mobile-new-1"]');
             const grip = taskHandle?.querySelector('.drag-grip');
             const overflow = activeRow?.querySelector('.workspace-icon-button');
+            if (!activeRow) return fail('тестовая активная задача не найдена');
             if (!grip || parseFloat(getComputedStyle(grip).width) < 18 || parseFloat(getComputedStyle(grip).height) < 28) return fail('drag-иконка слишком маленькая или обрезана');
             if (!priority || getComputedStyle(priority).display === 'none') return fail('степень срочности задачи скрыта');
             if (priority.textContent.trim() !== 'Обычная') return fail(`неверный текст срочности: ${priority.textContent.trim()}`);
