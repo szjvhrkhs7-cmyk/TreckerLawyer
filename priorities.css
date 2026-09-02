@@ -329,7 +329,7 @@ body.drag-reordering .priority-drag-handle {
     grid-template-columns: minmax(0, 1fr);
     width: 100%;
     min-width: 0;
-    gap: 10px;
+    gap: 12px;
     overflow: visible;
     border: 0;
     border-radius: 0;
@@ -338,15 +338,25 @@ body.drag-reordering .priority-drag-handle {
   }
 
   .priority-day {
+    position: relative;
     display: grid;
-    grid-template-columns: 86px minmax(0, 1fr);
+    grid-template-columns: 118px minmax(0, 1fr);
     min-width: 0;
     padding: 0;
     overflow: hidden;
     border: 1px solid var(--line);
-    border-radius: 14px;
+    border-radius: 16px;
     background: var(--surface);
-    box-shadow: var(--shadow-sm);
+    box-shadow: 0 8px 24px rgba(24, 50, 85, .06);
+  }
+
+  .priority-day::before {
+    content: "";
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 3px;
+    background: var(--workspace-accent, var(--blue));
+    opacity: .9;
   }
 
   .priority-day + .priority-day {
@@ -356,12 +366,12 @@ body.drag-reordering .priority-drag-handle {
   .priority-day__head {
     align-content: start;
     justify-items: start;
-    gap: 4px;
+    gap: 6px;
     margin: 0;
-    padding: 16px 12px;
+    padding: 18px 16px 18px 18px;
     border-right: 1px solid var(--line);
     border-bottom: 0;
-    background: color-mix(in srgb, var(--surface-raised) 92%, var(--workspace-accent-soft));
+    background: color-mix(in srgb, var(--surface-raised) 96%, var(--workspace-accent-soft));
     text-align: left;
   }
 
@@ -369,20 +379,21 @@ body.drag-reordering .priority-drag-handle {
     color: var(--text);
     font-size: 10px;
     line-height: 1.25;
-    letter-spacing: .035em;
+    letter-spacing: .045em;
+    white-space: nowrap;
   }
 
   .priority-day__head span {
     color: var(--muted);
     font-size: 11px;
-    line-height: 1.3;
+    line-height: 1.35;
   }
 
   .priority-zone {
     grid-column: 2;
-    gap: 8px;
+    gap: 10px;
     min-height: 0;
-    padding: 14px;
+    padding: 16px 18px;
   }
 
   .priority-zone + .priority-zone {
@@ -391,41 +402,63 @@ body.drag-reordering .priority-drag-handle {
   }
 
   .priority-zone__head {
-    gap: 8px;
+    gap: 10px;
   }
 
   .priority-zone h3 {
-    font-size: 9px;
-    letter-spacing: .05em;
+    font-size: 9.5px;
+    letter-spacing: .06em;
   }
 
   .priority-zone__list {
-    gap: 8px;
-    min-height: 52px;
+    gap: 9px;
+    min-height: 58px;
   }
 
   .priority-zone-empty {
-    padding: 10px 2px 12px;
+    margin: 0;
+    padding: 16px 18px;
+    border: 1px dashed color-mix(in srgb, var(--line) 82%, var(--workspace-accent) 18%);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--surface-raised) 97%, var(--workspace-accent-soft));
+    color: var(--faint);
     font-size: 10.5px;
     line-height: 1.35;
     text-align: left;
   }
 
+  .priority-zone--main .priority-zone-empty {
+    border-style: solid;
+    border-color: color-mix(in srgb, var(--workspace-accent, var(--blue)) 28%, var(--line));
+    background: color-mix(in srgb, var(--surface-raised) 98%, var(--workspace-accent-soft));
+  }
+
   .priority-add {
-    min-height: 30px;
-    padding: 0 9px;
-    border-radius: 8px;
+    min-height: 32px;
+    padding: 0 10px;
+    border-radius: 9px;
     font-size: 9.5px;
+    box-shadow: 0 2px 8px rgba(24, 50, 85, .04);
   }
 
   .priority-card {
-    grid-template-columns: 24px minmax(0, 1fr);
-    gap: 7px 8px;
-    padding: 10px;
-    border-radius: 10px;
+    grid-template-columns: minmax(0, 1fr) 24px;
+    gap: 8px 10px;
+    padding: 13px 12px 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--surface-raised) 97%, var(--workspace-accent-soft));
+    box-shadow: 0 4px 14px rgba(24, 50, 85, .045);
+  }
+
+  .priority-zone--main .priority-card {
+    border-left: 4px solid var(--workspace-accent, var(--blue));
   }
 
   .priority-drag-handle {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    justify-self: end;
     width: 24px;
     min-width: 24px;
     height: 34px;
@@ -436,6 +469,10 @@ body.drag-reordering .priority-drag-handle {
     width: 12px;
     height: 21px;
     background-size: 6px 7px;
+  }
+
+  .priority-card__main {
+    grid-column: 1;
   }
 
   .priority-card__main strong {
@@ -449,6 +486,7 @@ body.drag-reordering .priority-drag-handle {
   }
 
   .priority-card__actions {
+    grid-column: 1;
     display: flex;
     flex-wrap: wrap;
     gap: 6px;
@@ -456,7 +494,7 @@ body.drag-reordering .priority-drag-handle {
 
   .priority-card__actions button {
     min-height: 30px;
-    padding: 0 9px;
+    padding: 0 10px;
     border-radius: 8px;
     background: var(--surface-hover);
     font-size: 9.5px;
@@ -519,16 +557,17 @@ body.drag-reordering .priority-drag-handle {
 
 @media (max-width: 520px) {
   .priority-day {
-    grid-template-columns: 76px minmax(0, 1fr);
-    border-radius: 12px;
+    grid-template-columns: 108px minmax(0, 1fr);
+    border-radius: 14px;
   }
 
   .priority-day__head {
-    padding: 14px 10px;
+    padding: 16px 12px 16px 16px;
   }
 
   .priority-day__head strong {
-    font-size: 9px;
+    font-size: 9.5px;
+    letter-spacing: .025em;
   }
 
   .priority-day__head span {
@@ -536,17 +575,17 @@ body.drag-reordering .priority-drag-handle {
   }
 
   .priority-zone {
-    padding: 12px 10px;
+    padding: 14px 12px;
   }
 
   .priority-zone h3 {
-    font-size: 8.5px;
+    font-size: 8.8px;
   }
 
   .priority-add {
-    width: 30px;
-    min-width: 30px;
-    min-height: 30px;
+    width: 32px;
+    min-width: 32px;
+    min-height: 32px;
     padding: 0;
     overflow: hidden;
     font-size: 0;
@@ -554,25 +593,17 @@ body.drag-reordering .priority-drag-handle {
 
   .priority-add::before {
     content: "+";
-    font-size: 15px;
+    font-size: 16px;
     line-height: 1;
   }
 
   .priority-zone-empty {
+    padding: 14px 12px;
     font-size: 10px;
   }
 
   .priority-card {
-    grid-template-columns: 22px minmax(0, 1fr);
-    gap: 6px 7px;
-    padding: 9px;
-  }
-
-  .priority-drag-handle {
-    width: 22px;
-    min-width: 22px;
-    height: 32px;
-    min-height: 32px;
+    padding: 12px 10px 11px 12px;
   }
 
   .priority-card__main strong {
