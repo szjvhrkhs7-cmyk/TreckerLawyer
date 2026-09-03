@@ -29,7 +29,7 @@
     setTimeout(() => {
       try {
         const viewport = document.querySelector('meta[name="viewport"]')?.content || '';
-        if (!viewport.includes('maximum-scale=1') || !viewport.includes('user-scalable=no')) return fail('масштабирование не отключено');
+        if (viewport.includes('maximum-scale=1') || viewport.includes('user-scalable=no')) return fail('масштабирование страницы отключено');
 
         const tabs = document.getElementById('tabs');
         const top = document.querySelector('.top');
@@ -142,10 +142,19 @@
             const board = document.querySelector('.priority-board');
             const days = [...document.querySelectorAll('.priority-day')];
             if (!board || days.length !== 5) return fail('мобильная недельная доска не показывает пять рабочих дней');
-            const boardRect = board.getBoundingClientRect();
-            const lastDayRect = days.at(-1).getBoundingClientRect();
             if (board.scrollWidth > board.clientWidth + 1) return fail(`недельная доска требует горизонтальной прокрутки: ${board.scrollWidth}/${board.clientWidth}`);
-            if (lastDayRect.right > boardRect.right + 1 || lastDayRect.left < boardRect.left) return fail('последний день недели не помещается в мобильную доску');
+            for (const [index, day] of days.entries()) {
+              const head = day.querySelector('.priority-day__head');
+              const zones = [...day.querySelectorAll('.priority-zone')];
+              if (!head || zones.length !== 2) return fail(`день ${index + 1}: неверная структура зон`);
+              const dayRect = day.getBoundingClientRect();
+              const headRect = head.getBoundingClientRect();
+              if (Math.abs(headRect.top - dayRect.top) > 2 || Math.abs(headRect.bottom - dayRect.bottom) > 2) {
+                return fail(`день ${index + 1}: колонка даты не растянута на всю высоту карточки`);
+              }
+              const label = head.querySelector('strong');
+              if (!label || label.scrollWidth > label.clientWidth + 1) return fail(`день ${index + 1}: название дня недели обрезается`);
+            }
 
             pass();
           } catch (error) {
