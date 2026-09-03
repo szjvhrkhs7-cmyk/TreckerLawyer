@@ -79,6 +79,41 @@
     return JSON.parse(JSON.stringify(Array.isArray(value) ? value : []));
   }
 
+  function normalizeDateString(value) {
+    if (!value) return '';
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? '' : date.toISOString();
+  }
+
+  function itemTimestamp(item) {
+    if (!item || typeof item !== 'object') return 0;
+    const raw = item.updatedAt || item.completedAt || item.createdAt || '';
+    const parsed = Date.parse(raw);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  function mergeEntityArrays(localValue, remoteValue) {
+    const local = cloneArray(localValue);
+    const remote = cloneArray(remoteValue);
+    const result = new Map();
+    const ingest = (item, source) => {
+      if (!item || item.id === undefined || item.id === null || String(item.id) === '') return;
+      const id = String(item.id);
+      const existing = result.get(id);
+      if (!existing) {
+        result.set(id, { item, source, timestamp: itemTimestamp(item) });
+        return;
+      }
+      const timestamp = itemTimestamp(item);
+      if (timestamp > existing.timestamp || (timestamp === existing.timestamp && source === 'local')) {
+        result.set(id, { item, source, timestamp });
+      }
+    };
+    remote.forEach(item => ingest(item, 'remote'));
+    local.forEach(item => ingest(item, 'local'));
+    return [...result.values()].map(entry => entry.item);
+  }
+
   function queueValue(localKey, value, timestamp = dirty[localKey] || markDirty(localKey)) {
     pending.set(localKey, { value: cloneArray(value), timestamp, revision: ++revision });
   }
@@ -247,7 +282,7 @@
         user_id: user.id,
         storage_key: storageKey,
         value: entry.value,
-        updated_at: entry.timestamp
+        updated_at: normalizeDateString(entry.timestamp) || new Date().toISOString()
       }])
     });
   }
@@ -324,16 +359,22 @@
             const remoteTime = Date.parse(remote.updated_at || 0);
             const dirtyTime = Date.parse(localDirtyAt || 0);
             if (localDirtyAt && dirtyTime > remoteTime) {
-              queueValue(localKey, load(localKey), localDirtyAt);
+              const merged = mergeEntityArrays(load(localKey), remote.value);
+              localStorage.setItem(localKey, JSON.stringify(merged));
+              changed = true;
+              queueValue(localKey, merged, localDirtyAt);
               continue;
             }
             if (lastRemoteAt.get(localKey) !== remote.updated_at || localDirtyAt) {
-              localStorage.setItem(localKey, JSON.stringify(remote.value));
+              const merged = localDirtyAt ? mergeEntityArrays(load(localKey), remote.value) : remote.value;
+              localStorage.setItem(localKey, JSON.stringify(merged));
               changed = true;
+              if (localDirtyAt && JSON.stringify(merged) !== JSON.stringify(remote.value)) queueValue(localKey, merged, localDirtyAt);
             }
-            clearDirty(localKey);
-            pending.delete(localKey);
-            lastRemoteAt.set(localKey, remote.updated_at);
+            if (!pending.has(localKey)) {
+              clearDirty(localKey);
+              lastRemoteAt.set(localKey, remote.updated_at);
+            }
           }
         } finally {
           applyingRemote = false;
