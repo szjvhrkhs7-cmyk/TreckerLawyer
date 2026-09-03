@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - codex/**
   pull_request:
 
 permissions:
@@ -12,7 +13,7 @@ permissions:
 jobs:
   smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
       - name: Verify cloud sync logic
@@ -20,6 +21,10 @@ jobs:
           node tests/sync.cjs
           node tests/sync-recovery.cjs
           node tests/calendar-cloud-bridge.cjs
+      - name: Verify cache-busting contract
+        run: |
+          set -euo pipefail
+          node tests/cache-version.cjs
       - name: Verify Supabase auth endpoint
         run: |
           set -euo pipefail
@@ -67,20 +72,22 @@ jobs:
             echo 'Today tab must not be present in the primary navigation.' >&2
             exit 1
           fi
-          grep -F 'task-home.js?v=20260901-task-home-1' index.html
-          grep -F 'task-home.css?v=20260901-task-home-1' index.html
+          grep -F 'task-home.js?v=20260903-hardening-1' index.html
+          grep -F 'task-home.css?v=20260903-hardening-1' index.html
           grep -F 'workspace-2026.js' index.html
           grep -F 'workspace-pages.js' sync.js
           grep -F 'workspace-task-restore.js' sync.js
-          grep -F 'drag-sortable-fix.js?v=20260901-ios-drag-3' sync.js
+          grep -F 'drag-sortable-fix.js' sync.js
           grep -F 'workspace-pages.css' app.css
           grep -F 'workspace-polish.css' app.css
           grep -F 'desktop-polish.css' app.css
           grep -F 'interaction-polish.css' app.css
           grep -F 'desktop-ux.js' index.html
           grep -F 'legacy-inline.css' index.html
-          grep -F 'maximum-scale=1' index.html
-          grep -F 'user-scalable=no' index.html
+          if grep -F 'user-scalable=no' index.html || grep -F 'maximum-scale=1' index.html; then
+            echo 'Mobile zoom must remain available for accessibility.' >&2
+            exit 1
+          fi
           grep -F 'Календарь' /tmp/dom.html
       - name: Verify complete workspace redesign in Chrome
         run: |
@@ -88,7 +95,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
+          app_tag = '<script src="app-core.js?v=20260903-hardening-1"></script>'
           if app_tag not in html:
               raise SystemExit('Expected application script tag was not found')
           html = html.replace(app_tag, '<script src="tests/workspace-browser.js"></script>\n' + app_tag, 1)
@@ -107,7 +114,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
+          app_tag = '<script src="app-core.js?v=20260903-hardening-1"></script>'
           if app_tag not in html:
               raise SystemExit('Expected application script tag was not found')
           html = html.replace(app_tag, '<script src="tests/priorities-browser.js"></script>\n' + app_tag, 1)
@@ -126,7 +133,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
+          app_tag = '<script src="app-core.js?v=20260903-hardening-1"></script>'
           if app_tag not in html:
               raise SystemExit('Expected application script tag was not found')
           html = html.replace(app_tag, '<script src="tests/desktop-regression-browser.js"></script>\n' + app_tag, 1)
@@ -157,7 +164,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
+          app_tag = '<script src="app-core.js?v=20260903-hardening-1"></script>'
           if app_tag not in html:
               raise SystemExit('Expected application script tag was not found')
           html = html.replace(app_tag, '<script src="tests/mobile-regression-browser.js"></script>\n' + app_tag, 1)
@@ -176,7 +183,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
+          app_tag = '<script src="app-core.js?v=20260903-hardening-1"></script>'
           if app_tag not in html:
               raise SystemExit('Expected application script tag was not found')
           html = html.replace(app_tag, '<script src="tests/interaction-regression-browser.js"></script>\n' + app_tag, 1)
@@ -199,8 +206,8 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
-          sync_tag = '<script src="sync.js?v=20260901-ios-drag-3"></script>'
+          app_tag = '<script src="app-core.js?v=20260903-hardening-1"></script>'
+          sync_tag = '<script src="sync.js?v=20260903-hardening-1"></script>'
           if app_tag not in html or sync_tag not in html:
               raise SystemExit('Expected application script tags were not found')
           html = html.replace(app_tag, '<script src="tests/project-lifecycle-browser.js"></script>\n' + app_tag, 1)
@@ -220,7 +227,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
+          app_tag = '<script src="app-core.js?v=20260903-hardening-1"></script>'
           html = html.replace(app_tag, '<script src="tests/calendar-browser.js"></script>\n' + app_tag, 1)
           Path('calendar-test.html').write_text(html, encoding='utf-8')
           PY
