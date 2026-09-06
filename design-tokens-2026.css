@@ -1,12 +1,10 @@
 /*
  * Product design tokens for the 2026 rounded interface.
- * This file is deliberately semantic: components consume the same geometry,
- * spacing and elevation values on desktop and mobile instead of inventing
- * local radii or shadows.
+ * Components consume one shared geometry, spacing and elevation system on
+ * desktop and mobile instead of inventing local radii or shadows.
  */
 
 :root {
-  /* Base spacing scale */
   --ui-space-1: 4px;
   --ui-space-2: 8px;
   --ui-space-3: 12px;
@@ -17,7 +15,6 @@
   --ui-space-8: 32px;
   --ui-space-10: 40px;
 
-  /* Shared geometry */
   --ui-radius-control: 14px;
   --ui-radius-input: 16px;
   --ui-radius-card: 20px;
@@ -26,19 +23,16 @@
   --ui-radius-shell: 32px;
   --ui-radius-pill: 999px;
 
-  /* Shared touch / control sizing */
   --ui-control-height: 44px;
   --ui-control-height-compact: 38px;
   --ui-icon-button: 44px;
   --ui-fab-size: 58px;
 
-  /* Elevation */
   --ui-shadow-subtle: 0 4px 16px rgba(26, 54, 87, .035);
   --ui-shadow-card: 0 10px 30px rgba(26, 54, 87, .06), 0 2px 8px rgba(26, 54, 87, .03);
   --ui-shadow-card-hover: 0 16px 42px rgba(26, 54, 87, .085), 0 4px 14px rgba(26, 54, 87, .04);
   --ui-shadow-floating: 0 24px 64px rgba(18, 42, 70, .16);
 
-  /* Map existing rounded layer to the semantic token system. */
   --r26-xs: 12px;
   --r26-sm: var(--ui-radius-control);
   --r26-md: var(--ui-radius-input);
@@ -129,7 +123,39 @@
   box-shadow: var(--ui-shadow-card-hover);
 }
 
-/* Desktop design tokens: denser controls, generous canvas, restrained elevation. */
+/* Current-week context in priorities */
+.priority-week-actions .is-current-week {
+  border-color: color-mix(in srgb, var(--workspace-accent) 20%, var(--line)) !important;
+  background: var(--r26-soft-accent) !important;
+  color: var(--workspace-accent) !important;
+}
+
+.priority-day.is-today {
+  border-color: color-mix(in srgb, var(--workspace-accent) 42%, var(--line)) !important;
+  background: color-mix(in srgb, var(--surface) 98%, var(--workspace-accent-soft));
+  box-shadow: 0 14px 36px rgba(52, 120, 246, .11), 0 2px 8px rgba(26, 54, 87, .035) !important;
+}
+
+.priority-day__today {
+  grid-column: 1;
+  display: inline-flex;
+  width: fit-content;
+  min-height: 24px;
+  margin-top: 3px;
+  padding: 0 9px;
+  align-items: center;
+  border-radius: var(--ui-radius-pill);
+  background: var(--workspace-accent-soft);
+  color: var(--workspace-accent);
+  font-family: var(--workspace-ui-font, sans-serif);
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 760;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+/* Desktop design tokens */
 @media (min-width: 900px) {
   :root {
     --ui-page-gutter: 36px;
@@ -173,6 +199,12 @@
     padding: var(--ui-card-padding) !important;
   }
 
+  .priority-board {
+    grid-template-columns: repeat(7, minmax(132px, 1fr)) !important;
+    scrollbar-gutter: stable;
+    padding-bottom: 6px !important;
+  }
+
   .priority-day__head {
     padding: var(--ui-day-padding-y) var(--ui-day-padding-x) 10px !important;
   }
@@ -183,7 +215,7 @@
   }
 }
 
-/* Mobile design tokens: large touch targets, softer cards and safe edge spacing. */
+/* Mobile design tokens */
 @media (max-width: 899px) {
   :root {
     --ui-page-gutter: 16px;
@@ -241,6 +273,10 @@
     border-radius: var(--ui-radius-panel) var(--ui-radius-panel) 0 0 !important;
   }
 
+  .priority-board {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
   .priority-day {
     border-radius: var(--ui-radius-panel) !important;
   }
@@ -252,6 +288,12 @@
   .priority-zone {
     padding-right: var(--ui-day-padding-x) !important;
     padding-left: var(--ui-day-padding-x) !important;
+  }
+
+  .priority-day__today {
+    min-height: 26px;
+    padding-inline: 10px;
+    font-size: 10px;
   }
 
   .sheet,
