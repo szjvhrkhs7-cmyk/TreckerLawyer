@@ -62,18 +62,10 @@
   box-shadow: none !important;
 }
 
-/* Always render the priority action with the same short label. */
+/* Priority action uses the real button text only. */
 .workspace-task-row:not(.is-done) .workspace-priority-action {
-  font-size: 0 !important;
   background: var(--surface) !important;
   color: var(--muted) !important;
-}
-
-.workspace-task-row:not(.is-done) .workspace-priority-action::before {
-  content: "Приоритет" !important;
-  font-size: 10.5px;
-  font-weight: 720;
-  line-height: 1;
 }
 
 /* Completion must stay visible even when the helper class is not present. */
