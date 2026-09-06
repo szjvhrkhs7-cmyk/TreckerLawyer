@@ -1,0 +1,847 @@
+/*
+ * Rounded 2026 visual layer.
+ * Pure presentation overrides: keeps existing data model and interaction logic intact.
+ * Loaded last from index.html so the same visual language applies to every workspace section.
+ */
+
+:root {
+  --r26-xs: 12px;
+  --r26-sm: 14px;
+  --r26-md: 18px;
+  --r26-lg: 22px;
+  --r26-xl: 26px;
+  --r26-2xl: 32px;
+  --r26-card-shadow: 0 10px 32px rgba(26, 54, 87, .065), 0 2px 8px rgba(26, 54, 87, .035);
+  --r26-card-shadow-hover: 0 16px 40px rgba(26, 54, 87, .09), 0 4px 12px rgba(26, 54, 87, .04);
+  --r26-soft: color-mix(in srgb, var(--surface) 86%, var(--bg));
+  --r26-soft-accent: color-mix(in srgb, var(--surface) 90%, var(--workspace-accent-soft));
+  --radius-sm: var(--r26-sm);
+  --radius-md: var(--r26-md);
+  --radius-lg: var(--r26-lg);
+  --shadow-sm: var(--r26-card-shadow);
+}
+
+:root[data-theme="dark"] {
+  --r26-card-shadow: 0 12px 34px rgba(0, 0, 0, .24), 0 2px 8px rgba(0, 0, 0, .16);
+  --r26-card-shadow-hover: 0 18px 42px rgba(0, 0, 0, .32), 0 4px 12px rgba(0, 0, 0, .18);
+}
+
+/* Shared controls */
+.btn,
+.chip,
+.search,
+.field input,
+.field textarea,
+.field select,
+.sheet .editor-wrap,
+.sync-button,
+.theme-toggle,
+.back,
+.completed-link {
+  border-radius: var(--r26-sm) !important;
+}
+
+.btn {
+  border-color: color-mix(in srgb, var(--line) 86%, transparent);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, .35) inset;
+  transition: background-color 150ms ease, border-color 150ms ease, color 150ms ease, box-shadow 150ms ease, transform 150ms ease;
+}
+
+.btn:hover,
+.btn:focus-visible {
+  border-color: var(--line-strong);
+}
+
+.btn.primary {
+  border-radius: var(--r26-sm) !important;
+  box-shadow: 0 10px 24px rgba(52, 120, 246, .20);
+}
+
+.chip,
+.workspace-status,
+.workspace-priority,
+.today-status,
+.today-alert-count,
+.today-neutral-count {
+  border-radius: 999px !important;
+}
+
+.search,
+.search-wrap {
+  border-radius: var(--r26-md) !important;
+}
+
+.search-wrap {
+  overflow: hidden;
+  border-color: color-mix(in srgb, var(--line) 84%, transparent) !important;
+  background: var(--surface) !important;
+  box-shadow: 0 4px 16px rgba(27, 54, 84, .035);
+}
+
+.sheet,
+.confirm-box {
+  border-radius: var(--r26-xl) !important;
+  box-shadow: 0 28px 80px rgba(15, 34, 56, .20) !important;
+}
+
+.sheet .field input,
+.sheet .field textarea,
+.sheet .field select,
+.sheet .editor-wrap,
+.priority-picker-task {
+  border-radius: var(--r26-md) !important;
+}
+
+.workspace-icon-button {
+  border-radius: var(--r26-sm) !important;
+}
+
+/* Desktop shell and navigation */
+@media (min-width: 900px) {
+  .app {
+    border-radius: var(--r26-2xl) !important;
+    box-shadow: 0 28px 80px rgba(22, 47, 75, .12) !important;
+  }
+
+  .brandmark {
+    border-radius: var(--r26-md) !important;
+  }
+
+  .tab {
+    border-radius: var(--r26-sm) !important;
+  }
+
+  .tab.active {
+    border-color: rgba(255, 255, 255, .09) !important;
+    background: rgba(255, 255, 255, .135) !important;
+  }
+
+  .page {
+    padding-top: 38px !important;
+  }
+}
+
+/* Mobile shell: a calmer rounded header and dock without backdrop-filter.
+ * Do not reintroduce backdrop-filter here: mobile regression intentionally guards against it. */
+@media (max-width: 899px) {
+  body {
+    padding-bottom: calc(92px + var(--safe-bottom)) !important;
+  }
+
+  .top {
+    padding: max(10px, env(safe-area-inset-top)) 16px 10px !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent) !important;
+    border-radius: 0 0 var(--r26-lg) var(--r26-lg);
+    background: color-mix(in srgb, var(--surface) 98%, var(--bg)) !important;
+    box-shadow: 0 8px 24px rgba(28, 55, 85, .045);
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  .brandmark {
+    width: 38px !important;
+    height: 38px !important;
+    border-radius: var(--r26-sm) !important;
+  }
+
+  .brandname {
+    font-size: 14px !important;
+  }
+
+  .sync-button,
+  .theme-toggle {
+    width: 44px !important;
+    min-width: 44px !important;
+    height: 44px !important;
+    min-height: 44px !important;
+    border-radius: var(--r26-sm) !important;
+  }
+
+  #tabs.tabs {
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    padding: 8px 8px calc(7px + var(--safe-bottom)) !important;
+    border-top-color: color-mix(in srgb, var(--line) 74%, transparent) !important;
+    border-radius: var(--r26-lg) var(--r26-lg) 0 0 !important;
+    background: color-mix(in srgb, var(--surface) 99%, var(--bg)) !important;
+    box-shadow: 0 -10px 30px rgba(21, 43, 69, .075) !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+
+  #tabs .tab {
+    border-radius: var(--r26-sm) !important;
+  }
+
+  #tabs .tab .icon {
+    width: 23px !important;
+    height: 23px !important;
+    overflow: visible !important;
+  }
+
+  .page {
+    padding: 20px 16px 42px !important;
+  }
+
+  .fab {
+    right: 18px !important;
+    bottom: calc(84px + var(--safe-bottom)) !important;
+    width: 58px !important;
+    height: 58px !important;
+    box-shadow: 0 16px 38px rgba(52, 120, 246, .30) !important;
+  }
+
+  .workspace-page-head h2,
+  .calendar-month-title h2 {
+    letter-spacing: -.035em !important;
+  }
+}
+
+/* Shared page hierarchy */
+.workspace-page-head {
+  margin-bottom: 24px;
+}
+
+.workspace-page-head h2 {
+  line-height: 1.04;
+}
+
+.workspace-summary-strip {
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.workspace-summary-item {
+  min-height: 62px;
+  padding: 14px 16px;
+  border-color: color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: var(--r26-md) !important;
+  background: var(--surface);
+  box-shadow: 0 5px 18px rgba(26, 54, 87, .035);
+}
+
+.workspace-toolbar {
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+/* Tasks */
+.workspace-task-list {
+  gap: 10px;
+}
+
+.workspace-task-row {
+  min-height: 86px;
+  padding: 13px 13px 13px 10px;
+  border-color: color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: var(--r26-md) !important;
+  background: var(--surface);
+  box-shadow: 0 5px 18px rgba(26, 54, 87, .035);
+}
+
+.workspace-task-row:hover,
+.workspace-task-row:focus-within {
+  border-color: color-mix(in srgb, var(--workspace-accent) 22%, var(--line));
+  background: color-mix(in srgb, var(--surface) 97%, var(--workspace-accent-soft));
+  box-shadow: var(--r26-card-shadow-hover);
+}
+
+.workspace-task-row--danger {
+  border-color: color-mix(in srgb, var(--workspace-danger) 24%, var(--line));
+}
+
+.workspace-task-detail-block {
+  border-radius: var(--r26-sm) !important;
+}
+
+.workspace-status,
+.workspace-priority {
+  min-height: 30px;
+  padding-inline: 10px;
+  overflow: visible;
+}
+
+.workspace-row-actions .btn {
+  border-radius: var(--r26-sm) !important;
+}
+
+.workspace-utilities {
+  border-top: 0;
+  margin-top: 18px;
+  padding: 2px 14px;
+  border-radius: var(--r26-md);
+  background: var(--r26-soft);
+}
+
+.workspace-completed .completed-link {
+  padding-inline: 10px;
+  border-radius: var(--r26-sm) !important;
+}
+
+/* Empty states: soft surfaces rather than dashed placeholders. */
+.workspace-empty {
+  min-height: 172px;
+  padding: 32px 20px;
+  border: 0 !important;
+  border-radius: var(--r26-lg) !important;
+  background: var(--r26-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 68%, transparent);
+}
+
+.workspace-empty .icon {
+  width: 30px;
+  height: 30px;
+  padding: 7px;
+  box-sizing: content-box;
+  border-radius: 14px;
+  background: var(--r26-soft-accent);
+  color: var(--workspace-accent);
+}
+
+/* Projects */
+.workspace-project-grid {
+  gap: 14px;
+}
+
+.workspace-project-card {
+  gap: 15px;
+  padding: 18px;
+  border-color: color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: var(--r26-lg) !important;
+  background: var(--surface);
+  box-shadow: var(--r26-card-shadow);
+}
+
+.workspace-project-card:hover,
+.workspace-project-card:focus-within {
+  border-color: color-mix(in srgb, var(--workspace-accent) 20%, var(--line));
+  box-shadow: var(--r26-card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+.workspace-project-icon {
+  border-radius: var(--r26-sm) !important;
+}
+
+.workspace-project-footer {
+  padding-top: 8px;
+  border-top-color: color-mix(in srgb, var(--workspace-line-soft) 78%, transparent);
+}
+
+/* Notes */
+.workspace-notes-grid {
+  gap: 14px;
+}
+
+.workspace-note-row,
+.workspace-note-card {
+  border-radius: var(--r26-lg) !important;
+}
+
+.workspace-note-card {
+  min-height: 180px;
+  padding: 16px;
+  border-color: color-mix(in srgb, var(--line) 82%, transparent);
+  box-shadow: var(--r26-card-shadow);
+}
+
+.workspace-note-card:hover,
+.workspace-note-card:focus-visible,
+.workspace-note-card:focus-within {
+  border-color: color-mix(in srgb, var(--workspace-accent) 20%, var(--line));
+  box-shadow: var(--r26-card-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* Task details: replace the small internal table with independent rounded fact cards. */
+.task-detail__facts {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  overflow: visible;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.task-detail__facts > div,
+.task-detail__facts > div:nth-child(2n),
+.task-detail__facts > div:nth-last-child(-n + 2) {
+  min-height: 72px;
+  padding: 13px 15px;
+  border: 0;
+  border-radius: var(--r26-md);
+  background: var(--r26-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 68%, transparent);
+}
+
+/* Priorities: card-based week instead of a table. */
+.priority-page-head {
+  align-items: center;
+}
+
+.priority-week-actions {
+  gap: 8px;
+}
+
+.priority-week-actions .btn {
+  border-radius: var(--r26-sm) !important;
+}
+
+.priority-board {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+  padding: 2px;
+  overflow-x: auto;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.priority-day {
+  min-width: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: var(--r26-lg);
+  background: var(--surface);
+  box-shadow: var(--r26-card-shadow);
+}
+
+.priority-day + .priority-day {
+  border-left: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+}
+
+.priority-day::before {
+  display: none !important;
+}
+
+.priority-day__head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 44px;
+  align-items: start;
+  gap: 4px 12px;
+  margin: 0;
+  padding: 18px 16px 10px;
+  border: 0;
+  background: transparent;
+  text-align: left;
+}
+
+.priority-day__head strong,
+.priority-day__head span {
+  grid-column: 1;
+}
+
+.priority-day__head strong {
+  font-size: 11px;
+  letter-spacing: .055em;
+}
+
+.priority-day__head span {
+  font-size: 11.5px;
+}
+
+.priority-day-add {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  display: grid;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  min-height: 42px;
+  padding: 0;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: var(--r26-sm);
+  background: var(--surface);
+  color: var(--workspace-primary);
+  box-shadow: 0 4px 14px rgba(26, 54, 87, .04);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.priority-day-add:hover,
+.priority-day-add:focus-visible {
+  border-color: color-mix(in srgb, var(--workspace-accent) 28%, var(--line));
+  background: var(--r26-soft-accent);
+  color: var(--workspace-accent);
+}
+
+.priority-zone {
+  gap: 10px;
+  min-height: 0;
+  padding: 10px 16px 16px;
+}
+
+.priority-zone + .priority-zone {
+  min-height: 0;
+  padding-top: 3px;
+  border-top: 0;
+}
+
+.priority-zone__head {
+  min-height: 28px;
+}
+
+.priority-zone__head .priority-add {
+  /* The day-level + is the visible creation control. Keep zone buttons in DOM for
+     backwards compatibility and automated regression coverage. */
+  display: none;
+}
+
+.priority-zone__list {
+  gap: 10px;
+  min-height: 60px;
+}
+
+.priority-zone-empty {
+  margin: 0;
+  padding: 14px 15px;
+  border: 0 !important;
+  border-radius: var(--r26-md) !important;
+  background: var(--r26-soft);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--line) 60%, transparent);
+  color: var(--faint);
+  text-align: left;
+}
+
+.priority-zone--main .priority-zone-empty {
+  border: 0 !important;
+  background: var(--r26-soft-accent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--workspace-accent) 14%, var(--line));
+}
+
+.priority-card {
+  grid-template-columns: minmax(0, 1fr) 28px;
+  gap: 8px 10px;
+  padding: 14px 13px 13px 15px;
+  border-color: color-mix(in srgb, var(--line) 78%, transparent);
+  border-radius: var(--r26-md) !important;
+  background: color-mix(in srgb, var(--surface) 97%, var(--workspace-accent-soft));
+  box-shadow: 0 6px 18px rgba(26, 54, 87, .04);
+}
+
+.priority-zone--main .priority-card {
+  border-left: 4px solid var(--workspace-accent);
+}
+
+.priority-drag-handle {
+  grid-column: 2;
+  grid-row: 1 / span 2;
+  justify-self: end;
+}
+
+.priority-card__main {
+  grid-column: 1;
+}
+
+.priority-card__actions {
+  grid-column: 1;
+  gap: 7px;
+}
+
+.priority-card__actions button {
+  min-height: 34px;
+  padding: 0 11px;
+  border-radius: var(--r26-xs);
+  background: var(--surface-hover);
+}
+
+.priority-card__actions .priority-card__done {
+  background: var(--workspace-success-soft);
+}
+
+.priority-card__actions .is-danger {
+  background: var(--workspace-danger-soft);
+}
+
+/* Calendar: preserve the useful date grid, soften its container and agenda. */
+.calendar-view {
+  max-width: 1120px;
+}
+
+.calendar-toolbar {
+  margin-bottom: 20px;
+}
+
+.calendar-toolbar__actions .btn,
+.calendar-nav {
+  border-radius: var(--r26-sm) !important;
+}
+
+.calendar-month {
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent) !important;
+  border-radius: var(--r26-lg) !important;
+  background: var(--surface);
+  box-shadow: var(--r26-card-shadow) !important;
+}
+
+.calendar-weekdays {
+  background: var(--r26-soft);
+  border-bottom-color: color-mix(in srgb, var(--line) 70%, transparent);
+}
+
+.calendar-date {
+  border-right-color: color-mix(in srgb, var(--line) 54%, transparent);
+  border-bottom-color: color-mix(in srgb, var(--line) 64%, transparent);
+}
+
+.calendar-day-events {
+  margin-top: 16px;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: var(--r26-lg) !important;
+  background: var(--surface);
+  box-shadow: var(--r26-card-shadow);
+}
+
+.calendar-agenda-list {
+  display: grid;
+  gap: 8px;
+  border-top: 0;
+}
+
+.calendar-agenda-event {
+  min-height: 64px;
+  padding: 13px 14px;
+  border: 0;
+  border-radius: var(--r26-md);
+  background: var(--r26-soft);
+}
+
+.calendar-agenda-event:hover {
+  background: var(--r26-soft-accent);
+}
+
+.calendar-agenda-empty {
+  padding: 22px 14px;
+  border: 0;
+  border-radius: var(--r26-md);
+  background: var(--r26-soft);
+}
+
+/* Generic legacy cards and dashboard panels still used in nested project views. */
+.card,
+.today-panel {
+  border-radius: var(--r26-lg) !important;
+  box-shadow: var(--r26-card-shadow);
+}
+
+.today-panel-heading {
+  border-bottom-color: color-mix(in srgb, var(--workspace-line-soft) 68%, transparent);
+}
+
+.today-focus-task.is-overdue {
+  border-radius: var(--r26-md) !important;
+}
+
+/* Mobile refinements */
+@media (max-width: 899px) {
+  .workspace-page-head {
+    margin-bottom: 20px;
+  }
+
+  .workspace-summary-strip {
+    gap: 8px;
+  }
+
+  .workspace-summary-item {
+    min-height: 76px;
+    padding: 12px;
+    border-radius: var(--r26-md) !important;
+  }
+
+  .workspace-task-row {
+    border-radius: var(--r26-md) !important;
+    box-shadow: 0 5px 16px rgba(26, 54, 87, .035);
+  }
+
+  .workspace-project-card,
+  .workspace-note-card {
+    border-radius: var(--r26-lg) !important;
+  }
+
+  .workspace-project-icon,
+  .workspace-project-card .drag-handle,
+  .workspace-note-card .drag-handle,
+  .workspace-project-card .workspace-icon-button,
+  .workspace-note-card .workspace-icon-button {
+    border-radius: var(--r26-sm) !important;
+  }
+
+  .workspace-empty {
+    min-height: 154px;
+    border-radius: var(--r26-lg) !important;
+  }
+
+  .task-detail__facts {
+    gap: 8px;
+  }
+
+  .priority-page-head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 14px;
+  }
+
+  .priority-week-actions {
+    width: 100%;
+  }
+
+  .priority-week-actions .btn:nth-child(2) {
+    border-radius: var(--r26-md) !important;
+  }
+
+  .priority-board {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 16px !important;
+    width: 100%;
+    overflow: visible !important;
+    padding: 0;
+  }
+
+  .priority-day {
+    display: block !important;
+    width: 100%;
+    min-width: 0;
+    padding: 0 !important;
+    overflow: hidden;
+    border-radius: var(--r26-xl) !important;
+    box-shadow: 0 8px 24px rgba(24, 50, 85, .055);
+  }
+
+  .priority-day__head {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) 44px !important;
+    grid-template-rows: auto auto !important;
+    align-items: start !important;
+    justify-items: start !important;
+    gap: 5px 12px !important;
+    margin: 0 !important;
+    padding: 20px 18px 8px !important;
+    border: 0 !important;
+    background: transparent !important;
+    text-align: left !important;
+  }
+
+  .priority-day__head strong {
+    font-size: 12px !important;
+    line-height: 1.25;
+    letter-spacing: .045em !important;
+  }
+
+  .priority-day__head span {
+    font-size: 12px !important;
+  }
+
+  .priority-day-add {
+    grid-column: 2 !important;
+    grid-row: 1 / span 2 !important;
+    align-self: start;
+    justify-self: end;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+    border-radius: var(--r26-sm);
+  }
+
+  .priority-zone {
+    display: grid;
+    grid-column: auto !important;
+    gap: 10px;
+    min-height: 0 !important;
+    padding: 12px 18px 18px !important;
+  }
+
+  .priority-zone + .priority-zone {
+    min-height: 0 !important;
+    padding-top: 1px !important;
+    border-top: 0 !important;
+  }
+
+  .priority-zone h3 {
+    font-size: 10px !important;
+    letter-spacing: .065em !important;
+  }
+
+  .priority-zone-empty {
+    padding: 15px 16px !important;
+    border-radius: var(--r26-md) !important;
+    font-size: 11.5px !important;
+  }
+
+  .priority-card {
+    grid-template-columns: minmax(0, 1fr) 28px !important;
+    padding: 15px 14px 14px 16px !important;
+    border-radius: var(--r26-md) !important;
+  }
+
+  .priority-card__main strong {
+    font-size: 14px !important;
+    line-height: 1.4 !important;
+  }
+
+  .priority-card__actions button {
+    min-height: 36px !important;
+    padding: 0 12px !important;
+    border-radius: var(--r26-xs) !important;
+    font-size: 10px !important;
+  }
+
+  .calendar-month {
+    border-radius: var(--r26-lg) !important;
+  }
+
+  .calendar-day-events {
+    padding: 16px 14px !important;
+    border-radius: var(--r26-lg) !important;
+  }
+
+  .calendar-agenda-event {
+    padding: 13px 12px !important;
+    border-radius: var(--r26-md) !important;
+  }
+
+  .sheet,
+  .confirm-box {
+    border-radius: var(--r26-xl) var(--r26-xl) 0 0 !important;
+  }
+}
+
+@media (max-width: 520px) {
+  .task-detail__facts {
+    grid-template-columns: 1fr;
+  }
+
+  .task-detail__facts > div,
+  .task-detail__facts > div:nth-child(2n),
+  .task-detail__facts > div:nth-last-child(-n + 2) {
+    border: 0;
+  }
+
+  .workspace-project-card,
+  .workspace-note-card {
+    padding: 15px !important;
+  }
+
+  .calendar-day-events {
+    margin-top: 14px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn,
+  .workspace-task-row,
+  .workspace-project-card,
+  .workspace-note-card,
+  .priority-card,
+  .calendar-agenda-event {
+    transition: none !important;
+  }
+}
