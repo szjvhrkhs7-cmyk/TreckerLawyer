@@ -77,10 +77,34 @@
     { id: 'visual-event-2', title: 'Встреча с продуктом', date: dateKey(addDays(now, 1)), startTime: '11:00', endTime: '11:45', color: 'red', reminder: 15, createdAt: stamp, updatedAt: stamp }
   ]));
 
+  function reportDesktopPrioritiesLayout() {
+    if (window.innerWidth < 900) return;
+    const board = document.querySelector('.priority-board');
+    const days = [...document.querySelectorAll('.priority-day')];
+    if (!board || days.length !== 7) return;
+
+    const boardRect = board.getBoundingClientRect();
+    const dayRects = days.map(day => day.getBoundingClientRect());
+    const stacked = dayRects.every((rect, index) => index === 0 || rect.top > dayRects[index - 1].top + 20);
+    const fullWidth = dayRects.every(rect => rect.width >= boardRect.width - 2);
+    const noHorizontalOverflow = document.documentElement.scrollWidth <= window.innerWidth + 1;
+    const readableMainZones = [...document.querySelectorAll('.priority-zone--main')]
+      .every(zone => zone.getBoundingClientRect().width >= 240);
+
+    const result = document.createElement('div');
+    result.id = 'priority-desktop-layout-result';
+    result.hidden = true;
+    result.textContent = stacked && fullWidth && noHorizontalOverflow && readableMainZones
+      ? 'PRIORITY_DESKTOP_VERTICAL_PASS'
+      : `PRIORITY_DESKTOP_VERTICAL_FAIL stacked=${stacked} fullWidth=${fullWidth} overflow=${!noHorizontalOverflow} readable=${readableMainZones}`;
+    document.body.append(result);
+  }
+
   window.addEventListener('load', () => {
     setTimeout(() => {
       const view = new URLSearchParams(location.search).get('view') || 'tasks';
       document.querySelector(`[data-tab="${view}"]`)?.click();
+      if (view === 'priorities') setTimeout(reportDesktopPrioritiesLayout, 700);
     }, 500);
   });
 })();
