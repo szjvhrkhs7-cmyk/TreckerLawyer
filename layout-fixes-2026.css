@@ -116,10 +116,12 @@
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-self: stretch !important;
     justify-self: stretch !important;
+    box-sizing: border-box;
     width: 100% !important;
     min-width: 0 !important;
     gap: 8px !important;
     margin: 2px 0 0 !important;
+    padding-right: 64px !important;
   }
 
   .workspace-task-row:not(.is-done) .workspace-row-actions .btn {
@@ -153,6 +155,7 @@
 
   .workspace-task-row:not(.is-done) .workspace-row-actions {
     gap: 6px !important;
+    padding-right: 58px !important;
   }
 
   .workspace-task-row:not(.is-done) .workspace-row-actions .btn {
