@@ -56,6 +56,7 @@
     if (rect.left < rowRect.left - 1 || rect.right > rowRect.right + 1) return `${context}: кнопка выходит за карточку`;
     if (rect.left < -1 || rect.right > window.innerWidth + 1) return `${context}: кнопка выходит за viewport`;
     if (window.innerWidth < 900 && rect.height < 44) return `${context}: мобильная touch-зона меньше 44px`;
+    if (window.innerWidth < 900 && rowRect.right - rect.right < 56) return `${context}: справа нет безопасной зоны под FAB (${rowRect.right - rect.right}px)`;
     if (window.innerWidth >= 900 && rect.height < 36) return `${context}: desktop-кнопка слишком мала`;
     return '';
   }
