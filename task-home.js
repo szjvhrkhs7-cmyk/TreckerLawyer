@@ -69,6 +69,12 @@
     row.dataset.taskHomeEnhanced = '1';
     main.querySelectorAll('.workspace-task-description').forEach(node => node.remove());
 
+    const priorityAction = row.querySelector('[data-set-priority]');
+    if (priorityAction) {
+      priorityAction.textContent = 'Приоритет';
+      priorityAction.setAttribute('aria-label', 'Приоритет');
+    }
+
     const extra = String(task.extra || '').trim();
     const notes = typeof stripHtml === 'function' ? stripHtml(task.notes || '').trim() : String(task.notes || '').trim();
     if (!extra && !notes) return;
