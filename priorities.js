@@ -4,6 +4,7 @@
   const prioritySheet = document.getElementById('prioritySheet');
   const priorityForm = document.getElementById('priorityForm');
   const prioritySheetTitle = document.getElementById('prioritySheetTitle');
+  const tabs = document.getElementById('tabs');
   let selectedTask = null;
   let newTaskDefaults = null;
   let weekAnchor = startOfWeek(new Date());
@@ -37,11 +38,14 @@
     return result;
   }
 
-  function nearestWorkday() {
+  function sameDay(left, right) {
+    return dateKey(left) === dateKey(right);
+  }
+
+  function defaultPriorityDay() {
     const today = new Date();
-    const day = today.getDay();
-    if (day >= 1 && day <= 5) return today;
-    return addDays(today, day === 6 ? 2 : 1);
+    today.setHours(0, 0, 0, 0);
+    return today;
   }
 
   function taskEntries() {
@@ -87,13 +91,13 @@
   function openPriorityPicker(entry) {
     if (!entry || entry.task.status === 'done') return;
     selectedTask = entry;
-    const chosenDate = fromDateKey(entry.task.priorityDate) || nearestWorkday();
+    const chosenDate = fromDateKey(entry.task.priorityDate) || defaultPriorityDay();
     prioritySheetTitle.textContent = entry.task.priorityDate ? 'Изменить приоритет' : 'Поставить приоритет';
     priorityForm.innerHTML = `<div class="sheet-fields">
       <p class="priority-picker-task">${esc(entry.task.title)}</p>
       <div class="field"><label for="priorityDay">День</label><input id="priorityDay" name="priorityDate" type="date" required value="${esc(dateKey(chosenDate))}"></div>
       <div class="field"><label for="priorityLevel">Зона</label><select id="priorityLevel" name="priorityLevel"><option value="main">Главное</option><option value="other">Остальные задачи</option></select></div>
-      <p class="priority-picker-hint">Можно выбрать только рабочий день — с понедельника по пятницу.</p>
+      <p class="priority-picker-hint">Можно выбрать любой день недели.</p>
     </div><div class="sheet-actions">
       <button type="button" class="btn" data-cancel-priority>Отмена</button>
       <button type="submit" class="btn primary">Сохранить</button>
@@ -104,7 +108,7 @@
 
   function openPriorityCreator(priorityDate, priorityLevel) {
     const parsedDate = fromDateKey(priorityDate);
-    if (!parsedDate || parsedDate.getDay() === 0 || parsedDate.getDay() === 6) return;
+    if (!parsedDate) return;
     selectedTask = null;
     newTaskDefaults = { priorityDate, priorityLevel: priorityLevel === 'other' ? 'other' : 'main' };
     prioritySheetTitle.textContent = 'Новая задача в приоритетах';
@@ -133,7 +137,7 @@
 
   function weekLabel(days) {
     const first = days[0];
-    const last = days[4];
+    const last = days[days.length - 1];
     if (first.getFullYear() !== last.getFullYear()) {
       return `${formatDay(first, { day: 'numeric', month: 'long', year: 'numeric' })} — ${formatDay(last, { day: 'numeric', month: 'long', year: 'numeric' })}`;
     }
@@ -190,10 +194,10 @@
       let originRect = null;
       const animations = new WeakMap();
 
-      const cardsIn = zone => [...zone.querySelectorAll(':scope > .priority-card')];
-      const snapshot = zone => new Map(cardsIn(zone).filter(item => item !== card).map(item => [item, item.getBoundingClientRect().top]));
-      const animate = (zone, before) => {
-        cardsIn(zone).forEach(item => {
+      const cardsIn = zoneElement => [...zoneElement.querySelectorAll(':scope > .priority-card')];
+      const snapshot = zoneElement => new Map(cardsIn(zoneElement).filter(item => item !== card).map(item => [item, item.getBoundingClientRect().top]));
+      const animate = (zoneElement, before) => {
+        cardsIn(zoneElement).forEach(item => {
           if (item === card) return;
           const oldTop = before.get(item);
           if (oldTop === undefined) return;
@@ -218,21 +222,21 @@
         return hit?.closest?.('[data-priority-dropzone]') || null;
       };
 
-      const moveCard = (zone, y) => {
-        if (!zone) return;
+      const moveCard = (zoneElement, y) => {
+        if (!zoneElement) return;
         const previousZone = card.parentElement;
         const beforePrevious = previousZone?.matches?.('[data-priority-dropzone]') ? snapshot(previousZone) : null;
-        const beforeTarget = previousZone === zone ? beforePrevious : snapshot(zone);
-        const candidates = cardsIn(zone).filter(item => item !== card);
+        const beforeTarget = previousZone === zoneElement ? beforePrevious : snapshot(zoneElement);
+        const candidates = cardsIn(zoneElement).filter(item => item !== card);
         const target = candidates.find(item => {
           const rect = item.getBoundingClientRect();
           return y < rect.top + rect.height / 2;
         });
-        if (target) zone.insertBefore(card, target);
-        else zone.append(card);
+        if (target) zoneElement.insertBefore(card, target);
+        else zoneElement.append(card);
         if (beforePrevious) animate(previousZone, beforePrevious);
-        if (zone !== previousZone) animate(zone, beforeTarget);
-        zone.querySelector('.priority-zone-empty')?.remove();
+        if (zoneElement !== previousZone) animate(zoneElement, beforeTarget);
+        zoneElement.querySelector('.priority-zone-empty')?.remove();
       };
 
       const onMove = event => {
@@ -261,11 +265,11 @@
       };
 
       const persistDrop = () => {
-        const zone = card.parentElement;
-        if (!zone?.matches?.('[data-priority-dropzone]')) return false;
+        const zoneElement = card.parentElement;
+        if (!zoneElement?.matches?.('[data-priority-dropzone]')) return false;
         const entry = findTask(card.dataset.priorityCard, card.dataset.taskScope || 'root');
         if (!entry) return false;
-        const patch = { priorityDate: zone.dataset.priorityDate, priorityLevel: zone.dataset.priorityLevel === 'other' ? 'other' : 'main' };
+        const patch = { priorityDate: zoneElement.dataset.priorityDate, priorityLevel: zoneElement.dataset.priorityLevel === 'other' ? 'other' : 'main' };
         return saveTask(entry, patch);
       };
 
@@ -323,23 +327,26 @@
   }
 
   function renderPriorities() {
-    const days = Array.from({ length: 5 }, (_, index) => addDays(weekAnchor, index));
+    const days = Array.from({ length: 7 }, (_, index) => addDays(weekAnchor, index));
+    const today = defaultPriorityDay();
     const entries = taskEntries().filter(({ task }) => task.status !== 'done' && fromDateKey(task.priorityDate));
+    const currentWeek = sameDay(weekAnchor, startOfWeek(today));
     page.innerHTML = `<section class="workspace-page priority-page">
       <header class="workspace-page-head priority-page-head">
         <div><p class="workspace-page-eyebrow">План на неделю</p><h2>Приоритеты</h2><p>${esc(weekLabel(days))}</p></div>
         <div class="priority-week-actions" aria-label="Навигация по неделям">
           <button type="button" class="btn" data-priority-week="prev" aria-label="Предыдущая неделя">‹</button>
-          <button type="button" class="btn" data-priority-week="today">Текущая неделя</button>
+          <button type="button" class="btn${currentWeek ? ' is-current-week' : ''}" data-priority-week="today" aria-pressed="${currentWeek}">Текущая неделя</button>
           <button type="button" class="btn" data-priority-week="next" aria-label="Следующая неделя">›</button>
         </div>
       </header>
-      <div class="priority-board" role="region" aria-label="Приоритеты на рабочую неделю" tabindex="0">
+      <div class="priority-board" role="region" aria-label="Приоритеты на неделю" tabindex="0">
         ${days.map(day => {
           const key = dateKey(day);
+          const isToday = sameDay(day, today);
           const dayEntries = entries.filter(entry => entry.task.priorityDate === key);
-          return `<section class="priority-day" data-priority-date="${key}">
-            <header class="priority-day__head"><strong>${esc(formatDay(day, { weekday: 'long' }))}</strong><span>${esc(formatDay(day, { day: 'numeric', month: 'long' }))}</span></header>
+          return `<section class="priority-day${isToday ? ' is-today' : ''}" data-priority-date="${key}"${isToday ? ' aria-current="date"' : ''}>
+            <header class="priority-day__head"><strong>${esc(formatDay(day, { weekday: 'long' }))}</strong><span>${esc(formatDay(day, { day: 'numeric', month: 'long' }))}</span>${isToday ? '<em class="priority-day__today">Сегодня</em>' : ''}</header>
             <div class="priority-zone priority-zone--main">${zone(dayEntries, 'main', 'Главный приоритет не выбран', key)}</div>
             <div class="priority-zone priority-zone--other">${zone(dayEntries, 'other', 'Дополнительных задач нет', key)}</div>
           </section>`;
@@ -355,8 +362,8 @@
     const priorityDate = String(data.get('priorityDate') || '');
     const parsedDate = fromDateKey(priorityDate);
     const control = priorityForm.elements.priorityDate;
-    if (!parsedDate || parsedDate.getDay() === 0 || parsedDate.getDay() === 6) {
-      control.setCustomValidity('Выберите рабочий день с понедельника по пятницу');
+    if (!parsedDate) {
+      control.setCustomValidity('Выберите корректную дату');
       control.reportValidity();
       control.setCustomValidity('');
       return;
@@ -455,6 +462,12 @@
     askConfirm('Задача будет удалена из трекера без возможности восстановления.', () => {
       if (deleteTask(entry)) render();
     });
+  }, true);
+
+  tabs?.addEventListener('click', event => {
+    const tab = event.target.closest('[data-tab]');
+    if (tab?.dataset.tab !== 'priorities') return;
+    if (state.tab !== 'priorities') weekAnchor = startOfWeek(new Date());
   }, true);
 
   document.addEventListener('click', event => {
