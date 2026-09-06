@@ -41,6 +41,12 @@ jobs:
           mkdir -p /tmp/visual-qa
           "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,900 --virtual-time-budget=5000 --screenshot=/tmp/visual-qa/desktop-tasks.png 'http://127.0.0.1:8765/visual-preview.html?view=tasks'
           "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,1100 --virtual-time-budget=5000 --screenshot=/tmp/visual-qa/desktop-priorities.png 'http://127.0.0.1:8765/visual-preview.html?view=priorities'
+          "$CHROME" --headless --no-sandbox --disable-gpu --window-size=1440,1100 --virtual-time-budget=5000 --dump-dom 'http://127.0.0.1:8765/visual-preview.html?view=priorities' > /tmp/visual-qa/desktop-priorities.html
+          grep -F 'PRIORITY_DESKTOP_VERTICAL_PASS' /tmp/visual-qa/desktop-priorities.html
+          if grep -F 'PRIORITY_DESKTOP_VERTICAL_FAIL' /tmp/visual-qa/desktop-priorities.html; then
+            echo 'Desktop priorities did not render as a readable vertical list.' >&2
+            exit 1
+          fi
           "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=390,844 --virtual-time-budget=5000 --screenshot=/tmp/visual-qa/iphone-tasks.png 'http://127.0.0.1:8765/visual-preview.html?view=tasks'
           "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=390,844 --virtual-time-budget=5000 --screenshot=/tmp/visual-qa/iphone-priorities.png 'http://127.0.0.1:8765/visual-preview.html?view=priorities'
           "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=390,844 --virtual-time-budget=5000 --screenshot=/tmp/visual-qa/iphone-calendar.png 'http://127.0.0.1:8765/visual-preview.html?view=calendar'
