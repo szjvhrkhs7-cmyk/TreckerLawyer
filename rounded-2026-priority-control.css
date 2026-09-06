@@ -1,0 +1,62 @@
+/* Compatibility bridge for the existing priority markup: reuse the main-zone add button as the day-level + control. */
+.priority-day {
+  position: relative;
+}
+
+.priority-zone--main > .priority-zone__head .priority-add {
+  position: absolute;
+  top: 18px;
+  right: 16px;
+  z-index: 2;
+  display: grid;
+  width: 42px;
+  min-width: 42px;
+  height: 42px;
+  min-height: 42px;
+  padding: 0;
+  place-items: center;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: var(--r26-sm, 14px);
+  background: var(--surface);
+  color: transparent;
+  box-shadow: 0 4px 14px rgba(26, 54, 87, .04);
+  font-size: 0;
+}
+
+.priority-zone--main > .priority-zone__head .priority-add::before {
+  content: "+";
+  display: grid;
+  place-items: center;
+  color: var(--workspace-primary);
+  font-family: var(--workspace-ui-font, sans-serif);
+  font-size: 22px;
+  font-weight: 500;
+  line-height: 1;
+}
+
+.priority-zone--main > .priority-zone__head .priority-add:hover,
+.priority-zone--main > .priority-zone__head .priority-add:focus-visible {
+  border-color: color-mix(in srgb, var(--workspace-accent) 28%, var(--line));
+  background: var(--r26-soft-accent, var(--workspace-accent-soft));
+}
+
+.priority-zone--main > .priority-zone__head .priority-add:hover::before,
+.priority-zone--main > .priority-zone__head .priority-add:focus-visible::before {
+  color: var(--workspace-accent);
+}
+
+.priority-zone--other > .priority-zone__head .priority-add {
+  display: none;
+}
+
+@media (max-width: 899px) {
+  .priority-zone--main > .priority-zone__head .priority-add {
+    top: 20px;
+    right: 18px;
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+    min-height: 44px;
+  }
+}
