@@ -33,6 +33,9 @@
 
         const tabs = document.getElementById('tabs');
         const top = document.querySelector('.top');
+        const brandbar = document.querySelector('.brandbar');
+        const syncButton = document.getElementById('syncButton');
+        const themeButton = document.getElementById('themeToggle');
         const firstTabIcon = tabs?.querySelector('.tab .icon');
         const firstCounter = tabs?.querySelector('.tab .count');
         if (!tabs || getComputedStyle(tabs).position !== 'fixed') return fail('мобильная навигация не закреплена снизу');
@@ -46,12 +49,24 @@
         if (topStyle?.backdropFilter && topStyle.backdropFilter !== 'none') return fail('backdrop-filter верхней панели снова создаёт containing block для fixed-навигации');
         if (topStyle?.webkitBackdropFilter && topStyle.webkitBackdropFilter !== 'none') return fail('webkit-backdrop-filter верхней панели снова создаёт containing block для fixed-навигации');
 
+        if (!brandbar || !syncButton || !themeButton) return fail('не найдены элементы мобильной шапки');
+        const brandRect = brandbar.getBoundingClientRect();
+        const syncRect = syncButton.getBoundingClientRect();
+        const themeRect = themeButton.getBoundingClientRect();
+        if (brandRect.left < -1 || brandRect.right > window.innerWidth + 1) return fail('мобильная шапка выходит за viewport');
+        if (syncRect.right > window.innerWidth + 1 || themeRect.right > window.innerWidth + 1) return fail('кнопки мобильной шапки выходят за экран');
+        if (getComputedStyle(syncButton.querySelector('span')).display !== 'none') return fail('текст синхронизации перегружает мобильную шапку');
+
         if (!firstTabIcon || parseFloat(getComputedStyle(firstTabIcon).width) < 22) return fail('иконки навигации слишком маленькие');
         if (getComputedStyle(firstTabIcon).overflow !== 'visible') return fail('иконки навигации могут обрезаться');
         if (firstCounter) {
           const counterRect = firstCounter.getBoundingClientRect();
           if (counterRect.top < tabsRect.top - 1) return fail('счётчик навигации выступает за верхнюю границу панели');
         }
+
+        const summaryLabel = document.querySelector('.workspace-summary-item span');
+        if (summaryLabel && getComputedStyle(summaryLabel).whiteSpace === 'nowrap') return fail('подпись мобильной статистики обрезается вместо переноса');
+        if (document.documentElement.scrollWidth > window.innerWidth + 1) return fail(`страница имеет горизонтальный overflow: ${document.documentElement.scrollWidth}/${window.innerWidth}`);
 
         const verifyCreateForm = (tab, sheetSelector, fieldSelector, value) => {
           document.querySelector(`[data-tab="${tab}"]`)?.click();
@@ -77,6 +92,7 @@
           field.dispatchEvent(new Event('input', { bubbles: true }));
           submit.click();
           if (overlay.classList.contains('show')) return `форма раздела ${tab} не сохранилась`;
+          if (document.documentElement.scrollWidth > window.innerWidth + 1) return `раздел ${tab} создаёт горизонтальный overflow`;
           return '';
         };
 
@@ -88,6 +104,11 @@
         ];
         const formFailure = formChecks.find(Boolean);
         if (formFailure) return fail(formFailure);
+
+        const calendar = document.querySelector('.calendar-month');
+        if (!calendar) return fail('мобильный календарь не отображается');
+        const calendarRect = calendar.getBoundingClientRect();
+        if (calendarRect.left < -1 || calendarRect.right > window.innerWidth + 1) return fail('мобильный календарь выходит за экран');
 
         document.querySelector('[data-tab="projects"]')?.click();
         document.querySelector('[data-open-project]')?.click();
@@ -141,12 +162,17 @@
             document.querySelector('[data-tab="priorities"]')?.click();
             const board = document.querySelector('.priority-board');
             const days = [...document.querySelectorAll('.priority-day')];
+            const weekActions = document.querySelector('.priority-week-actions');
             if (!board || days.length !== 7) return fail('мобильная недельная доска не показывает все семь дней');
             if (!document.querySelector('.priority-day.is-today[aria-current="date"]')) return fail('текущий день не отмечен на мобильном');
+            if (!weekActions || weekActions.querySelectorAll('.btn').length !== 3) return fail('неполная навигация по неделям на мобильном');
+            const weekRect = weekActions.getBoundingClientRect();
+            if (weekRect.left < -1 || weekRect.right > window.innerWidth + 1) return fail('навигация по неделям выходит за экран');
             const boardRect = board.getBoundingClientRect();
             const lastDayRect = days.at(-1).getBoundingClientRect();
             if (board.scrollWidth > board.clientWidth + 1) return fail(`недельная доска требует горизонтальной прокрутки: ${board.scrollWidth}/${board.clientWidth}`);
             if (lastDayRect.right > boardRect.right + 1 || lastDayRect.left < boardRect.left) return fail('последний день недели не помещается в мобильную доску');
+            if (document.documentElement.scrollWidth > window.innerWidth + 1) return fail('приоритеты создают горизонтальный overflow страницы');
 
             pass();
           } catch (error) {
