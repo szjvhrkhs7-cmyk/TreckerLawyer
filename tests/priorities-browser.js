@@ -10,8 +10,8 @@
   tuesday.setDate(tuesday.getDate() + 1);
   const wednesday = new Date(monday);
   wednesday.setDate(wednesday.getDate() + 2);
-  const thursday = new Date(monday);
-  thursday.setDate(thursday.getDate() + 3);
+  const saturday = new Date(monday);
+  saturday.setDate(saturday.getDate() + 5);
   const timestamp = new Date().toISOString();
   const longTitle = 'Подготовить подробное правовое заключение по проекту реструктуризации без сокращения текста';
 
@@ -54,7 +54,12 @@
 
       document.querySelector('[data-tab="priorities"]')?.click();
       await wait(120);
-      if (!document.querySelector('.priority-board') || document.querySelectorAll('.priority-day').length !== 5) return finish('FAIL: недельная доска не отрисована');
+      const days = [...document.querySelectorAll('.priority-day')];
+      if (!document.querySelector('.priority-board') || days.length !== 7) return finish('FAIL: недельная доска должна показывать семь дней');
+      const today = document.querySelector('.priority-day.is-today[aria-current="date"]');
+      if (!today || today.dataset.priorityDate !== key(new Date())) return finish('FAIL: текущий день не отмечен в текущей неделе');
+      const currentWeekButton = document.querySelector('[data-priority-week="today"]');
+      if (currentWeekButton?.getAttribute('aria-pressed') !== 'true') return finish('FAIL: текущая неделя не отмечена активной');
       if (document.querySelectorAll('.priority-card').length !== 3) return finish('FAIL: не показаны обычные и проектные задачи');
       if (document.querySelector('[data-priority-remove]')) return finish('FAIL: кнопка «Убрать» осталась на карточке приоритета');
       if (document.querySelectorAll('[data-priority-drag]').length !== 3) return finish('FAIL: drag-handle отсутствует у части карточек');
@@ -63,22 +68,33 @@
       const titleStyle = getComputedStyle(title);
       if (titleStyle.whiteSpace === 'nowrap' || titleStyle.textOverflow === 'ellipsis' || title.scrollHeight > title.clientHeight + 1) return finish('FAIL: текст приоритета обрезается');
 
-      const addButton = document.querySelector(`[data-priority-add="other"][data-priority-date="${key(thursday)}"]`);
-      if (!addButton) return finish('FAIL: кнопка добавления задачи в приоритетах не найдена');
+      document.querySelector('[data-priority-week="next"]')?.click();
+      await wait(80);
+      if (document.querySelector('.priority-day.is-today')) return finish('FAIL: текущий день ошибочно отмечен на следующей неделе');
+      if (document.querySelector('[data-priority-week="today"]')?.getAttribute('aria-pressed') !== 'false') return finish('FAIL: следующая неделя ошибочно отмечена текущей');
+      document.querySelector('[data-tab="tasks"]')?.click();
+      await wait(80);
+      document.querySelector('[data-tab="priorities"]')?.click();
+      await wait(100);
+      if (!document.querySelector(`.priority-day.is-today[data-priority-date="${key(new Date())}"]`)) return finish('FAIL: при повторном входе не открылась текущая неделя');
+
+      const addButton = document.querySelector(`[data-priority-add="main"][data-priority-date="${key(saturday)}"]`);
+      if (!addButton) return finish('FAIL: суббота отсутствует или в ней нельзя добавить задачу');
       addButton.click();
       await wait(50);
-      if (!document.querySelector('#prioritySheet.show')) return finish('FAIL: форма новой задачи из приоритетов не открылась');
-      form.elements.title.value = 'Новая задача прямо из приоритетов';
-      form.elements.extra.value = 'Проверить синхронное появление в общем списке';
+      if (!document.querySelector('#prioritySheet.show')) return finish('FAIL: форма новой задачи на выходной не открылась');
+      form.elements.title.value = 'Задача на субботу';
+      form.elements.extra.value = 'Проверить поддержку всех семи дней недели';
+      form.elements.priorityLevel.value = 'other';
       form.requestSubmit();
       await wait(100);
       tasks = JSON.parse(localStorage.getItem('lawyerTasks') || '[]');
-      const created = tasks.find(task => task.title === 'Новая задача прямо из приоритетов');
-      if (!created || created.priorityDate !== key(thursday) || created.priorityLevel !== 'other' || created.status !== 'new') return finish('FAIL: новая задача из приоритетов сохранена неверно');
-      if (!document.querySelector(`[data-priority-card="${created.id}"]`)) return finish('FAIL: новая задача не появилась на доске');
+      const created = tasks.find(task => task.title === 'Задача на субботу');
+      if (!created || created.priorityDate !== key(saturday) || created.priorityLevel !== 'other' || created.status !== 'new') return finish('FAIL: задача на выходной сохранена неверно');
+      if (!document.querySelector(`[data-priority-card="${created.id}"]`)) return finish('FAIL: задача на выходной не появилась на доске');
       document.querySelector('[data-tab="tasks"]')?.click();
       await wait(100);
-      if (!document.querySelector(`[data-task-row="${created.id}"]`) && !document.body.textContent.includes('Новая задача прямо из приоритетов')) return finish('FAIL: новая задача не появилась во вкладке задач');
+      if (!document.querySelector(`[data-task-row="${created.id}"]`) && !document.body.textContent.includes('Задача на субботу')) return finish('FAIL: задача на выходной не появилась во вкладке задач');
       document.querySelector('[data-tab="priorities"]')?.click();
       await wait(100);
 

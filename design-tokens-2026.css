@@ -1,0 +1,303 @@
+/*
+ * Product design tokens for the 2026 rounded interface.
+ * Components consume one shared geometry, spacing and elevation system on
+ * desktop and mobile instead of inventing local radii or shadows.
+ */
+
+:root {
+  --ui-space-1: 4px;
+  --ui-space-2: 8px;
+  --ui-space-3: 12px;
+  --ui-space-4: 16px;
+  --ui-space-5: 20px;
+  --ui-space-6: 24px;
+  --ui-space-7: 28px;
+  --ui-space-8: 32px;
+  --ui-space-10: 40px;
+
+  --ui-radius-control: 14px;
+  --ui-radius-input: 16px;
+  --ui-radius-card: 20px;
+  --ui-radius-panel: 24px;
+  --ui-radius-sheet: 28px;
+  --ui-radius-shell: 32px;
+  --ui-radius-pill: 999px;
+
+  --ui-control-height: 44px;
+  --ui-control-height-compact: 38px;
+  --ui-icon-button: 44px;
+  --ui-fab-size: 58px;
+
+  --ui-shadow-subtle: 0 4px 16px rgba(26, 54, 87, .035);
+  --ui-shadow-card: 0 10px 30px rgba(26, 54, 87, .06), 0 2px 8px rgba(26, 54, 87, .03);
+  --ui-shadow-card-hover: 0 16px 42px rgba(26, 54, 87, .085), 0 4px 14px rgba(26, 54, 87, .04);
+  --ui-shadow-floating: 0 24px 64px rgba(18, 42, 70, .16);
+
+  --r26-xs: 12px;
+  --r26-sm: var(--ui-radius-control);
+  --r26-md: var(--ui-radius-input);
+  --r26-lg: var(--ui-radius-card);
+  --r26-xl: var(--ui-radius-panel);
+  --r26-2xl: var(--ui-radius-shell);
+  --r26-card-shadow: var(--ui-shadow-card);
+  --r26-card-shadow-hover: var(--ui-shadow-card-hover);
+  --shadow-sm: var(--ui-shadow-card);
+}
+
+:root[data-theme="dark"] {
+  --ui-shadow-subtle: 0 5px 18px rgba(0, 0, 0, .16);
+  --ui-shadow-card: 0 12px 34px rgba(0, 0, 0, .24), 0 2px 8px rgba(0, 0, 0, .14);
+  --ui-shadow-card-hover: 0 18px 44px rgba(0, 0, 0, .32), 0 4px 14px rgba(0, 0, 0, .18);
+  --ui-shadow-floating: 0 28px 72px rgba(0, 0, 0, .42);
+}
+
+/* Common component geometry */
+.btn,
+.chip,
+.sync-button,
+.theme-toggle,
+.workspace-icon-button,
+.priority-add,
+.calendar-nav {
+  min-height: var(--ui-control-height);
+  border-radius: var(--ui-radius-control) !important;
+}
+
+.search-wrap,
+.search,
+.field input,
+.field textarea,
+.field select,
+.sheet .editor-wrap {
+  border-radius: var(--ui-radius-input) !important;
+}
+
+.workspace-task-row,
+.workspace-summary-item,
+.priority-card,
+.calendar-agenda-event,
+.task-detail__facts > div,
+.workspace-task-detail-block {
+  border-radius: var(--ui-radius-card) !important;
+}
+
+.workspace-project-card,
+.workspace-note-card,
+.workspace-empty,
+.calendar-month,
+.calendar-day-events,
+.today-panel,
+.card {
+  border-radius: var(--ui-radius-panel) !important;
+}
+
+.sheet,
+.confirm-box {
+  border-radius: var(--ui-radius-sheet) !important;
+}
+
+.workspace-status,
+.workspace-priority,
+.today-status,
+.today-alert-count,
+.today-neutral-count,
+.count {
+  border-radius: var(--ui-radius-pill) !important;
+}
+
+.workspace-project-card,
+.workspace-note-card,
+.priority-day,
+.calendar-day-events,
+.today-panel,
+.card {
+  box-shadow: var(--ui-shadow-card);
+}
+
+.workspace-project-card:hover,
+.workspace-project-card:focus-within,
+.workspace-note-card:hover,
+.workspace-note-card:focus-within,
+.workspace-task-row:hover,
+.workspace-task-row:focus-within {
+  box-shadow: var(--ui-shadow-card-hover);
+}
+
+/* Current-week context in priorities */
+.priority-week-actions .is-current-week {
+  border-color: color-mix(in srgb, var(--workspace-accent) 20%, var(--line)) !important;
+  background: var(--r26-soft-accent) !important;
+  color: var(--workspace-accent) !important;
+}
+
+.priority-day.is-today {
+  border-color: color-mix(in srgb, var(--workspace-accent) 42%, var(--line)) !important;
+  background: color-mix(in srgb, var(--surface) 98%, var(--workspace-accent-soft));
+  box-shadow: 0 14px 36px rgba(52, 120, 246, .11), 0 2px 8px rgba(26, 54, 87, .035) !important;
+}
+
+.priority-day__today {
+  grid-column: 1;
+  display: inline-flex;
+  width: fit-content;
+  min-height: 24px;
+  margin-top: 3px;
+  padding: 0 9px;
+  align-items: center;
+  border-radius: var(--ui-radius-pill);
+  background: var(--workspace-accent-soft);
+  color: var(--workspace-accent);
+  font-family: var(--workspace-ui-font, sans-serif);
+  font-size: 9.5px;
+  font-style: normal;
+  font-weight: 760;
+  letter-spacing: .035em;
+  text-transform: uppercase;
+}
+
+/* Desktop design tokens */
+@media (min-width: 900px) {
+  :root {
+    --ui-page-gutter: 36px;
+    --ui-section-gap: 24px;
+    --ui-card-gap: 14px;
+    --ui-card-padding: 18px;
+    --ui-day-padding-x: 16px;
+    --ui-day-padding-y: 18px;
+    --ui-radius-control: 13px;
+    --ui-radius-input: 16px;
+    --ui-radius-card: 19px;
+    --ui-radius-panel: 23px;
+    --ui-radius-sheet: 26px;
+    --ui-radius-shell: 32px;
+    --ui-control-height: 44px;
+    --ui-icon-button: 44px;
+  }
+
+  .app {
+    border-radius: var(--ui-radius-shell) !important;
+  }
+
+  .page {
+    padding-right: var(--ui-page-gutter) !important;
+    padding-left: var(--ui-page-gutter) !important;
+  }
+
+  .workspace-page-head {
+    margin-bottom: var(--ui-section-gap) !important;
+  }
+
+  .workspace-task-list,
+  .workspace-project-grid,
+  .workspace-notes-grid,
+  .priority-board {
+    gap: var(--ui-card-gap) !important;
+  }
+
+  .workspace-project-card,
+  .workspace-note-card {
+    padding: var(--ui-card-padding) !important;
+  }
+
+  .priority-board {
+    grid-template-columns: repeat(7, minmax(132px, 1fr)) !important;
+    scrollbar-gutter: stable;
+    padding-bottom: 6px !important;
+  }
+
+  .priority-day__head {
+    padding: var(--ui-day-padding-y) var(--ui-day-padding-x) 10px !important;
+  }
+
+  .priority-zone {
+    padding-right: var(--ui-day-padding-x) !important;
+    padding-left: var(--ui-day-padding-x) !important;
+  }
+}
+
+/* Mobile design tokens */
+@media (max-width: 899px) {
+  :root {
+    --ui-page-gutter: 16px;
+    --ui-section-gap: 20px;
+    --ui-card-gap: 12px;
+    --ui-card-padding: 16px;
+    --ui-day-padding-x: 18px;
+    --ui-day-padding-y: 20px;
+    --ui-radius-control: 15px;
+    --ui-radius-input: 17px;
+    --ui-radius-card: 21px;
+    --ui-radius-panel: 26px;
+    --ui-radius-sheet: 28px;
+    --ui-radius-shell: 28px;
+    --ui-control-height: 44px;
+    --ui-icon-button: 48px;
+    --ui-fab-size: 60px;
+  }
+
+  .page {
+    padding-right: var(--ui-page-gutter) !important;
+    padding-left: var(--ui-page-gutter) !important;
+  }
+
+  .workspace-page-head {
+    margin-bottom: var(--ui-section-gap) !important;
+  }
+
+  .workspace-task-list,
+  .workspace-project-grid,
+  .workspace-notes-grid {
+    gap: var(--ui-card-gap) !important;
+  }
+
+  .workspace-project-card,
+  .workspace-note-card {
+    padding: var(--ui-card-padding) !important;
+  }
+
+  .workspace-icon-button,
+  .sync-button,
+  .theme-toggle {
+    width: var(--ui-icon-button) !important;
+    min-width: var(--ui-icon-button) !important;
+    height: var(--ui-icon-button) !important;
+    min-height: var(--ui-icon-button) !important;
+  }
+
+  .fab {
+    width: var(--ui-fab-size) !important;
+    height: var(--ui-fab-size) !important;
+  }
+
+  #tabs.tabs {
+    border-radius: var(--ui-radius-panel) var(--ui-radius-panel) 0 0 !important;
+  }
+
+  .priority-board {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .priority-day {
+    border-radius: var(--ui-radius-panel) !important;
+  }
+
+  .priority-day__head {
+    padding: var(--ui-day-padding-y) var(--ui-day-padding-x) 8px !important;
+  }
+
+  .priority-zone {
+    padding-right: var(--ui-day-padding-x) !important;
+    padding-left: var(--ui-day-padding-x) !important;
+  }
+
+  .priority-day__today {
+    min-height: 26px;
+    padding-inline: 10px;
+    font-size: 10px;
+  }
+
+  .sheet,
+  .confirm-box {
+    border-radius: var(--ui-radius-sheet) var(--ui-radius-sheet) 0 0 !important;
+  }
+}

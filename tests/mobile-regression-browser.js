@@ -141,7 +141,8 @@
             document.querySelector('[data-tab="priorities"]')?.click();
             const board = document.querySelector('.priority-board');
             const days = [...document.querySelectorAll('.priority-day')];
-            if (!board || days.length !== 5) return fail('мобильная недельная доска не показывает пять рабочих дней');
+            if (!board || days.length !== 7) return fail('мобильная недельная доска не показывает все семь дней');
+            if (!document.querySelector('.priority-day.is-today[aria-current="date"]')) return fail('текущий день не отмечен на мобильном');
             const boardRect = board.getBoundingClientRect();
             const lastDayRect = days.at(-1).getBoundingClientRect();
             if (board.scrollWidth > board.clientWidth + 1) return fail(`недельная доска требует горизонтальной прокрутки: ${board.scrollWidth}/${board.clientWidth}`);

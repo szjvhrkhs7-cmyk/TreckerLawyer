@@ -1,3 +1,5 @@
+@import url("design-tokens-2026.css?v=20260906-design-tokens-1");
+
 /* Compatibility bridge for the existing priority markup: reuse the main-zone add button as the day-level + control. */
 .priority-day {
   position: relative;
