@@ -26,22 +26,118 @@
   }
 }
 
+/* Task-card controls use one compact visual scale. Status and priority remain
+ * passive filled pills; actions use the same geometry with interactive borders. */
+.workspace-task-row > .workspace-status,
+.workspace-task-row > .workspace-priority,
+.workspace-task-row:not(.is-done) .workspace-row-actions .btn,
+.workspace-task-row:not(.is-done) .workspace-row-actions .workspace-icon-button {
+  min-height: 32px !important;
+  height: 32px !important;
+  box-sizing: border-box;
+  border-radius: 999px !important;
+  font-family: var(--workspace-ui-font, var(--font)) !important;
+  font-size: 10.5px !important;
+  font-weight: 720 !important;
+  line-height: 1 !important;
+  white-space: nowrap !important;
+}
+
+.workspace-task-row > .workspace-status,
+.workspace-task-row > .workspace-priority {
+  padding: 0 11px !important;
+}
+
+.workspace-task-row:not(.is-done) .workspace-row-actions {
+  gap: 8px !important;
+}
+
+.workspace-task-row:not(.is-done) .workspace-row-actions .btn {
+  width: auto !important;
+  min-width: 0 !important;
+  padding: 0 12px !important;
+  border: 1px solid color-mix(in srgb, var(--line-strong) 82%, transparent) !important;
+  background: color-mix(in srgb, var(--surface) 96%, var(--surface-hover)) !important;
+  color: var(--muted) !important;
+  box-shadow: none !important;
+}
+
+.workspace-task-row:not(.is-done) .workspace-priority-action {
+  font-size: 0 !important;
+  background: var(--surface) !important;
+  color: var(--muted) !important;
+}
+
+.workspace-task-row:not(.is-done) .workspace-priority-action::before {
+  content: "Приоритет";
+  font-size: 10.5px;
+  font-weight: 720;
+  line-height: 1;
+}
+
+.workspace-task-row:not(.is-done) .workspace-complete-action {
+  gap: 5px !important;
+  border-color: color-mix(in srgb, var(--workspace-success) 22%, var(--line)) !important;
+  background: color-mix(in srgb, var(--workspace-success-soft) 64%, var(--surface)) !important;
+  color: var(--workspace-success) !important;
+}
+
+.workspace-task-row:not(.is-done) .workspace-complete-action::before {
+  content: "✓";
+  display: inline-block;
+  width: auto;
+  height: auto;
+  flex: 0 0 auto;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font-size: 12px;
+  line-height: 1;
+}
+
+.workspace-task-row:not(.is-done) .workspace-row-actions .workspace-icon-button {
+  width: 32px !important;
+  min-width: 32px !important;
+  padding: 0 !important;
+  border: 1px solid transparent !important;
+  background: transparent !important;
+  color: var(--faint) !important;
+  font-size: 13px !important;
+}
+
+.workspace-task-row:not(.is-done) .workspace-row-actions .btn:hover,
+.workspace-task-row:not(.is-done) .workspace-row-actions .btn:focus-visible,
+.workspace-task-row:not(.is-done) .workspace-row-actions .workspace-icon-button:hover,
+.workspace-task-row:not(.is-done) .workspace-row-actions .workspace-icon-button:focus-visible {
+  border-color: color-mix(in srgb, var(--workspace-accent) 28%, var(--line)) !important;
+  background: var(--surface-hover) !important;
+  color: var(--text) !important;
+}
+
+.workspace-task-row:not(.is-done) .workspace-complete-action:hover,
+.workspace-task-row:not(.is-done) .workspace-complete-action:focus-visible {
+  border-color: color-mix(in srgb, var(--workspace-success) 36%, var(--line)) !important;
+  background: color-mix(in srgb, var(--workspace-success-soft) 82%, var(--surface)) !important;
+  color: var(--workspace-success) !important;
+}
+
 @media (min-width: 900px) {
   .workspace-task-row:not(.is-done) .workspace-row-actions {
     flex-wrap: wrap;
-    gap: 6px !important;
+    gap: 7px !important;
   }
 }
 
 @media (max-width: 899px) {
-  /* Preserve the proven four-column mobile card and add a third row for actions.
-   * Explicit placement avoids the narrow-text regression caused by auto-sized columns. */
+  /* Keep content hierarchy clear on iPhone: title first, state second, compact
+   * actions third. Visual controls are 32px tall while the invisible hit area
+   * expands to roughly 44px for comfortable touch interaction. */
   .workspace-task-row:not(.is-done) {
     grid-template-columns: 48px auto auto minmax(0, 1fr) !important;
     grid-template-areas: none !important;
     grid-template-rows: auto auto auto;
-    row-gap: 10px !important;
-    padding-bottom: 12px !important;
+    row-gap: 9px !important;
+    padding-bottom: 13px !important;
   }
 
   .workspace-task-row:not(.is-done) > .drag-handle {
@@ -61,46 +157,38 @@
     grid-column: 2 !important;
     grid-row: 2 !important;
     justify-self: start !important;
+    margin: 0 !important;
   }
 
   .workspace-task-row:not(.is-done) > .workspace-priority {
     grid-column: 3 !important;
     grid-row: 2 !important;
     justify-self: start !important;
+    margin: 0 !important;
   }
 
   .workspace-task-row:not(.is-done) > .workspace-row-actions {
     grid-column: 2 / -1 !important;
     grid-row: 3 !important;
-    display: grid !important;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    align-self: stretch !important;
-    justify-self: stretch !important;
-    box-sizing: border-box;
-    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    justify-self: start !important;
+    width: auto !important;
     min-width: 0 !important;
     gap: 8px !important;
-    margin: 2px 0 0 !important;
-    padding-right: 64px !important;
+    margin: 1px 0 0 !important;
+    padding: 0 !important;
   }
 
-  .workspace-task-row:not(.is-done) .workspace-row-actions .btn {
-    display: inline-flex !important;
-    width: 100% !important;
-    min-width: 0 !important;
-    min-height: 46px !important;
-    padding: 0 10px !important;
-    align-items: center;
-    justify-content: center;
-    border-radius: var(--r26-sm, 14px) !important;
-    font-size: 12.5px !important;
-    line-height: 1.15;
-    text-align: center;
-    white-space: normal;
+  .workspace-task-row:not(.is-done) .workspace-row-actions > button {
+    position: relative;
   }
 
-  .workspace-task-row:not(.is-done) .workspace-priority-action {
-    max-width: none !important;
+  .workspace-task-row:not(.is-done) .workspace-row-actions > button::after {
+    content: "";
+    position: absolute;
+    inset: -6px -4px;
   }
 }
 
@@ -110,13 +198,11 @@
   }
 
   .workspace-task-row:not(.is-done) .workspace-row-actions {
-    gap: 6px !important;
-    padding-right: 58px !important;
+    gap: 7px !important;
   }
 
   .workspace-task-row:not(.is-done) .workspace-row-actions .btn {
-    padding-right: 7px !important;
-    padding-left: 7px !important;
-    font-size: 11.5px !important;
+    padding-right: 10px !important;
+    padding-left: 10px !important;
   }
 }
