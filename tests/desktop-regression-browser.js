@@ -145,6 +145,16 @@
       taskTab?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
       await wait(100);
       if (!document.querySelector('[data-tab="priorities"]')?.classList.contains('active')) return fail('ArrowDown не переключает на приоритеты');
+
+      const priorityBoard = document.querySelector('.priority-board');
+      const priorityDays = [...document.querySelectorAll('.priority-day')];
+      if (!priorityBoard || priorityDays.length !== 7) return fail(`desktop-приоритеты показывают не семь дней: ${priorityDays.length}`);
+      if (!document.querySelector('.priority-day.is-today[aria-current="date"]')) return fail('текущий день не отмечен в desktop-приоритетах');
+      if (priorityBoard.scrollWidth > priorityBoard.clientWidth + 1) return fail(`desktop-неделя требует горизонтальной прокрутки: ${priorityBoard.scrollWidth}/${priorityBoard.clientWidth}`);
+      const priorityDayTops = priorityDays.map(day => day.getBoundingClientRect().top);
+      if (Math.max(...priorityDayTops) - Math.min(...priorityDayTops) > 3) return fail('на широком desktop семь дней не помещаются в одну строку');
+      if (document.documentElement.scrollWidth > window.innerWidth + 2) return fail('приоритеты создают горизонтальный overflow страницы');
+
       document.querySelector('[data-tab="priorities"]')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
       await wait(100);
       if (!document.querySelector('[data-tab="projects"]')?.classList.contains('active')) return fail('повторный ArrowDown не переключает на проекты');
