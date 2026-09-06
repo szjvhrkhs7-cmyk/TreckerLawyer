@@ -60,6 +60,22 @@
     return '';
   }
 
+  function validateMobileTaskGeometry(row, context) {
+    if (window.innerWidth >= 900) return '';
+    const main = row?.querySelector('.workspace-task-main');
+    const title = main?.querySelector('strong');
+    const actions = row?.querySelector('.workspace-row-actions');
+    if (!main || !title || !actions) return `${context}: неполная мобильная карточка`;
+    const rowRect = row.getBoundingClientRect();
+    const mainRect = main.getBoundingClientRect();
+    const titleRect = title.getBoundingClientRect();
+    const actionsRect = actions.getBoundingClientRect();
+    if (mainRect.width < 200 || titleRect.width < 200) return `${context}: текстовая колонка слишком узкая (${mainRect.width}/${titleRect.width})`;
+    if (rowRect.height > 420) return `${context}: карточка аномально высокая (${rowRect.height})`;
+    if (actionsRect.width < 200) return `${context}: панель действий слишком узкая (${actionsRect.width})`;
+    return '';
+  }
+
   function validateCompletedSection(expectedId, expectedCount, context) {
     const toggle = document.getElementById('toggleCompleted');
     if (!toggle) return `${context}: раздел завершённых задач не найден`;
@@ -81,6 +97,8 @@
       const rootRow = rootButton?.closest('.workspace-task-row');
       const rootButtonFailure = validateButton(rootButton, rootRow, 'Обычная задача');
       if (rootButtonFailure) return fail(rootButtonFailure);
+      const rootGeometryFailure = validateMobileTaskGeometry(rootRow, 'Обычная задача');
+      if (rootGeometryFailure) return fail(rootGeometryFailure);
 
       if (window.innerWidth < 900) {
         const actions = rootRow.querySelector('.workspace-row-actions');
@@ -114,6 +132,8 @@
       const projectRow = projectButton?.closest('.workspace-task-row');
       const projectButtonFailure = validateButton(projectButton, projectRow, 'Задача проекта');
       if (projectButtonFailure) return fail(projectButtonFailure);
+      const projectGeometryFailure = validateMobileTaskGeometry(projectRow, 'Задача проекта');
+      if (projectGeometryFailure) return fail(projectGeometryFailure);
 
       projectButton.click();
       const projectStored = await waitFor(() => {
