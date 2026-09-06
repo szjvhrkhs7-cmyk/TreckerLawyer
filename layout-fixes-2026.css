@@ -7,22 +7,131 @@
   hyphens: auto;
 }
 
-/* Seven days remain visible without forcing unreadably narrow columns. */
-@media (min-width: 1680px) {
+/* Desktop priorities use one readable day per row. The page scrolls vertically,
+ * while each day keeps the date, main priority and other tasks visually grouped. */
+@media (min-width: 900px) {
   .priority-board {
-    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    width: 100%;
+    min-width: 0;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+  }
+
+  .priority-day {
+    display: grid;
+    grid-template-columns: 160px minmax(260px, .82fr) minmax(360px, 1.18fr);
+    min-width: 0;
+    padding: 0 !important;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 16px;
+    background: var(--surface);
+    box-shadow: 0 8px 24px rgba(24, 50, 85, .055);
+  }
+
+  .priority-day + .priority-day {
+    border-left: 1px solid var(--line) !important;
+  }
+
+  .priority-day__head {
+    grid-column: 1;
+    grid-row: 1;
+    align-content: start;
+    justify-items: start;
+    gap: 6px;
+    margin: 0 !important;
+    padding: 20px 18px !important;
+    border-right: 1px solid var(--line);
+    border-bottom: 0 !important;
+    background: color-mix(in srgb, var(--surface-raised) 97%, var(--workspace-accent-soft));
+    text-align: left;
+  }
+
+  .priority-day__head strong {
+    font-size: 11px;
+    line-height: 1.25;
+    letter-spacing: .05em;
+    white-space: nowrap;
+  }
+
+  .priority-day__head span {
+    font-size: 12px;
+    line-height: 1.35;
+  }
+
+  .priority-zone {
+    min-width: 0;
+    min-height: 0 !important;
+    padding: 18px 20px !important;
+  }
+
+  .priority-zone--main {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .priority-zone + .priority-zone {
+    grid-column: 3;
+    grid-row: 1;
+    min-height: 0 !important;
+    border-top: 0 !important;
+    border-left: 1px solid var(--line);
+  }
+
+  .priority-zone__list {
+    min-height: 0 !important;
+  }
+
+  .priority-zone-empty {
+    min-height: 54px;
+    padding: 14px 16px;
+    border: 1px solid color-mix(in srgb, var(--line) 88%, var(--workspace-accent) 12%);
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--surface-raised) 98%, var(--workspace-accent-soft));
+    text-align: left;
+  }
+
+  .priority-zone--main .priority-zone-empty {
+    border-color: color-mix(in srgb, var(--workspace-accent, var(--blue)) 22%, var(--line));
+  }
+
+  .priority-card {
+    max-width: 100%;
+  }
+
+  .priority-card__main strong {
+    font-size: 13.5px;
+    line-height: 1.4;
   }
 }
 
-@media (min-width: 1280px) and (max-width: 1679px) {
-  .priority-board {
-    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+@media (min-width: 900px) and (max-width: 1199px) {
+  .priority-day {
+    grid-template-columns: 150px minmax(0, 1fr);
+    grid-template-rows: auto auto;
   }
-}
 
-@media (min-width: 900px) and (max-width: 1279px) {
-  .priority-board {
-    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  .priority-day__head {
+    grid-column: 1;
+    grid-row: 1 / span 2;
+  }
+
+  .priority-zone--main {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .priority-zone + .priority-zone {
+    grid-column: 2;
+    grid-row: 2;
+    border-top: 1px solid var(--line) !important;
+    border-left: 0;
   }
 }
 
