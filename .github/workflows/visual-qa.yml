@@ -1,0 +1,58 @@
+name: Visual QA
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  screenshots:
+    runs-on: ubuntu-latest
+    timeout-minutes: 6
+    steps:
+      - uses: actions/checkout@v4
+      - name: Serve app
+        run: |
+          python3 -m http.server 8765 >/tmp/http.log 2>&1 &
+          sleep 1
+      - name: Build visual preview page
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path('index.html').read_text(encoding='utf-8')
+          app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
+          if app_tag not in html:
+              raise SystemExit('Expected application script tag was not found')
+          html = html.replace(app_tag, '<script src="tests/visual-qa-preview.js"></script>\n' + app_tag, 1)
+          Path('visual-preview.html').write_text(html, encoding='utf-8')
+          PY
+      - name: Capture desktop and iPhone previews
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            echo 'Chrome/Chromium is not available on the runner' >&2
+            exit 1
+          fi
+          mkdir -p /tmp/visual-qa
+          "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,900 --virtual-time-budget=5000 --screenshot=/tmp/visual-qa/desktop-tasks.png 'http://127.0.0.1:8765/visual-preview.html?view=tasks'
+          "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,1100 --virtual-time-budget=5000 --screenshot=/tmp/visual-qa/desktop-priorities.png 'http://127.0.0.1:8765/visual-preview.html?view=priorities'
+          "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=390,844 --virtual-time-budget=5000 --screenshot=/tmp/visual-qa/iphone-tasks.png 'http://127.0.0.1:8765/visual-preview.html?view=tasks'
+          "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=390,844 --virtual-time-budget=5000 --screenshot=/tmp/visual-qa/iphone-priorities.png 'http://127.0.0.1:8765/visual-preview.html?view=priorities'
+          "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=390,844 --virtual-time-budget=5000 --screenshot=/tmp/visual-qa/iphone-calendar.png 'http://127.0.0.1:8765/visual-preview.html?view=calendar'
+          test -s /tmp/visual-qa/desktop-tasks.png
+          test -s /tmp/visual-qa/desktop-priorities.png
+          test -s /tmp/visual-qa/iphone-tasks.png
+          test -s /tmp/visual-qa/iphone-priorities.png
+          test -s /tmp/visual-qa/iphone-calendar.png
+      - name: Upload visual QA previews
+        uses: actions/upload-artifact@v4
+        with:
+          name: visual-qa-previews
+          path: /tmp/visual-qa/*.png
+          if-no-files-found: error
+          retention-days: 5

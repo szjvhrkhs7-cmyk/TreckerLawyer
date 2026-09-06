@@ -1,0 +1,38 @@
+/* Final readability fixes found by visual QA. Loaded after platform-polish-2026.css. */
+
+.priority-card__main strong,
+.priority-card__main span {
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+  hyphens: auto;
+}
+
+/* Seven days remain visible without forcing unreadably narrow columns. */
+@media (min-width: 1680px) {
+  .priority-board {
+    grid-template-columns: repeat(7, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 1280px) and (max-width: 1679px) {
+  .priority-board {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (min-width: 900px) and (max-width: 1279px) {
+  .priority-board {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}
+
+@media (max-width: 899px) {
+  /* Keep the task priority action away from the floating add button. */
+  .workspace-task-row:not(.is-done) .workspace-row-actions {
+    justify-content: flex-start !important;
+  }
+
+  .workspace-task-row:not(.is-done) .workspace-priority-action {
+    max-width: calc(100% - 62px) !important;
+  }
+}

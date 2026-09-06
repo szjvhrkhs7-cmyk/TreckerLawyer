@@ -151,8 +151,17 @@
       if (!priorityBoard || priorityDays.length !== 7) return fail(`desktop-приоритеты показывают не семь дней: ${priorityDays.length}`);
       if (!document.querySelector('.priority-day.is-today[aria-current="date"]')) return fail('текущий день не отмечен в desktop-приоритетах');
       if (priorityBoard.scrollWidth > priorityBoard.clientWidth + 1) return fail(`desktop-неделя требует горизонтальной прокрутки: ${priorityBoard.scrollWidth}/${priorityBoard.clientWidth}`);
-      const priorityDayTops = priorityDays.map(day => day.getBoundingClientRect().top);
-      if (Math.max(...priorityDayTops) - Math.min(...priorityDayTops) > 3) return fail('на широком desktop семь дней не помещаются в одну строку');
+      const priorityDayRects = priorityDays.map(day => day.getBoundingClientRect());
+      const rowTops = [...new Set(priorityDayRects.map(rect => Math.round(rect.top)))];
+      if (window.innerWidth >= 1280 && window.innerWidth < 1680) {
+        if (rowTops.length !== 2) return fail(`на desktop 1440 неделя должна занимать две строки, получено ${rowTops.length}`);
+        const firstRowCount = priorityDayRects.filter(rect => Math.abs(rect.top - rowTops[0]) < 3).length;
+        const secondRowCount = priorityDayRects.filter(rect => Math.abs(rect.top - rowTops[1]) < 3).length;
+        if (firstRowCount !== 4 || secondRowCount !== 3) return fail(`ожидалась раскладка 4+3, получено ${firstRowCount}+${secondRowCount}`);
+      }
+      if (Math.min(...priorityDayRects.map(rect => rect.width)) < 210) return fail(`колонки приоритетов слишком узкие: ${Math.min(...priorityDayRects.map(rect => rect.width))}`);
+      const priorityTitles = [...document.querySelectorAll('.priority-card__main strong')];
+      if (priorityTitles.some(title => getComputedStyle(title).wordBreak === 'break-all')) return fail('название приоритета разбивается посимвольно');
       if (document.documentElement.scrollWidth > window.innerWidth + 2) return fail('приоритеты создают горизонтальный overflow страницы');
 
       document.querySelector('[data-tab="priorities"]')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
