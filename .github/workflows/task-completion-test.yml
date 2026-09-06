@@ -1,0 +1,61 @@
+name: Task completion regression
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  task-completion:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build task completion test page
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          html = Path('index.html').read_text(encoding='utf-8')
+          app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
+          if app_tag not in html:
+              raise SystemExit('Expected application script tag was not found')
+          html = html.replace(app_tag, '<script src="tests/task-completion-browser.js"></script>\n' + app_tag, 1)
+          Path('task-completion-test.html').write_text(html, encoding='utf-8')
+          PY
+
+      - name: Serve app
+        run: |
+          python3 -m http.server 8765 >/tmp/http.log 2>&1 &
+          echo $! >/tmp/http.pid
+          sleep 1
+
+      - name: Verify task completion on desktop
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          if [ -z "$CHROME" ]; then
+            echo 'Chrome/Chromium is not available on the runner' >&2
+            exit 1
+          fi
+          "$CHROME" --headless --no-sandbox --disable-gpu --window-size=1440,900 --virtual-time-budget=12000 --dump-dom http://127.0.0.1:8765/task-completion-test.html > /tmp/task-completion-desktop.html
+          grep -F 'TASK_COMPLETION_PASS' /tmp/task-completion-desktop.html
+          if grep -F 'FAIL:' /tmp/task-completion-desktop.html; then
+            echo 'Desktop task completion regression reported a failure.' >&2
+            exit 1
+          fi
+
+      - name: Verify task completion on iPhone-sized viewport
+        run: |
+          set -euo pipefail
+          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
+          "$CHROME" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=12000 --dump-dom http://127.0.0.1:8765/task-completion-test.html > /tmp/task-completion-mobile.html
+          grep -F 'TASK_COMPLETION_PASS' /tmp/task-completion-mobile.html
+          if grep -F 'FAIL:' /tmp/task-completion-mobile.html; then
+            echo 'Mobile task completion regression reported a failure.' >&2
+            exit 1
+          fi
