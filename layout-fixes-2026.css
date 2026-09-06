@@ -74,46 +74,44 @@
 }
 
 @media (max-width: 899px) {
-  /* Give actions their own full-width row instead of hiding them or squeezing
-   * them beside the status pills. This keeps both actions readable on iPhone. */
+  /* Preserve the proven four-column mobile card and add a third row for actions.
+   * Explicit placement avoids the narrow-text regression caused by auto-sized columns. */
   .workspace-task-row:not(.is-done) {
-    grid-template-columns: 48px minmax(0, 1fr) auto !important;
-    grid-template-areas:
-      "handle main main"
-      "handle status priority"
-      "actions actions actions" !important;
+    grid-template-columns: 48px auto auto minmax(0, 1fr) !important;
+    grid-template-areas: none !important;
+    grid-template-rows: auto auto auto;
     row-gap: 10px !important;
     padding-bottom: 12px !important;
   }
 
   .workspace-task-row:not(.is-done) > .drag-handle {
-    grid-area: handle !important;
+    grid-column: 1 !important;
+    grid-row: 1 / span 2 !important;
+    align-self: start !important;
   }
 
   .workspace-task-row:not(.is-done) > .workspace-task-main {
-    grid-area: main !important;
-    grid-column: auto !important;
-    grid-row: auto !important;
+    grid-column: 2 / -1 !important;
+    grid-row: 1 !important;
+    width: 100% !important;
+    min-width: 0 !important;
   }
 
   .workspace-task-row:not(.is-done) > .workspace-status {
-    grid-area: status !important;
-    grid-column: auto !important;
-    grid-row: auto !important;
+    grid-column: 2 !important;
+    grid-row: 2 !important;
     justify-self: start !important;
   }
 
   .workspace-task-row:not(.is-done) > .workspace-priority {
-    grid-area: priority !important;
-    grid-column: auto !important;
-    grid-row: auto !important;
-    justify-self: end !important;
+    grid-column: 3 !important;
+    grid-row: 2 !important;
+    justify-self: start !important;
   }
 
   .workspace-task-row:not(.is-done) > .workspace-row-actions {
-    grid-area: actions !important;
-    grid-column: auto !important;
-    grid-row: auto !important;
+    grid-column: 2 / -1 !important;
+    grid-row: 3 !important;
     display: grid !important;
     grid-template-columns: repeat(2, minmax(0, 1fr));
     align-self: stretch !important;
@@ -149,6 +147,10 @@
 }
 
 @media (max-width: 374px) {
+  .workspace-task-row:not(.is-done) {
+    grid-template-columns: 44px auto auto minmax(0, 1fr) !important;
+  }
+
   .workspace-task-row:not(.is-done) .workspace-row-actions {
     gap: 6px !important;
   }
