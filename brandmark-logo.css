@@ -1,0 +1,34 @@
+/* Header logo override: use the provided folded-paper/checkmark mark without a surrounding square. */
+.brandbar .brandmark {
+  width: 42px !important;
+  height: 42px !important;
+  min-width: 42px !important;
+  flex: 0 0 42px !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background-color: transparent !important;
+  background-image: url("tracker-logo-header-128.png") !important;
+  background-repeat: no-repeat !important;
+  background-position: center !important;
+  background-size: contain !important;
+  box-shadow: none !important;
+  color: transparent !important;
+}
+
+.brandbar .brandmark .icon {
+  display: none !important;
+}
+
+:root[data-theme="dark"] .brandbar .brandmark {
+  background-color: transparent !important;
+  color: transparent !important;
+}
+
+@media (max-width: 899px) {
+  .brandbar .brandmark {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px !important;
+    flex-basis: 44px !important;
+  }
+}
