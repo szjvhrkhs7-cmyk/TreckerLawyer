@@ -845,3 +845,20 @@
     transition: none !important;
   }
 }
+
+/* Use the app’s folded-paper checkmark with the workspace accent palette. */
+.brandmark,
+:root[data-theme="dark"] .brandmark {
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--workspace-accent-soft) !important;
+  border: 0 !important;
+  box-shadow: none !important;
+}
+
+.brandmark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
