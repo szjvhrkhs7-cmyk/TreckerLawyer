@@ -1,0 +1,28 @@
+/* Keep the header brandmark as the standalone logo with no tile/background. */
+.brandmark,
+:root[data-theme="dark"] .brandmark {
+  flex-shrink: 0;
+  overflow: visible !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.brandmark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  background: transparent !important;
+}
+
+@media (max-width: 899px) {
+  .brandmark {
+    width: 44px !important;
+    height: 44px !important;
+    min-width: 44px;
+    flex-basis: 44px;
+  }
+}
