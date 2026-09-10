@@ -51,7 +51,7 @@ async function main() {
   const context = {
     LS: keys,
     localStorage,
-    fetch,
+    fetch, AbortController,
     navigator: { onLine: true },
     location: { hash: '', origin: 'https://example.test', pathname: '/tracker/', search: '' },
     history: { replaceState() {} },

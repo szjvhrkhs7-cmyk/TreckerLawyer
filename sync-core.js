@@ -28,6 +28,9 @@
   let syncLabel = 'Данные сохраняются на устройстве';
   let lastSyncAt = null;
   let refreshTimer = null;
+  let refreshPromise = null;
+  let refreshFailures = 0;
+  let refreshRetryAt = 0;
   let flushTimer = null;
   let retryTimer = null;
   let syncPromise = null;
@@ -120,6 +123,8 @@
   }
 
   function saveSession(nextSession) {
+    refreshFailures = 0;
+    refreshRetryAt = 0;
     session = nextSession;
     if (session) {
       if (!session.expires_at && session.expires_in) {
@@ -157,14 +162,27 @@
       const message = data?.msg || data?.message || data?.error_description || data?.error || `HTTP ${response.status}`;
       const error = new Error(message);
       error.status = response.status;
+      error.code = data?.code || data?.error_code || data?.error;
       throw error;
     }
     return data;
   }
 
+  async function timedRequest(url, options, raw = false) {
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 20000);
+    try {
+      const response = await fetch(url, { ...options, signal: controller.signal });
+      if (raw && response.status === 401) return { unauthorized: true };
+      return await parseResponse(response);
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
   async function authRequest(path, options = {}) {
     const { token, headers, ...requestOptions } = options;
-    const response = await fetch(`${SUPABASE_URL}/auth/v1${path}`, {
+    return timedRequest(`${SUPABASE_URL}/auth/v1${path}`, {
       ...requestOptions,
       cache: 'no-store',
       credentials: 'omit',
@@ -172,30 +190,73 @@
       referrerPolicy: 'no-referrer',
       headers: { ...authHeaders(token), ...(headers || {}) }
     });
-    return parseResponse(response);
+  }
+
+  function adoptSavedSession() {
+    const saved = readSession();
+    if (session?.access_token !== saved?.access_token || session?.refresh_token !== saved?.refresh_token) {
+      session = saved;
+      refreshRetryAt = 0;
+      refreshFailures = 0;
+      scheduleRefresh();
+    }
+    return session;
+  }
+
+  function terminalRefreshError(error) {
+    return ['refresh_token_not_found', 'refresh_token_already_used', 'session_expired',
+      'session_not_found', 'user_not_found', 'user_banned'].includes(error?.code);
   }
 
   async function refreshSession() {
-    if (!session?.refresh_token) return null;
-    try {
-      const next = await authRequest('/token?grant_type=refresh_token', {
-        method: 'POST',
-        body: JSON.stringify({ refresh_token: session.refresh_token })
-      });
-      saveSession({ ...next, user: next.user || session.user });
-      return session;
-    } catch (error) {
-      if (!navigator.onLine) {
-        setStatus('offline', 'Нет сети, локальная копия доступна');
+    if (refreshPromise) return refreshPromise;
+    const requestedToken = session?.refresh_token;
+    const refresh = async () => {
+      // Another tab may have rotated the token while this tab was asleep or waiting for the lock.
+      adoptSavedSession();
+      if (!session?.refresh_token) return null;
+      if (session.refresh_token !== requestedToken && Number(session.expires_at || 0) * 1000 > Date.now() + 60000) return session;
+      if (Date.now() < refreshRetryAt) throw new Error('REFRESH_RETRY_PENDING');
+      const current = session;
+      try {
+        if (!navigator.onLine) throw new Error('OFFLINE');
+        const next = await authRequest('/token?grant_type=refresh_token', {
+          method: 'POST',
+          body: JSON.stringify({ refresh_token: current.refresh_token })
+        });
+        // Never resurrect a logout or overwrite a newer login with a late response.
+        if (readSession()?.refresh_token !== current.refresh_token) return adoptSavedSession();
+        if (!next?.access_token || !next?.refresh_token) throw new Error('INVALID_SESSION_RESPONSE');
+        refreshFailures = 0;
+        refreshRetryAt = 0;
+        saveSession({ ...next, user: next.user || current.user });
         return session;
+      } catch (error) {
+        if (readSession()?.refresh_token !== current.refresh_token) return adoptSavedSession();
+        if (terminalRefreshError(error)) {
+          saveSession(null);
+          setStatus('local', 'Сеанс больше не действует. Войдите снова, локальные данные сохранены');
+        } else {
+          // Network failures, timeouts, rate limits and server errors do not end a session.
+          const delay = Math.min(60000, 5000 * (2 ** Math.min(refreshFailures++, 4)));
+          refreshRetryAt = Date.now() + delay;
+          clearTimeout(refreshTimer);
+          refreshTimer = setTimeout(() => syncFromCloud().catch(() => {}), delay);
+          setStatus(navigator.onLine ? 'error' : 'offline', 'Аккаунт сохранён. Подключение восстановится автоматически');
+        }
+        throw error;
       }
-      saveSession(null);
-      setStatus('local', 'Сеанс завершён, данные остаются на устройстве');
-      throw error;
-    }
+    };
+    // Web Locks coordinate token rotation between Safari tabs; the promise coalesces callers in this tab.
+    refreshPromise = Promise.resolve().then(() => navigator.locks?.request
+      ? navigator.locks.request('lawyer-cloud-session-refresh', refresh)
+      : refresh());
+    try { return await refreshPromise; }
+    finally { refreshPromise = null; }
   }
 
   async function ensureSession() {
+    adoptSavedSession();
     if (!session) return null;
     if (Number(session.expires_at || 0) * 1000 <= Date.now() + 60000) {
       await refreshSession();
@@ -204,21 +265,24 @@
   }
 
   async function dataRequest(path, options = {}, retried = false) {
+    const userId = session?.user?.id;
     await ensureSession();
+    if (userId && session?.user?.id !== userId) throw new Error('AUTH_REQUIRED');
     if (!session?.access_token) throw new Error('AUTH_REQUIRED');
-    const response = await fetch(`${SUPABASE_URL}/rest/v1${path}`, {
+    const data = await timedRequest(`${SUPABASE_URL}/rest/v1${path}`, {
       ...options,
       cache: 'no-store',
       credentials: 'omit',
       redirect: 'error',
       referrerPolicy: 'no-referrer',
       headers: { ...authHeaders(session.access_token), ...(options.headers || {}) }
-    });
-    if (response.status === 401 && !retried && session?.refresh_token) {
+    }, !retried);
+    if (userId && readSession()?.user?.id !== userId) throw new Error('AUTH_REQUIRED');
+    if (data?.unauthorized && !retried && session?.refresh_token) {
       await refreshSession();
       return dataRequest(path, options, true);
     }
-    return parseResponse(response);
+    return data;
   }
 
   async function loadUser() {
@@ -363,7 +427,7 @@
     if (message.includes('already registered') || message.includes('already been registered')) return 'Аккаунт уже создан, нажмите «Войти»';
     if (message.includes('password')) return 'Проверьте пароль. Для нового аккаунта используйте не менее 12 символов.';
     if (message.includes('lawyer_store') || error?.status === 404) return 'Облачная таблица пока недоступна';
-    if (message.includes('auth_required') || error?.status === 401) return 'Нужно войти заново';
+    if (terminalRefreshError(error) || message.includes('auth_required') || error?.status === 401) return 'Нужно войти заново';
     if (message.includes('invalid_cloud_data')) return 'Сетевая копия имеет неверный формат';
     return 'Не удалось связаться с облачным хранилищем';
   }
@@ -456,14 +520,15 @@
   }
 
   async function signOut() {
+    const token = session?.access_token;
+    saveSession(null);
     try {
-      if (session?.access_token && navigator.onLine) {
-        await authRequest('/logout?scope=local', { method: 'POST', token: session.access_token });
+      if (token && navigator.onLine) {
+        await authRequest('/logout?scope=local', { method: 'POST', token });
       }
     } catch (error) {
       console.warn('Cloud logout failed', error);
     }
-    saveSession(null);
     pending.clear();
     lastRemoteAt.clear();
     setStatus('local', 'Данные сохранены на этом устройстве');
@@ -506,13 +571,23 @@
   }
 
   window.addEventListener('online', () => {
+    adoptSavedSession();
+    refreshRetryAt = 0;
     if (!session) return;
     setStatus('syncing', 'Соединение восстановлено');
     syncFromCloud().catch(() => scheduleFlush(1000));
   });
   window.addEventListener('offline', () => setStatus('offline', 'Нет сети, локальная копия доступна'));
-  document.addEventListener('visibilitychange', () => {
+  function resumeSync() {
+    adoptSavedSession();
     if (document.visibilityState === 'visible' && session) syncFromCloud().catch(() => {});
+  }
+  document.addEventListener('visibilitychange', resumeSync);
+  window.addEventListener('pageshow', resumeSync);
+  window.addEventListener('storage', event => {
+    if (event.key !== SESSION_KEY) return;
+    adoptSavedSession();
+    if (!session) setStatus('local', 'Данные сохраняются на устройстве');
   });
   setInterval(() => {
     if (session && navigator.onLine && document.visibilityState === 'visible') syncFromCloud().catch(() => {});

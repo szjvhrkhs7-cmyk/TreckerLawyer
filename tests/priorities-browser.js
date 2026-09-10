@@ -56,6 +56,17 @@
       await wait(120);
       const days = [...document.querySelectorAll('.priority-day')];
       if (!document.querySelector('.priority-board') || days.length !== 7) return finish('FAIL: недельная доска должна показывать семь дней');
+      for (const day of days) {
+        const button = day.querySelector('.priority-zone--main .priority-add');
+        const rect = button.getBoundingClientRect();
+        if (Math.abs(rect.width - rect.height) > 1) return finish('FAIL: кнопка добавления должна быть квадратной');
+        for (const pseudo of ['::before', '::after']) {
+          const stroke = getComputedStyle(button, pseudo);
+          if (stroke.position !== 'absolute' || !['""', "''"].includes(stroke.content)) return finish('FAIL: плюс зависит от текстовой строки');
+          if (Math.abs(parseFloat(stroke.left) - button.clientWidth / 2) > 1 || Math.abs(parseFloat(stroke.top) - button.clientHeight / 2) > 1) return finish('FAIL: плюс смещён относительно центра кнопки');
+        }
+        if (innerWidth < 900 && (rect.width < 44 || rect.height < 44)) return finish('FAIL: область нажатия слишком мала');
+      }
       const today = document.querySelector('.priority-day.is-today[aria-current="date"]');
       if (!today || today.dataset.priorityDate !== key(new Date())) return finish('FAIL: текущий день не отмечен в текущей неделе');
       const currentWeekButton = document.querySelector('[data-priority-week="today"]');

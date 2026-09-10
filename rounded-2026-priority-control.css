@@ -26,15 +26,23 @@
   font-size: 0;
 }
 
-.priority-zone--main > .priority-zone__head .priority-add::before {
-  content: "+";
-  display: grid;
-  place-items: center;
-  color: var(--workspace-primary);
-  font-family: var(--workspace-ui-font, sans-serif);
-  font-size: 22px;
-  font-weight: 500;
-  line-height: 1;
+/* Draw both strokes around the button center, independent of font metrics and grid text rows. */
+.priority-zone--main > .priority-zone__head .priority-add::before,
+.priority-zone--main > .priority-zone__head .priority-add::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 16px;
+  height: 2px;
+  border-radius: 1px;
+  background: var(--workspace-primary);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.priority-zone--main > .priority-zone__head .priority-add::after {
+  transform: translate(-50%, -50%) rotate(90deg);
 }
 
 .priority-zone--main > .priority-zone__head .priority-add:hover,
@@ -44,8 +52,10 @@
 }
 
 .priority-zone--main > .priority-zone__head .priority-add:hover::before,
-.priority-zone--main > .priority-zone__head .priority-add:focus-visible::before {
-  color: var(--workspace-accent);
+.priority-zone--main > .priority-zone__head .priority-add:focus-visible::before,
+.priority-zone--main > .priority-zone__head .priority-add:hover::after,
+.priority-zone--main > .priority-zone__head .priority-add:focus-visible::after {
+  background: var(--workspace-accent);
 }
 
 .priority-zone--other > .priority-zone__head .priority-add {

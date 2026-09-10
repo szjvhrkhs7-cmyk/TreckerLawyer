@@ -2,7 +2,6 @@
   'use strict';
 
   const SUPABASE_URL = 'https://cfkpxrvinkcutbtqpufa.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_VAKzxSJ53hXxd4Tvk0FFlw_D_sNbFq9';
   const SESSION_KEY = 'lawyerCloudSession';
   const DIAGNOSTIC_KEY = 'lawyerCloudDiagnostic';
   const RELOGIN_KEY = 'lawyerCloudNeedsRelogin';
@@ -15,10 +14,6 @@
     } catch {
       return null;
     }
-  }
-
-  function writeSession(session) {
-    try { localStorage.setItem(SESSION_KEY, JSON.stringify(session)); } catch {}
   }
 
   function clearSessionForRelogin() {
@@ -58,17 +53,6 @@
     return payload?.code || payload?.error_code || payload?.error || '';
   }
 
-  function isTerminalRefreshFailure(status, payload) {
-    if (status !== 400 && status !== 401) return false;
-    const code = String(responseCode(payload)).toLowerCase();
-    const message = String(payload?.message || payload?.msg || payload?.error_description || '').toLowerCase();
-    return code.includes('refresh_token_not_found')
-      || code.includes('refresh_token_already_used')
-      || message.includes('invalid refresh token')
-      || message.includes('refresh token not found')
-      || message.includes('refresh token already used');
-  }
-
   function wait(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
@@ -102,6 +86,7 @@
         }
         return response;
       } catch (error) {
+        if (args[1]?.signal?.aborted) throw error;
         lastError = error;
         storeDiagnostic(kind, 0, 'network_error');
         if (retryableRefresh && attempt + 1 < attempts) {
@@ -114,68 +99,14 @@
     throw lastError || new Error('Supabase request failed');
   };
 
-  async function refreshSavedSession(saved) {
-    const response = await originalFetch(`${SUPABASE_URL}/auth/v1/token?grant_type=refresh_token`, {
-      method: 'POST',
-      cache: 'no-store',
-      credentials: 'omit',
-      referrerPolicy: 'no-referrer',
-      headers: { apikey: SUPABASE_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: saved.refresh_token })
-    });
-    const payload = await responsePayload(response);
-    if (response.ok && payload?.access_token && payload?.refresh_token) {
-      const next = { ...payload, user: payload.user || saved.user };
-      if (!next.expires_at && next.expires_in) next.expires_at = Math.floor(Date.now() / 1000) + Number(next.expires_in);
-      writeSession(next);
-      clearDiagnostic();
-      try { sessionStorage.removeItem(RELOGIN_KEY); } catch {}
-      return true;
-    }
-    storeDiagnostic('refresh', response.status, responseCode(payload));
-    if (isTerminalRefreshFailure(response.status, payload)) clearSessionForRelogin();
-    return false;
-  }
-
-  async function preflightSavedSession() {
-    const saved = readJson(localStorage, SESSION_KEY);
-    if (!saved?.access_token || !saved?.refresh_token || !navigator.onLine) return;
-
-    try {
-      const userResponse = await originalFetch(`${SUPABASE_URL}/auth/v1/user`, {
-        method: 'GET',
-        cache: 'no-store',
-        credentials: 'omit',
-        referrerPolicy: 'no-referrer',
-        headers: { apikey: SUPABASE_KEY, Authorization: `Bearer ${saved.access_token}`, 'Content-Type': 'application/json' }
-      });
-
-      const expiresSoon = Number(saved.expires_at || 0) * 1000 <= Date.now() + 60000;
-      if (userResponse.ok && !expiresSoon) {
-        clearDiagnostic();
-        return;
-      }
-
-      if (!userResponse.ok && userResponse.status !== 401) {
-        const payload = await responsePayload(userResponse);
-        storeDiagnostic('user', userResponse.status, responseCode(payload));
-        return;
-      }
-
-      await refreshSavedSession(saved);
-    } catch {
-      storeDiagnostic('user', 0, 'network_error');
-    }
-  }
-
   function diagnosticText() {
     const diagnostic = readJson(sessionStorage, DIAGNOSTIC_KEY);
     if (!diagnostic) return 'Облачная сессия дала сбой. Локальные данные сохранены.';
     if (diagnostic.kind === 'data' && diagnostic.status === 403) return 'Облако отклонило доступ к данным. Переподключение безопасно; если ошибка повторится, потребуется проверить права RLS.';
     if (diagnostic.kind === 'data' && diagnostic.status === 404) return 'Облачная таблица недоступна. Локальные данные сохранены.';
     if (diagnostic.kind === 'data' && diagnostic.status === 409) return 'Облако вернуло конфликт структуры данных. Локальная копия не потеряна.';
-    if (diagnostic.status === 401 || diagnostic.kind === 'refresh') return 'Облачная сессия устарела. Переподключите аккаунт, локальные данные останутся на месте.';
     if (diagnostic.status === 0) return 'Соединение с облаком прервалось. Локальная копия сохранена.';
+    if (diagnostic.kind === 'refresh') return 'Не удалось продлить подключение. Аккаунт сохранён, приложение повторит попытку автоматически.';
     if (diagnostic.status >= 500) return 'Supabase временно не ответил корректно. Локальные данные сохранены.';
     return `Сбой облачной синхронизации (код ${diagnostic.status || 'сети'}). Локальная копия сохранена.`;
   }
@@ -231,5 +162,6 @@
   }
 
   installRecoveryUi();
-  window.lawyerCloudRecoveryReady = preflightSavedSession();
+  // Session restoration is owned by sync-core, including refresh locking and retries.
+  window.lawyerCloudRecoveryReady = Promise.resolve();
 })();
