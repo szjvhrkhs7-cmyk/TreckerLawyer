@@ -8,6 +8,7 @@
   let selectedTask = null;
   let newTaskDefaults = null;
   let weekAnchor = startOfWeek(new Date());
+  let revealTodayAfterRender = false;
 
   function pad(value) {
     return String(value).padStart(2, '0');
@@ -326,6 +327,13 @@
     });
   }
 
+  function revealCurrentPriorityDay() {
+    if (!revealTodayAfterRender) return;
+    revealTodayAfterRender = false;
+    const marker = page.querySelector('.priority-day.is-today .priority-day__today');
+    marker?.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+  }
+
   function renderPriorities() {
     const days = Array.from({ length: 7 }, (_, index) => addDays(weekAnchor, index));
     const today = defaultPriorityDay();
@@ -354,6 +362,7 @@
       </div>
     </section>`;
     bindPriorityDrag();
+    revealCurrentPriorityDay();
   }
 
   priorityForm.addEventListener('submit', event => {
@@ -438,6 +447,7 @@
     const weekButton = event.target.closest('[data-priority-week]');
     if (weekButton) {
       const action = weekButton.dataset.priorityWeek;
+      if (action === 'today') revealTodayAfterRender = true;
       weekAnchor = action === 'today' ? startOfWeek(new Date()) : addDays(weekAnchor, action === 'prev' ? -7 : 7);
       render();
       return;
@@ -467,7 +477,10 @@
   tabs?.addEventListener('click', event => {
     const tab = event.target.closest('[data-tab]');
     if (tab?.dataset.tab !== 'priorities') return;
-    if (state.tab !== 'priorities') weekAnchor = startOfWeek(new Date());
+    if (state.tab !== 'priorities') {
+      weekAnchor = startOfWeek(new Date());
+      revealTodayAfterRender = true;
+    }
   }, true);
 
   document.addEventListener('click', event => {
