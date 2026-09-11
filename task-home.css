@@ -154,3 +154,155 @@
     line-height: 1.52;
   }
 }
+
+/* Status overview: compact bento layout instead of three equal empty cards. */
+.workspace-tasks-page .workspace-summary-strip {
+  display: grid;
+  grid-template-columns: minmax(0, 1.12fr) minmax(0, .88fr);
+  grid-template-rows: repeat(2, minmax(58px, auto));
+  gap: 8px;
+  margin: 2px 0 16px;
+}
+
+.workspace-tasks-page .workspace-summary-item {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  min-height: 58px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--line) 86%, var(--workspace-accent-soft));
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--workspace-accent-soft));
+  box-shadow: 0 7px 22px rgba(38, 65, 96, .055);
+}
+
+.workspace-tasks-page .workspace-summary-item::before {
+  content: "";
+  width: 4px;
+  height: 24px;
+  flex: 0 0 4px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--workspace-accent) 62%, var(--surface));
+}
+
+.workspace-tasks-page .workspace-summary-item strong {
+  margin-left: auto;
+  color: var(--workspace-primary);
+  font-family: var(--workspace-heading-font) !important;
+  font-size: 24px;
+  font-weight: 780;
+  line-height: 1;
+  letter-spacing: -.035em;
+  font-variant-numeric: tabular-nums;
+}
+
+.workspace-tasks-page .workspace-summary-item span {
+  min-width: 0;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 690;
+  line-height: 1.2;
+}
+
+.workspace-tasks-page .workspace-summary-item:first-child {
+  grid-row: 1 / span 2;
+  min-height: 124px;
+  align-items: flex-start;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px 17px;
+  background:
+    radial-gradient(circle at 92% 12%, color-mix(in srgb, var(--workspace-accent-soft) 82%, transparent) 0 34px, transparent 35px),
+    color-mix(in srgb, var(--surface) 89%, var(--workspace-accent-soft));
+}
+
+.workspace-tasks-page .workspace-summary-item:first-child::before {
+  position: absolute;
+  top: 16px;
+  left: 17px;
+  width: 34px;
+  height: 4px;
+  background: color-mix(in srgb, var(--workspace-accent) 55%, var(--surface));
+}
+
+.workspace-tasks-page .workspace-summary-item:first-child span {
+  order: 1;
+  padding-top: 13px;
+  font-size: 12px;
+  font-weight: 720;
+}
+
+.workspace-tasks-page .workspace-summary-item:first-child strong {
+  order: 2;
+  margin: 0;
+  font-size: 36px;
+}
+
+.workspace-tasks-page .workspace-summary-item:nth-child(2)::before {
+  background: color-mix(in srgb, #5f8ec9 72%, var(--surface));
+}
+
+.workspace-tasks-page .workspace-summary-item:nth-child(3)::before {
+  background: color-mix(in srgb, #8f78bd 66%, var(--surface));
+}
+
+.workspace-tasks-page .workspace-summary-item.is-danger {
+  border-color: color-mix(in srgb, var(--workspace-danger) 22%, var(--line));
+  background:
+    radial-gradient(circle at 92% 12%, color-mix(in srgb, var(--workspace-danger-soft) 82%, transparent) 0 34px, transparent 35px),
+    color-mix(in srgb, var(--workspace-danger-soft) 54%, var(--surface));
+}
+
+.workspace-tasks-page .workspace-summary-item.is-danger::before {
+  background: color-mix(in srgb, var(--workspace-danger) 78%, var(--surface));
+}
+
+.workspace-tasks-page .workspace-summary-item.is-danger strong {
+  color: var(--workspace-danger);
+}
+
+@media (max-width: 899px) {
+  .workspace-tasks-page .workspace-summary-strip {
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr);
+    grid-template-rows: repeat(2, 60px);
+    gap: 7px;
+    margin-bottom: 14px;
+  }
+
+  .workspace-tasks-page .workspace-summary-item {
+    min-height: 60px;
+    padding: 10px 12px;
+    border-radius: 15px;
+  }
+
+  .workspace-tasks-page .workspace-summary-item strong {
+    font-size: 22px;
+  }
+
+  .workspace-tasks-page .workspace-summary-item span {
+    font-size: 10px;
+  }
+
+  .workspace-tasks-page .workspace-summary-item:first-child {
+    min-height: 127px;
+    padding: 15px 16px;
+  }
+
+  .workspace-tasks-page .workspace-summary-item:first-child::before {
+    top: 15px;
+    left: 16px;
+  }
+
+  .workspace-tasks-page .workspace-summary-item:first-child span {
+    padding-top: 12px;
+    font-size: 11px;
+  }
+
+  .workspace-tasks-page .workspace-summary-item:first-child strong {
+    font-size: 33px;
+  }
+}
