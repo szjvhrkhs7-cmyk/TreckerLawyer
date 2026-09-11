@@ -166,10 +166,12 @@
             const today = document.querySelector('.priority-day.is-today[aria-current="date"]');
             if (!board || days.length !== 7) return fail('мобильная недельная доска не показывает все семь дней');
             if (!today) return fail('текущий день не отмечен на мобильном');
-            const todayMarkerRect = today.querySelector('.priority-day__today')?.getBoundingClientRect();
-            const visibleTop = top.getBoundingClientRect().bottom;
+            const todayRect = today.getBoundingClientRect();
+            const visibleTop = Math.max(0, top.getBoundingClientRect().bottom);
             const visibleBottom = tabs.getBoundingClientRect().top;
-            if (!todayMarkerRect || todayMarkerRect.top < visibleTop || todayMarkerRect.bottom > visibleBottom) return fail('при входе в приоритеты текущий день не виден');
+            const visibleCenter = (visibleTop + visibleBottom) / 2;
+            const todayCenter = (todayRect.top + todayRect.bottom) / 2;
+            if (Math.abs(todayCenter - visibleCenter) > (visibleBottom - visibleTop) * 0.12) return fail('при входе в приоритеты карточка текущего дня не расположена по центру');
             if (!weekActions || weekActions.querySelectorAll('.btn').length !== 3) return fail('неполная навигация по неделям на мобильном');
             const weekRect = weekActions.getBoundingClientRect();
             if (weekRect.left < -1 || weekRect.right > window.innerWidth + 1) return fail('навигация по неделям выходит за экран');

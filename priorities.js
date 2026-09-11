@@ -330,8 +330,8 @@
   function revealCurrentPriorityDay() {
     if (!revealTodayAfterRender) return;
     revealTodayAfterRender = false;
-    const marker = page.querySelector('.priority-day.is-today .priority-day__today');
-    marker?.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+    const currentDay = page.querySelector('.priority-day.is-today[aria-current="date"]');
+    currentDay?.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
   }
 
   function renderPriorities() {
