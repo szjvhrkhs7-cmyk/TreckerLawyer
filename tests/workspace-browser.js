@@ -50,6 +50,11 @@
       if (document.querySelectorAll('.workspace-task-row').length < 3) return finish('FAIL: задачи не отображаются новым списком');
       if (document.querySelectorAll('.workspace-summary-item').length !== 3) return finish('FAIL: сводка задач не отображается');
 
+      const activeFilterStyle = getComputedStyle(document.querySelector('.workspace-tasks-page .filters .chip.active'));
+      if (activeFilterStyle.backgroundColor !== 'rgb(234, 243, 255)' || activeFilterStyle.color !== 'rgb(36, 91, 136)' || activeFilterStyle.borderTopColor !== 'rgb(207, 225, 244)') {
+        return finish('FAIL: активный фильтр задач не использует согласованную бело-голубую палитру');
+      }
+
       const detailedRow = document.querySelector('[data-sort-id="ci-workspace-overdue"]');
       const extra = detailedRow?.querySelector('.workspace-task-detail-block--extra .workspace-task-detail-text');
       const notes = detailedRow?.querySelector('.workspace-task-detail-block--notes .workspace-task-detail-text');

@@ -35,6 +35,20 @@ a,
   -webkit-tap-highlight-color: transparent;
 }
 
+.workspace-tasks-page .filters .chip.active {
+  border-color: #cfe1f4;
+  background: #eaf3ff;
+  color: #245b88;
+  box-shadow: 0 6px 18px rgba(36, 91, 136, .08), inset 0 1px 0 rgba(255, 255, 255, .82);
+}
+
+:root[data-theme="dark"] .workspace-tasks-page .filters .chip.active {
+  border-color: rgba(110, 168, 255, .28);
+  background: rgba(110, 168, 255, .16);
+  color: #d7e7f8;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, .14);
+}
+
 /* Desktop: keep the full seven-day week visible without horizontal scrolling.
  * Wide screens use one row; compact desktop widths reflow into balanced rows. */
 @media (min-width: 1380px) {
