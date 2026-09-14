@@ -343,9 +343,9 @@
       <header class="workspace-page-head priority-page-head">
         <div><p class="workspace-page-eyebrow">План на неделю</p><h2>Приоритеты</h2><p>${esc(weekLabel(days))}</p></div>
         <div class="priority-week-actions" aria-label="Навигация по неделям">
-          <button type="button" class="btn" data-priority-week="prev" aria-label="Предыдущая неделя">‹</button>
+          <button type="button" class="btn" data-priority-week="prev" aria-label="Предыдущая неделя"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-left"></use></svg></button>
           <button type="button" class="btn${currentWeek ? ' is-current-week' : ''}" data-priority-week="today" aria-pressed="${currentWeek}">Текущая неделя</button>
-          <button type="button" class="btn" data-priority-week="next" aria-label="Следующая неделя">›</button>
+          <button type="button" class="btn" data-priority-week="next" aria-label="Следующая неделя"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-right"></use></svg></button>
         </div>
       </header>
       <div class="priority-board" role="region" aria-label="Приоритеты на неделю" tabindex="0">
@@ -494,3 +494,4 @@
   globalThis.renderPriorities = renderPriorities;
   globalThis.openPriorityPicker = openPriorityPicker;
 })();
+

@@ -119,16 +119,16 @@
     const selectedEvents = events.filter(event => event.date === preferred);
     const selectedLabel = capitalized(selectedDate.toLocaleDateString('ru-RU', { weekday: 'long', day: 'numeric', month: 'long' }));
     const eventList = selectedEvents.length
-      ? selectedEvents.map(event => `<button type="button" class="calendar-agenda-event" data-calendar-event="${esc(event.id)}"><span class="calendar-agenda-event__time">${esc(event.startTime)}<small>${esc(event.endTime)}</small></span><span class="calendar-agenda-event__body"><strong>${esc(event.title)}</strong>${event.location ? `<small>${esc(event.location)}</small>` : ''}</span><span class="calendar-agenda-event__chevron" aria-hidden="true">›</span></button>`).join('')
+      ? selectedEvents.map(event => `<button type="button" class="calendar-agenda-event" data-calendar-event="${esc(event.id)}"><span class="calendar-agenda-event__time">${esc(event.startTime)}<small>${esc(event.endTime)}</small></span><span class="calendar-agenda-event__body"><strong>${esc(event.title)}</strong>${event.location ? `<small>${esc(event.location)}</small>` : ''}</span><span class="calendar-agenda-event__chevron" aria-hidden="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-right"></use></svg></span></button>`).join('')
       : '<p class="calendar-agenda-empty">На этот день событий нет</p>';
 
     page.innerHTML = `<section class="calendar-view" aria-label="Календарь на месяц">
       <div class="calendar-toolbar">
         <div class="calendar-month-title"><h2>${esc(monthName)}</h2><span>${start.getFullYear()}</span></div>
         <div class="calendar-toolbar__actions">
-          <button class="btn calendar-nav" type="button" data-calendar-prev aria-label="Предыдущий месяц">‹</button>
+          <button class="btn calendar-nav" type="button" data-calendar-prev aria-label="Предыдущий месяц"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-left"></use></svg></button>
           <button class="btn" type="button" data-calendar-today>Сегодня</button>
-          <button class="btn calendar-nav" type="button" data-calendar-next aria-label="Следующий месяц">›</button>
+          <button class="btn calendar-nav" type="button" data-calendar-next aria-label="Следующий месяц"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-right"></use></svg></button>
         </div>
       </div>
       <div class="calendar-month" role="grid" aria-label="${esc(`${monthName} ${start.getFullYear()}`)}">
@@ -261,3 +261,4 @@
   globalThis.exportCalendarEvent = exportCalendarEvent;
   updateHeader();
 })();
+

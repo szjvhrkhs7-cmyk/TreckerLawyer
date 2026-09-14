@@ -102,7 +102,7 @@
           ${current.priority !== 'normal' && current.priority !== 'none' ? `<span class="workspace-priority workspace-priority--${esc(current.priority)}">${esc(priorityText[current.priority] || current.priority)}</span>` : ''}
           <h3>${esc(current.title)}</h3>
         </div>
-        <button type="button" class="workspace-icon-button" id="cancelTask" aria-label="Закрыть детали задачи">×</button>
+        <button type="button" class="workspace-icon-button" id="cancelTask" aria-label="Закрыть детали задачи"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-close"></use></svg></button>
       </header>
       <dl class="task-detail__facts">
         <div><dt>Срок</dt><dd class="${overdue(current) ? 'is-danger' : ''}">${esc(taskDueLabel(current))}</dd></div>
@@ -168,7 +168,7 @@
     const tone = taskTone(task);
     const project = taskProject(task);
     return `<article class="workspace-task-row workspace-task-row--${tone} ${done ? 'is-done' : ''}" data-sort-id="${id}">
-      ${done ? '<span class="workspace-task-row__done-mark" aria-hidden="true">✓</span>' : dragHandle(`задачу ${task.title}`)}
+      ${done ? '<span class="workspace-task-row__done-mark" aria-hidden="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check"></use></svg></span>' : dragHandle(`задачу ${task.title}`)}
       <button type="button" class="workspace-task-main" data-edit-task="${id}">
         <strong>${esc(task.title || 'Без названия')}</strong>
         <span class="workspace-task-meta">
@@ -182,7 +182,7 @@
       <div class="workspace-row-actions">
         ${!done && task.status !== 'done' ? `<button type="button" class="btn workspace-priority-action" data-set-priority="${id}" data-task-scope="${task.projectId ? 'project' : 'root'}">${task.priorityDate ? 'Изменить приоритет' : 'Поставить приоритет'}</button>` : ''}
         ${!done && task.status !== 'done' ? `<button type="button" class="btn ok" data-done-task="${id}">Завершить</button>` : ''}
-        <button type="button" class="workspace-icon-button" data-edit-task="${id}" aria-label="Открыть задачу ${esc(task.title)}">•••</button>
+        <button type="button" class="workspace-icon-button" data-edit-task="${id}" aria-label="Открыть задачу ${esc(task.title)}"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-more"></use></svg></button>
       </div>
     </article>`;
   }
@@ -269,9 +269,9 @@
         <div class="workspace-row-actions">
           ${completed ? '' : dragHandle(`проект ${project.title}`)}
           <button type="button" class="btn" data-open-project="${id}">Открыть</button>
-          <button type="button" class="workspace-icon-button" data-edit-project="${id}" aria-label="Изменить проект ${esc(project.title)}">✎</button>
-          ${completed ? '' : `<button type="button" class="workspace-icon-button workspace-icon-button--success" data-complete-project="${id}" aria-label="Завершить проект ${esc(project.title)}">✓</button>`}
-          <button type="button" class="workspace-icon-button workspace-icon-button--danger" data-del-project="${id}" aria-label="Удалить проект ${esc(project.title)}">×</button>
+          <button type="button" class="workspace-icon-button" data-edit-project="${id}" aria-label="Изменить проект ${esc(project.title)}"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-edit"></use></svg></button>
+          ${completed ? '' : `<button type="button" class="workspace-icon-button workspace-icon-button--success" data-complete-project="${id}" aria-label="Завершить проект ${esc(project.title)}"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check"></use></svg></button>`}
+          <button type="button" class="workspace-icon-button workspace-icon-button--danger" data-del-project="${id}" aria-label="Удалить проект ${esc(project.title)}"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-close"></use></svg></button>
         </div>
       </div>
     </article>`;
@@ -344,7 +344,7 @@
         return `<div class="swipe-row workspace-note-row" data-note-row="${id}" data-sort-id="${id}">
           <div class="swipe-action"><button type="button" class="swipe-delete" data-delete-note="${id}" aria-label="Удалить заметку">Удалить</button></div>
           <article class="workspace-note-card note-card">
-            <div class="workspace-note-card__top">${dragHandle(`заметку ${note.title || 'Без заголовка'}`)}<span>${esc(noteUpdatedLabel(note))}</span><button type="button" class="workspace-icon-button workspace-icon-button--danger" data-delete-note="${id}" aria-label="Удалить заметку ${title}">×</button></div>
+            <div class="workspace-note-card__top">${dragHandle(`заметку ${note.title || 'Без заголовка'}`)}<span>${esc(noteUpdatedLabel(note))}</span><button type="button" class="workspace-icon-button workspace-icon-button--danger" data-delete-note="${id}" aria-label="Удалить заметку ${title}"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-close"></use></svg></button></div>
             <button type="button" class="workspace-note-main" data-open-note="${id}" aria-label="Открыть заметку ${title}"><h3>${title}</h3><p>${preview}</p></button>
           </article>
         </div>`;
@@ -401,3 +401,4 @@
 
   render();
 })();
+
