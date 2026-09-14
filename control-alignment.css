@@ -38,6 +38,26 @@
   height: 18px;
 }
 
+.calendar-agenda-heading > div {
+  min-width: 0;
+}
+
+.calendar-agenda-heading [data-calendar-new-for-day] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.calendar-agenda-heading [data-calendar-new-for-day] .icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
 .workspace-icon-button,
 .workspace-task-row__done-mark,
 .calendar-agenda-event__chevron {

@@ -136,7 +136,7 @@
         <div class="calendar-month-grid">${dateCells}</div>
       </div>
       <div class="calendar-day-events" aria-live="polite">
-        <div class="calendar-agenda-heading"><div><p>Выбранная дата</p><h3>${esc(selectedLabel)}</h3></div><button class="btn" type="button" data-calendar-new-for-day>+ Добавить</button></div>
+        <div class="calendar-agenda-heading"><div><p>Выбранная дата</p><h3>${esc(selectedLabel)}</h3></div><button class="btn" type="button" data-calendar-new-for-day><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-plus"></use></svg><span>Добавить</span></button></div>
         <div class="calendar-agenda-list">${eventList}</div>
       </div>
     </section>`;
