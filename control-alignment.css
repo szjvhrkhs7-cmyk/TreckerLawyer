@@ -1,0 +1,75 @@
+/* Keep action glyphs independent of platform fonts and text baselines. */
+.priority-week-actions .btn[data-priority-week],
+.calendar-toolbar__actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  height: 44px;
+  min-height: 44px;
+  line-height: 1;
+}
+
+.priority-week-actions .btn[data-priority-week="prev"],
+.priority-week-actions .btn[data-priority-week="next"],
+.calendar-toolbar__actions .calendar-nav {
+  width: 44px;
+  min-width: 44px;
+  flex: 0 0 44px;
+  padding: 0;
+}
+
+.priority-week-actions .icon,
+.calendar-nav .icon,
+.workspace-icon-button .icon,
+.workspace-task-row__done-mark .icon,
+.calendar-agenda-event__chevron .icon,
+.today-waiting-row > .icon {
+  display: block;
+  width: 20px;
+  height: 20px;
+  flex: 0 0 20px;
+  margin: 0;
+  pointer-events: none;
+}
+
+.workspace-task-row .workspace-icon-button .icon {
+  width: 18px;
+  height: 18px;
+}
+
+.calendar-agenda-heading > div {
+  min-width: 0;
+}
+
+.calendar-agenda-heading [data-calendar-new-for-day] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  gap: 6px;
+  min-height: 44px;
+  white-space: nowrap;
+}
+
+.calendar-agenda-heading [data-calendar-new-for-day] .icon {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.workspace-icon-button,
+.workspace-task-row__done-mark,
+.calendar-agenda-event__chevron {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.priority-week-actions .btn:focus-visible,
+.calendar-nav:focus-visible,
+.workspace-icon-button:focus-visible {
+  outline: 2px solid var(--workspace-accent, var(--blue));
+  outline-offset: 2px;
+}

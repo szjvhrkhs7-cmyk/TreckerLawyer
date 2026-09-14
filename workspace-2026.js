@@ -166,7 +166,7 @@
       : '<div class="today-panel-empty">Активных проектов пока нет</div>';
 
     const waitingHtml = waiting.length
-      ? waiting.map(task => `<button class="today-waiting-row" type="button" data-today-edit="${esc(String(task.id))}"><span><strong>${esc(task.title)}</strong><small>${esc(dueText(task))}</small></span><span aria-hidden="true">›</span></button>`).join('')
+      ? waiting.map(task => `<button class="today-waiting-row" type="button" data-today-edit="${esc(String(task.id))}"><span><strong>${esc(task.title)}</strong><small>${esc(dueText(task))}</small></span><span aria-hidden="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-right"></use></svg></span></button>`).join('')
       : '<div class="today-panel-empty">Нет задач в ожидании</div>';
 
     page.innerHTML = `<section class="today-dashboard" aria-label="Рабочий день">
@@ -304,3 +304,4 @@
   applyTheme(document.documentElement.dataset.theme);
   render();
 })();
+
