@@ -91,32 +91,6 @@
     </article>`;
   }
 
-  function calendarEvents() {
-    if (typeof globalThis.allCalendarEvents === 'function') return globalThis.allCalendarEvents();
-    return load(LS.calendarEvents).filter(valid).sort((a, b) => `${a.date || ''}T${a.startTime || ''}`.localeCompare(`${b.date || ''}T${b.startTime || ''}`));
-  }
-
-  function todayEvents() {
-    return calendarEvents().filter(event => event.date === todayKey()).slice(0, 4);
-  }
-
-  function nextEvent() {
-    const current = new Date();
-    return calendarEvents().find(event => {
-      if (!event.date || !event.startTime) return false;
-      const date = new Date(`${event.date}T${event.startTime}:00`);
-      return Number.isFinite(date.getTime()) && date >= current;
-    }) || null;
-  }
-
-  function eventTimeLabel(event) {
-    if (!event) return '—';
-    if (event.date === todayKey()) return event.startTime || '—';
-    if (event.date === tomorrowKey()) return 'Завтра';
-    const date = new Date(`${event.date}T00:00:00`);
-    return Number.isFinite(date.getTime()) ? date.toLocaleDateString('ru-RU', { day: 'numeric', month: 'short' }).replace('.', '') : '—';
-  }
-
   function projectsSummary() {
     const projectTasks = load(LS.projectTasks).filter(valid).map(normTask);
     return allProjects()
@@ -146,8 +120,6 @@
     const allActive = activeTasks();
     const rootFocus = focusTasks();
     const waiting = rootTasks().filter(task => task.status === 'waiting' && task.status !== 'done').slice(0, 2);
-    const events = todayEvents();
-    const upcoming = nextEvent();
     const projects = projectsSummary();
     const overdueCount = allActive.filter(task => overdue(task)).length;
     const inWorkCount = allActive.filter(task => task.status === 'inwork').length;
@@ -156,10 +128,6 @@
     const focusHtml = rootFocus.length
       ? rootFocus.map(focusTaskHtml).join('')
       : '<div class="today-empty"><strong>Срочных задач нет</strong><span>Можно спокойно перейти к общему списку или запланировать новую задачу.</span></div>';
-
-    const eventsHtml = events.length
-      ? events.map(event => `<button class="today-event" type="button" data-today-event="${esc(String(event.id))}" data-event-date="${esc(event.date)}"><time>${esc(event.startTime || '')}</time><span><strong>${esc(event.title || 'Без названия')}</strong>${event.location ? `<small>${esc(event.location)}</small>` : ''}</span></button>`).join('')
-      : '<div class="today-panel-empty">На сегодня событий нет</div>';
 
     const projectsHtml = projects.length
       ? projects.map(projectHtml).join('')
@@ -195,13 +163,8 @@
           <section class="today-kpis" aria-label="Краткая статистика">
             <article class="today-kpi ${overdueCount ? 'is-danger' : ''}"><strong>${overdueCount}</strong><span>Просрочено</span></article>
             <article class="today-kpi"><strong>${inWorkCount}</strong><span>В работе</span></article>
-            <article class="today-kpi"><strong>${esc(eventTimeLabel(upcoming))}</strong><span>Следующее событие</span></article>
           </section>
 
-          <section class="today-panel">
-            <div class="today-panel-heading"><div><h3>Сегодня в календаре</h3></div><button type="button" data-workspace-tab="calendar">Все события →</button></div>
-            <div class="today-events">${eventsHtml}</div>
-          </section>
 
           <section class="today-panel">
             <div class="today-panel-heading"><div><h3>Проекты</h3></div><button type="button" data-workspace-tab="projects">Все проекты →</button></div>
@@ -264,16 +227,6 @@
       return;
     }
 
-    const eventButton = event.target.closest('[data-today-event]');
-    if (eventButton) {
-      event.preventDefault();
-      event.stopPropagation();
-      state.calendarAnchor = eventButton.dataset.eventDate || todayKey();
-      state.calendarSelectedDate = state.calendarAnchor;
-      switchTab('calendar');
-      return;
-    }
-
     const completeButton = event.target.closest('[data-today-done]');
     if (completeButton) {
       event.preventDefault();
@@ -304,4 +257,3 @@
   applyTheme(document.documentElement.dataset.theme);
   render();
 })();
-

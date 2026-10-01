@@ -93,7 +93,7 @@
 
       const tabs = [...document.querySelectorAll('#tabs .tab')];
       const tabRects = tabs.map(tab => tab.getBoundingClientRect());
-      if (tabs.length !== 5) return fail(`ожидалось 5 вкладок, получено ${tabs.length}`);
+      if (tabs.length !== 3) return fail(`ожидалось 3 вкладки, получено ${tabs.length}`);
       if (document.querySelector('[data-tab="today"]')) return fail('раздел Сегодня остался в desktop-навигации');
       if (!document.querySelector('[data-tab="tasks"]')?.classList.contains('active')) return fail('задачи не активны при запуске');
       if (tabRects.some(item => item.width < 190 || item.height < 42)) return fail(`слишком маленькая desktop-вкладка ${Math.min(...tabRects.map(item => item.width))}×${Math.min(...tabRects.map(item => item.height))}`);
@@ -169,17 +169,7 @@
       if (!document.querySelector('[data-tab="projects"]')?.classList.contains('active')) return fail('повторный ArrowDown не переключает на проекты');
       if (document.querySelectorAll('.workspace-project-card').length < 2) return fail('проекты не отображаются');
 
-      document.querySelector('[data-tab="notes"]')?.click();
-      await wait(100);
-      const notesCards = [...document.querySelectorAll('.workspace-note-card')];
-      if (notesCards.length < 2) return fail('заметки не отображаются');
-      if (Math.abs(notesCards[0].getBoundingClientRect().top - notesCards[1].getBoundingClientRect().top) > 3) return fail('заметки не образуют desktop-сетку');
-
-      document.querySelector('[data-tab="calendar"]')?.click();
-      await wait(100);
-      const calendar = document.querySelector('.calendar-view .calendar-month');
-      if (!calendar) return fail('календарь не открывается');
-      if (calendar.getBoundingClientRect().width < 700) return fail(`desktop-календарь слишком узкий: ${calendar.getBoundingClientRect().width}`);
+      if (document.querySelector('[data-tab="notes"], [data-tab="calendar"], #sidebarAgenda')) return fail('удалённые разделы остались');
 
       themeButton?.click();
       await wait(60);

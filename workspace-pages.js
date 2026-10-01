@@ -313,56 +313,10 @@
     draw();
   }
 
-  function noteUpdatedLabel(note) {
-    const value = note.updatedAt || note.createdAt;
-    if (!value || Number.isNaN(Date.parse(value))) return '';
-    return new Date(value).toLocaleDateString('ru-RU', { day: 'numeric', month: 'short', year: 'numeric' }).replace('.', '');
-  }
-
-  function enhancedRenderNotes() {
-    const notes = allNotes();
-    page.innerHTML = `<section class="workspace-page workspace-notes-page">
-      <header class="workspace-page-head">
-        <div><p class="workspace-page-eyebrow">Быстрый блокнот</p><h2>Заметки</h2><p>${notes.length} записей</p></div>
-        <button type="button" class="btn primary workspace-page-add" data-workspace-new-note><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>Новая заметка</button>
-      </header>
-      <div class="search-wrap workspace-page-search"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg><input class="search" id="noteSearch" type="search" autocomplete="off" placeholder="Поиск заметок" value="${esc(state.query)}" aria-label="Поиск заметок"></div>
-      <div class="workspace-notes-grid list" id="notesList"></div>
-    </section>`;
-
-    const input = $('#noteSearch');
-    const list = $('#notesList');
-
-    function draw() {
-      state.query = input.value;
-      const query = state.query.trim().toLocaleLowerCase('ru');
-      const matching = orderedFor('note', notes.filter(note => !query || `${note.title || ''} ${stripHtml(note.body || '')}`.toLocaleLowerCase('ru').includes(query)));
-      list.innerHTML = matching.map(note => {
-        const id = esc(String(note.id));
-        const title = esc(note.title || 'Без заголовка');
-        const preview = esc(cleanNotePreview(note.body).slice(0, 240) || 'Пустая заметка');
-        return `<div class="swipe-row workspace-note-row" data-note-row="${id}" data-sort-id="${id}">
-          <div class="swipe-action"><button type="button" class="swipe-delete" data-delete-note="${id}" aria-label="Удалить заметку">Удалить</button></div>
-          <article class="workspace-note-card note-card">
-            <div class="workspace-note-card__top">${dragHandle(`заметку ${note.title || 'Без заголовка'}`)}<span>${esc(noteUpdatedLabel(note))}</span><button type="button" class="workspace-icon-button workspace-icon-button--danger" data-delete-note="${id}" aria-label="Удалить заметку ${title}"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-close"></use></svg></button></div>
-            <button type="button" class="workspace-note-main" data-open-note="${id}" aria-label="Открыть заметку ${title}"><h3>${title}</h3><p>${preview}</p></button>
-          </article>
-        </div>`;
-      }).join('') || '<div class="workspace-empty"><svg class="icon" aria-hidden="true"><use href="#i-note"></use></svg><strong>Заметок не найдено</strong><span>Создайте запись или измените поисковый запрос.</span></div>';
-      bindNoteSwipe();
-      bindSortable(list, 'note');
-    }
-
-    input.oninput = draw;
-    draw();
-  }
-
   renderTasks = enhancedRenderTasks;
   renderProjects = enhancedRenderProjects;
-  renderNotes = enhancedRenderNotes;
   globalThis.renderTasks = enhancedRenderTasks;
   globalThis.renderProjects = enhancedRenderProjects;
-  globalThis.renderNotes = enhancedRenderNotes;
 
   page.addEventListener('click', event => {
     const editTaskButton = event.target.closest('[data-edit-task]');
@@ -385,12 +339,7 @@
       openProject();
       return;
     }
-    if (event.target.closest('[data-workspace-new-note]')) {
-      event.preventDefault();
-      event.stopPropagation();
-      openNote();
-      return;
-    }
+
     if (event.target.closest('#toggleCompletedProjects')) {
       event.preventDefault();
       event.stopPropagation();
@@ -401,4 +350,3 @@
 
   render();
 })();
-

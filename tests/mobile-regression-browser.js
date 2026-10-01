@@ -98,17 +98,12 @@
 
         const formChecks = [
           verifyCreateForm('tasks', '#taskSheet', '[name="title"]', 'Проверка создания задачи'),
-          verifyCreateForm('projects', '#projectSheet', '[name="title"]', 'Проверка создания проекта'),
-          verifyCreateForm('notes', '#noteSheet', '[name="title"]', 'Проверка создания заметки'),
-          verifyCreateForm('calendar', '#eventSheet', '[name="title"]', 'Проверка создания события')
+          verifyCreateForm('projects', '#projectSheet', '[name="title"]', 'Проверка создания проекта')
         ];
         const formFailure = formChecks.find(Boolean);
         if (formFailure) return fail(formFailure);
 
-        const calendar = document.querySelector('.calendar-month');
-        if (!calendar) return fail('мобильный календарь не отображается');
-        const calendarRect = calendar.getBoundingClientRect();
-        if (calendarRect.left < -1 || calendarRect.right > window.innerWidth + 1) return fail('мобильный календарь выходит за экран');
+        if (document.querySelectorAll('#tabs .tab').length !== 3) return fail('ожидалось три раздела');
 
         document.querySelector('[data-tab="projects"]')?.click();
         document.querySelector('[data-open-project]')?.click();

@@ -45,7 +45,7 @@
       if (document.querySelector('[data-tab="today"]')) return finish('FAIL: раздел Сегодня остался в навигации');
       if (!document.querySelector('[data-tab="tasks"]')?.classList.contains('active')) return finish('FAIL: задачи не являются главным экраном');
       if (!document.querySelector('.workspace-tasks-page')) return finish('FAIL: экран задач не открылся по умолчанию');
-      if (document.querySelectorAll('#tabs .tab').length !== 5) return finish('FAIL: в навигации нет пяти разделов с приоритетами');
+      if (document.querySelectorAll('#tabs .tab').length !== 3) return finish('FAIL: в навигации нет трёх разделов с приоритетами');
       if (!document.querySelector('[data-tab="priorities"]')) return finish('FAIL: вкладка приоритетов отсутствует');
       if (document.querySelectorAll('.workspace-task-row').length < 3) return finish('FAIL: задачи не отображаются новым списком');
       if (document.querySelectorAll('.workspace-summary-item').length !== 3) return finish('FAIL: сводка задач не отображается');
@@ -76,13 +76,7 @@
       await wait(100);
       if (!document.querySelector('.workspace-projects-page .workspace-project-card')) return finish('FAIL: новый экран проектов не отрисован');
 
-      document.querySelector('[data-tab="notes"]')?.click();
-      await wait(100);
-      if (!document.querySelector('.workspace-notes-page .workspace-note-card')) return finish('FAIL: новый экран заметок не отрисован');
-
-      document.querySelector('[data-tab="calendar"]')?.click();
-      await wait(100);
-      if (!document.querySelector('.calendar-view .calendar-month')) return finish('FAIL: календарь не открылся после редизайна');
+      if (document.querySelector('[data-tab="notes"], [data-tab="calendar"], #sidebarAgenda')) return finish('FAIL: удалённые разделы остались');
 
       finish('WORKSPACE_PASS');
     } catch (error) {

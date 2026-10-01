@@ -57,36 +57,6 @@
     draw();
   }
 
-  function enhancedRenderNotes() {
-    page.innerHTML = `<div class="view-heading"><h2>Заметки</h2><span class="rule"></span></div><div class="search-wrap"><svg class="icon" aria-hidden="true"><use href="#i-search"></use></svg><input class="search" id="noteSearch" type="search" autocomplete="off" placeholder="Поиск заметок" value="${esc(state.query)}" aria-label="Поиск заметок"></div><div class="list" id="notesList"></div>`;
-    const input = $('#noteSearch');
-    const list = $('#notesList');
-
-    function draw() {
-      state.query = input.value;
-      const query = state.query.toLocaleLowerCase('ru');
-      const notes = orderedFor('note', allNotes().filter(note => !query || `${note.title || ''} ${stripHtml(note.body || '')}`.toLocaleLowerCase('ru').includes(query)));
-      list.innerHTML = notes.map(note => {
-        const id = esc(String(note.id));
-        const preview = cleanNotePreview(note.body).slice(0, 700);
-        return `<div class="swipe-row" data-note-row="${id}" data-sort-id="${id}">
-          <div class="swipe-action"><button type="button" class="swipe-delete" data-delete-note="${id}" aria-label="Удалить заметку">Удалить</button></div>
-          <article class="card note-card" data-open-note="${id}" tabindex="0" role="button" aria-label="Открыть заметку ${esc(note.title || 'Без заголовка')}">
-            ${dragHandle(`заметку ${note.title || 'Без заголовка'}`)}
-            <h3>${esc(note.title || 'Без заголовка')}</h3>
-            <p class="extra note-preview">${esc(preview) || 'Пустая заметка'}</p>
-            <div class="buttons"><button type="button" class="btn danger" data-delete-note="${id}">Удалить</button></div>
-          </article>
-        </div>`;
-      }).join('') || '<div class="empty"><svg class="icon" aria-hidden="true"><use href="#i-note"></use></svg>Заметки не найдены</div>';
-      bindNoteSwipe();
-      bindSortable(list, 'note');
-    }
-
-    input.oninput = draw;
-    draw();
-  }
-
   function completeProject(projectId) {
     const projects = allProjects();
     const project = projects.find(item => sameId(item.id, projectId));
@@ -112,11 +82,8 @@
   }
 
   const originalRenderProjects = renderProjects;
-  const originalRenderNotes = renderNotes;
   renderProjects = enhancedRenderProjects;
-  renderNotes = enhancedRenderNotes;
   globalThis.renderProjects = enhancedRenderProjects;
-  globalThis.renderNotes = enhancedRenderNotes;
 
   page.addEventListener('click', event => {
     const completeButton = event.target.closest('[data-complete-project]');

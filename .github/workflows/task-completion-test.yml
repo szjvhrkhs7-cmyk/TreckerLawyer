@@ -21,7 +21,7 @@ jobs:
           python3 - <<'PY'
           from pathlib import Path
           html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20260831-calendar"></script>'
+          app_tag = '<script src="app-core.js?v=20261001-sections"></script>'
           if app_tag not in html:
               raise SystemExit('Expected application script tag was not found')
           html = html.replace(app_tag, '<script src="tests/task-completion-browser.js"></script>\n' + app_tag, 1)

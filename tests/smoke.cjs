@@ -181,7 +181,7 @@ function testSyncSecurityShape() {
   assert.doesNotMatch(syncSource, /service_role|sb_secret_|BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/i);
   assert.match(html, /Content-Security-Policy/);
   assert.match(appSource, /function icsSafe/);
-  assert.match(html, /calendar-core\.js/);
+  assert.doesNotMatch(html, /data-tab="(?:calendar|notes)"|calendar-core\.js|id="(?:noteSheet|eventSheet|sidebarAgenda)"/);
   assert.match(syncSource, /\[LS\.calendarEvents, 'calendarEvents'\]/);
 }
 
