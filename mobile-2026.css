@@ -245,7 +245,7 @@
   }
 
   .workspace-toolbar {
-    grid-template-columns: minmax(0, 1fr) 146px !important;
+    grid-template-columns: minmax(0, 1fr) 158px !important;
     gap: 9px !important;
     margin-bottom: 12px !important;
   }
@@ -436,6 +436,10 @@
 
   .priority-page {
     min-height: 0 !important;
+  }
+
+  body:has(.priority-page) .fab {
+    display: none !important;
   }
 
   .priority-page-head {
