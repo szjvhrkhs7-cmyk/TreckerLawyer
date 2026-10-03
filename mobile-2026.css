@@ -532,11 +532,41 @@
   }
 
   .priority-zone {
+    position: relative !important;
     display: grid !important;
     grid-template-columns: minmax(0, 1fr) !important;
     gap: 9px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
     min-height: 0 !important;
+    max-height: none !important;
     padding: 13px 13px 14px 16px !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    content-visibility: visible !important;
+  }
+
+  .priority-zone__head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    min-height: 38px !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .priority-zone__list {
+    display: grid !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 58px !important;
+    max-height: none !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 
   .priority-zone + .priority-zone {
