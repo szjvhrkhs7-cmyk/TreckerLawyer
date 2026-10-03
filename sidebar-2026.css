@@ -51,12 +51,13 @@
   }
 
   .top {
-    position: sticky !important;
+    position: fixed !important;
     top: 0 !important;
+    left: 0 !important;
     z-index: 70;
     align-self: start;
     box-sizing: border-box;
-    width: 100%;
+    width: var(--sidebar-width) !important;
     height: 100dvh !important;
     min-height: 100dvh !important;
     padding: 24px 16px 18px !important;
@@ -388,6 +389,8 @@
   }
 
   .page {
+    grid-column: 2 !important;
+    min-width: 0;
     min-height: 100dvh;
     background: var(--bg);
   }
@@ -397,6 +400,7 @@
   }
 
   body.sidebar-collapsed .top {
+    width: var(--sidebar-width-collapsed) !important;
     padding: 18px 12px 16px !important;
   }
 
