@@ -47,7 +47,7 @@
     border-radius: 0 !important;
     background: var(--bg) !important;
     box-shadow: none !important;
-    transition: grid-template-columns 180ms cubic-bezier(.2, .8, .2, 1);
+    transition: none !important;
   }
 
   .top {
