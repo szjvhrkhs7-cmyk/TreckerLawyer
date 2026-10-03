@@ -331,7 +331,29 @@
     if (!revealTodayAfterRender) return;
     revealTodayAfterRender = false;
     const currentDay = page.querySelector('.priority-day.is-today[aria-current="date"]');
-    currentDay?.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+    if (!currentDay) return;
+
+    const reveal = () => {
+      if (window.innerWidth >= 900) {
+        currentDay.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+        return;
+      }
+
+      const top = document.querySelector('.top');
+      const tabs = document.getElementById('tabs');
+      const dayRect = currentDay.getBoundingClientRect();
+      const visibleTop = Math.max(0, top?.getBoundingClientRect().bottom || 0) + 10;
+      const visibleBottom = Math.min(window.innerHeight, tabs?.getBoundingClientRect().top || window.innerHeight) - 10;
+      const viewportCenter = visibleTop + Math.max(0, visibleBottom - visibleTop) / 2;
+      const dayCenter = dayRect.top + dayRect.height / 2;
+      const delta = dayCenter - viewportCenter;
+
+      if (Number.isFinite(delta) && Math.abs(delta) > 1) {
+        window.scrollBy({ top: delta, left: 0, behavior: 'auto' });
+      }
+    };
+
+    requestAnimationFrame(() => requestAnimationFrame(reveal));
   }
 
   function renderPriorities() {
