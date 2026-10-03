@@ -1,3 +1,7 @@
+.sidebar-collapse {
+  display: none;
+}
+
 /* Modern desktop sidebar: fixed-in-viewport navigation with a compact, calmer visual system. */
 @media (min-width: 900px) {
   :root {
