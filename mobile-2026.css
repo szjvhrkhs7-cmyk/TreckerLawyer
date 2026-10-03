@@ -430,6 +430,14 @@
   }
 
   /* Mobile priorities: use full width instead of a cramped left date rail. */
+  .page:has(.priority-page) {
+    padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 8px) !important;
+  }
+
+  .priority-page {
+    min-height: 0 !important;
+  }
+
   .priority-page-head {
     gap: 11px !important;
     margin-bottom: 14px !important;
@@ -459,7 +467,18 @@
     gap: 10px !important;
     width: 100% !important;
     min-width: 0 !important;
-    overflow: visible !important;
+    height: max(360px, calc(100dvh - var(--mobile-header-offset) - var(--mobile-nav-height) - 166px - env(safe-area-inset-bottom))) !important;
+    max-height: 590px !important;
+    padding: 1px 1px 72px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .priority-board::-webkit-scrollbar {
+    display: none;
   }
 
   .priority-day {
