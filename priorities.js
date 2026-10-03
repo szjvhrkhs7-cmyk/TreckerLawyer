@@ -344,16 +344,16 @@
     const board = currentDay.closest('.priority-board');
     if (!board) return;
 
-    for (let attempt = 0; attempt < 2; attempt += 1) {
+    const centerInBoard = () => {
+      const boardRect = board.getBoundingClientRect();
       const dayRect = currentDay.getBoundingClientRect();
-      const visibleTop = Math.max(0, top?.getBoundingClientRect().bottom || 0) + 10;
-      const visibleBottom = Math.min(window.innerHeight, tabs?.getBoundingClientRect().top || window.innerHeight) - 10;
-      const viewportCenter = visibleTop + Math.max(0, visibleBottom - visibleTop) / 2;
-      const dayCenter = dayRect.top + dayRect.height / 2;
-      const delta = dayCenter - viewportCenter;
-      if (!Number.isFinite(delta) || Math.abs(delta) <= 1) break;
-      board.scrollTop += delta;
-    }
+      const relativeTop = dayRect.top - boardRect.top + board.scrollTop;
+      const target = relativeTop - Math.max(0, board.clientHeight - dayRect.height) / 2;
+      board.scrollTop = Math.max(0, target);
+    };
+
+    centerInBoard();
+    requestAnimationFrame(centerInBoard);
   }
 
   function renderPriorities() {
