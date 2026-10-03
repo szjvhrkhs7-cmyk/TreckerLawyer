@@ -36,6 +36,7 @@
         const brandbar = document.querySelector('.brandbar');
         const syncButton = document.getElementById('syncButton');
         const themeButton = document.getElementById('themeToggle');
+        const collapseButton = document.getElementById('sidebarCollapse');
         const firstTabIcon = tabs?.querySelector('.tab .icon');
         const firstCounter = tabs?.querySelector('.tab .count');
         if (!tabs || getComputedStyle(tabs).position !== 'fixed') return fail('мобильная навигация не закреплена снизу');
@@ -49,7 +50,8 @@
         if (topStyle?.backdropFilter && topStyle.backdropFilter !== 'none') return fail('backdrop-filter верхней панели снова создаёт containing block для fixed-навигации');
         if (topStyle?.webkitBackdropFilter && topStyle.webkitBackdropFilter !== 'none') return fail('webkit-backdrop-filter верхней панели снова создаёт containing block для fixed-навигации');
 
-        if (!brandbar || !syncButton || !themeButton) return fail('не найдены элементы мобильной шапки');
+        if (!brandbar || !syncButton || !themeButton || !collapseButton) return fail('не найдены элементы мобильной шапки');
+        if (getComputedStyle(collapseButton).display !== 'none') return fail('desktop-кнопка сворачивания видна на мобильном');
         const brandRect = brandbar.getBoundingClientRect();
         const syncRect = syncButton.getBoundingClientRect();
         const themeRect = themeButton.getBoundingClientRect();
