@@ -170,11 +170,6 @@
             const tabsRectAfterPriority = tabs.getBoundingClientRect();
             if (topRectAfterPriority.bottom < 48 || topRectAfterPriority.top > 1) return fail('верхняя мобильная панель исчезает после перехода в приоритеты');
             if (Math.abs(tabsRectAfterPriority.bottom - window.innerHeight) > 2) return fail('нижняя навигация исчезает после перехода в приоритеты');
-            const visibleTop = Math.max(0, topRectAfterPriority.bottom);
-            const visibleBottom = tabsRectAfterPriority.top;
-            const visibleCenter = (visibleTop + visibleBottom) / 2;
-            const todayCenter = (todayRect.top + todayRect.bottom) / 2;
-            if (Math.abs(todayCenter - visibleCenter) > (visibleBottom - visibleTop) * 0.14) return fail('при входе в приоритеты карточка текущего дня не расположена по центру');
             const priorityBoardRect = board.getBoundingClientRect();
             if (todayRect.width < priorityBoardRect.width - 4) return fail(`карточка текущего дня не занимает ширину доски: ${todayRect.width}/${priorityBoardRect.width}`);
             if (!['auto', 'scroll'].includes(getComputedStyle(board).overflowY)) return fail('мобильная доска приоритетов не имеет собственного вертикального скролла');
@@ -185,6 +180,11 @@
             if (!todayMainZone || !todayOtherZone) return fail('зоны текущего дня не отрисованы');
             if (todayMainZone.getBoundingClientRect().height < 70 || todayOtherZone.getBoundingClientRect().height < 70) {
               return fail(`зоны текущего дня схлопнуты: ${todayMainZone.getBoundingClientRect().height}/${todayOtherZone.getBoundingClientRect().height}`);
+            }
+            const boardCenter = (priorityBoardRect.top + priorityBoardRect.bottom) / 2;
+            const todayCenter = (todayRect.top + todayRect.bottom) / 2;
+            if (Math.abs(todayCenter - boardCenter) > Math.max(32, priorityBoardRect.height * 0.12)) {
+              return fail(`текущий день не расположен по центру мобильной доски: day=${Math.round(todayCenter)} board=${Math.round(boardCenter)} scroll=${Math.round(board.scrollTop)}`);
             }
             const priorityActionButtons = [...today.querySelectorAll('.priority-card__actions button')];
             if (priorityActionButtons.some(button => button.getBoundingClientRect().height < 39)) return fail('действия приоритетов слишком маленькие для касания');
