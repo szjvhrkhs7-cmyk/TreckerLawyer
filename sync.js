@@ -27,9 +27,9 @@
     .catch(error => console.error('Drag recovery module loading failed', error));
 
   loadScript('project-lifecycle.js?v=20261001-sections')
-    .then(() => loadScript('workspace-pages.js?v=20261001-sections'))
-    .then(() => loadScript('workspace-task-restore.js?v=20260901-mobile-fix'))
-    .then(() => loadScript('task-completion.js?v=20260906-task-completion-1'))
+    .then(() => loadScript('workspace-pages.js?v=20261003-workspace'))
+    .then(() => loadScript('workspace-task-restore.js?v=20261003-workspace'))
+    .then(() => loadScript('task-completion.js?v=20261003-workspace'))
     .catch(error => console.error('Workspace page modules loading failed', error));
 
   loadScript('qwen-enhancements.js?v=20260901-workspace-final')

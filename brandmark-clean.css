@@ -1,6 +1,6 @@
 /* Keep the header brandmark as the standalone logo with no tile/background. */
-.brandmark,
-:root[data-theme="dark"] .brandmark {
+.brandbar .brandmark,
+:root[data-theme="dark"] .brandbar .brandmark {
   flex-shrink: 0;
   overflow: visible !important;
   border: 0 !important;

@@ -61,7 +61,7 @@
       const brandname = document.querySelector('.brandname');
       const syncButton = document.getElementById('syncButton');
       const themeButton = document.getElementById('themeToggle');
-      const brandIcon = brandmark?.querySelector('.icon');
+      const brandIcon = brandmark?.querySelector('img');
       if (!app || !sidebar || !page || !brandbar || !brandmark || !brandname || !syncButton || !themeButton || !brandIcon) return fail('не найдена базовая desktop-компоновка');
 
       const appRect = app.getBoundingClientRect();
@@ -73,8 +73,8 @@
       if (pageRect.width < 760) return fail(`рабочая область слишком узкая: ${pageRect.width}`);
       if (document.documentElement.scrollWidth > window.innerWidth + 2) return fail(`горизонтальный overflow: ${document.documentElement.scrollWidth}/${window.innerWidth}`);
 
-      if (!getComputedStyle(brandmark).backgroundImage.includes('linear-gradient')) return fail('логомарка не использует цветной градиент');
-      if (Number.parseFloat(getComputedStyle(brandIcon).opacity) < .9) return fail('иконка внутри логомарки скрыта');
+      if (!brandIcon.complete || !brandIcon.naturalWidth) return fail('логотип не загрузился');
+      if (getComputedStyle(brandmark).backgroundImage !== 'none') return fail('у отдельного логотипа появилась лишняя подложка');
       const brandRect = brandbar.getBoundingClientRect();
       const markRect = brandmark.getBoundingClientRect();
       const nameRect = brandname.getBoundingClientRect();
@@ -153,12 +153,7 @@
       if (priorityBoard.scrollWidth > priorityBoard.clientWidth + 1) return fail(`desktop-неделя требует горизонтальной прокрутки: ${priorityBoard.scrollWidth}/${priorityBoard.clientWidth}`);
       const priorityDayRects = priorityDays.map(day => day.getBoundingClientRect());
       const rowTops = [...new Set(priorityDayRects.map(rect => Math.round(rect.top)))];
-      if (window.innerWidth >= 1280 && window.innerWidth < 1680) {
-        if (rowTops.length !== 2) return fail(`на desktop 1440 неделя должна занимать две строки, получено ${rowTops.length}`);
-        const firstRowCount = priorityDayRects.filter(rect => Math.abs(rect.top - rowTops[0]) < 3).length;
-        const secondRowCount = priorityDayRects.filter(rect => Math.abs(rect.top - rowTops[1]) < 3).length;
-        if (firstRowCount !== 4 || secondRowCount !== 3) return fail(`ожидалась раскладка 4+3, получено ${firstRowCount}+${secondRowCount}`);
-      }
+      if (rowTops.length !== 7) return fail(`приоритеты должны показывать отдельную строку на каждый день, получено ${rowTops.length}`);
       if (Math.min(...priorityDayRects.map(rect => rect.width)) < 210) return fail(`колонки приоритетов слишком узкие: ${Math.min(...priorityDayRects.map(rect => rect.width))}`);
       const priorityTitles = [...document.querySelectorAll('.priority-card__main strong')];
       if (priorityTitles.some(title => getComputedStyle(title).wordBreak === 'break-all')) return fail('название приоритета разбивается посимвольно');
@@ -174,7 +169,7 @@
       themeButton?.click();
       await wait(60);
       if (document.documentElement.dataset.theme !== 'dark') return fail(`тёмная тема не включилась: ${document.documentElement.dataset.theme}`);
-      if (!getComputedStyle(brandmark).backgroundImage.includes('linear-gradient')) return fail('логомарка ломается в тёмной теме');
+      if (getComputedStyle(brandIcon).display === 'none') return fail('логотип скрыт в темной теме');
       themeButton?.click();
 
       pass();

@@ -134,13 +134,7 @@
       if (projectIconButtons.some(control => control.getBoundingClientRect().width < 44)) return fail('project icon controls слишком узкие');
       if (projectIconButtons.some(control => parseFloat(getComputedStyle(control).fontSize) < 18)) return fail('glyph в project control слишком маленький');
 
-      document.querySelector('[data-tab="notes"]')?.click();
-      const note = await waitFor(() => document.querySelector('.workspace-note-card'), 'карточка заметки');
-      const noteAction = note.querySelector('.workspace-icon-button');
-      const noteHandle = note.querySelector('[data-drag-handle]');
-      if (!noteAction || !noteHandle) return fail('note controls не отрисованы');
-      if (noteAction.getBoundingClientRect().width < 44 || noteAction.getBoundingClientRect().height < 44) return fail('note action слишком маленький');
-      if (noteHandle.getBoundingClientRect().width < 44 || noteHandle.getBoundingClientRect().height < 44) return fail('note drag handle слишком маленький');
+      if (document.querySelector('[data-tab="notes"]')) return fail('Удаленный раздел заметок вернулся');
 
       pass();
     } catch (error) {

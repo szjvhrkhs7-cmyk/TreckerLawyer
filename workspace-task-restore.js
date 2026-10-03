@@ -48,8 +48,8 @@
     }
     toast.textContent = 'Задача возвращена в работу';
     toast.classList.add('show');
-    clearTimeout(showRestoreToast.timer);
-    showRestoreToast.timer = setTimeout(() => toast.classList.remove('show'), 2400);
+    clearTimeout(toast.hideTimer);
+    toast.hideTimer = setTimeout(() => toast.classList.remove('show'), 2400);
   }
 
   function enhanceCompletedRows(root = page) {
