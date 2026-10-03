@@ -178,8 +178,14 @@
             const todayMainZone = today.querySelector('.priority-zone--main');
             const todayOtherZone = today.querySelector('.priority-zone--other');
             if (!todayMainZone || !todayOtherZone) return fail('зоны текущего дня не отрисованы');
-            if (todayMainZone.getBoundingClientRect().height < 70 || todayOtherZone.getBoundingClientRect().height < 70) {
-              return fail(`зоны текущего дня схлопнуты: ${todayMainZone.getBoundingClientRect().height}/${todayOtherZone.getBoundingClientRect().height}`);
+            const mainZoneRect = todayMainZone.getBoundingClientRect();
+            const otherZoneRect = todayOtherZone.getBoundingClientRect();
+            if (mainZoneRect.height < 70 || otherZoneRect.height < 70) {
+              return fail(`зоны текущего дня схлопнуты: ${mainZoneRect.height}/${otherZoneRect.height}`);
+            }
+            const expectedDayHeight = todayHead.height + mainZoneRect.height + otherZoneRect.height;
+            if (todayRect.height + 4 < expectedDayHeight) {
+              return fail(`контент дня обрезается: day=${Math.round(todayRect.height)} parts=${Math.round(expectedDayHeight)} mainTop=${Math.round(mainZoneRect.top)} otherTop=${Math.round(otherZoneRect.top)}`);
             }
             const boardCenter = (priorityBoardRect.top + priorityBoardRect.bottom) / 2;
             const todayCenter = (todayRect.top + todayRect.bottom) / 2;
