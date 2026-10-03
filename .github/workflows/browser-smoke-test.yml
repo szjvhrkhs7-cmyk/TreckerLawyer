@@ -170,6 +170,7 @@ jobs:
           grep -F 'MOBILE_REGRESSION_PASS' /tmp/mobile-regression.html
           if grep -F 'FAIL:' /tmp/mobile-regression.html; then
             echo 'Mobile regression browser test reported a failure.' >&2
+            grep -o 'id="mobile-regression-result"[^<]*>[^<]*' /tmp/mobile-regression.html >&2 || true
             exit 1
           fi
       - name: Verify smooth card drag and mobile controls
