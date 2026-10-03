@@ -74,7 +74,7 @@
       if (sidebarRect.width < 220 || sidebarRect.width > 280) return fail(`неверная ширина sidebar: ${sidebarRect.width}`);
       if (Math.abs(sidebarRect.top) > 1) return fail(`sidebar не начинается у верхней границы viewport: ${sidebarRect.top}`);
       if (Math.abs(sidebarRect.height - window.innerHeight) > 2) return fail(`sidebar не занимает высоту viewport: ${sidebarRect.height}/${window.innerHeight}`);
-      if (getComputedStyle(sidebar).position !== 'sticky') return fail(`sidebar не sticky: ${getComputedStyle(sidebar).position}`);
+      if (getComputedStyle(sidebar).position !== 'fixed') return fail(`sidebar не fixed: ${getComputedStyle(sidebar).position}`);
       if (pageRect.width < 760) return fail(`рабочая область слишком узкая: ${pageRect.width}`);
       if (document.documentElement.scrollWidth > window.innerWidth + 2) return fail(`горизонтальный overflow: ${document.documentElement.scrollWidth}/${window.innerWidth}`);
 
@@ -179,7 +179,7 @@
       if (document.documentElement.scrollWidth > window.innerWidth + 2) return fail('приоритеты создают горизонтальный overflow страницы');
 
       const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
-      if (maxScroll < 120) return fail(`страница недостаточно высокая для проверки sticky sidebar: ${maxScroll}`);
+      if (maxScroll < 120) return fail(`страница недостаточно высокая для проверки fixed sidebar: ${maxScroll}`);
       window.scrollTo(0, Math.min(520, maxScroll));
       await wait(80);
       const scrolledSidebarRect = sidebar.getBoundingClientRect();
