@@ -24,7 +24,7 @@ const server = http.createServer((request, response) => {
     browser = await chromium.launch({
       executablePath: process.env.TEST_BROWSER_EXECUTABLE,
       headless: true,
-      args: ['--no-sandbox', '--single-process', '--no-zygote', '--disable-gpu']
+      args: ['--no-sandbox', '--disable-gpu']
     });
     const page = await browser.newPage({ viewport: { width: 390, height: 844 } });
     page.setDefaultTimeout(6000);
