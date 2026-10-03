@@ -236,7 +236,7 @@
   }
 
   .workspace-toolbar {
-    grid-template-columns: minmax(0, 1fr) minmax(122px, 38%) !important;
+    grid-template-columns: minmax(0, 1fr) 146px !important;
     gap: 9px !important;
     margin-bottom: 12px !important;
   }
@@ -334,7 +334,7 @@
   }
 
   .workspace-task-row .workspace-row-actions .btn {
-    min-height: 42px !important;
+    min-height: 44px !important;
     padding: 0 11px !important;
     border-radius: 10px !important;
     font-size: 11.5px !important;
@@ -578,7 +578,7 @@
   }
 
   .priority-card__actions button {
-    min-height: 40px !important;
+    min-height: 44px !important;
     padding: 0 10px !important;
     border-radius: 9px !important;
     font-size: 10.5px !important;
