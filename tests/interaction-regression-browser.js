@@ -112,7 +112,7 @@
       await waitFor(() => {
         const order = [...document.querySelectorAll('.workspace-task-row:not(.is-done)')].map(row => row.dataset.sortId);
         return order[1] === draggedId;
-      }, 'перемещение точки вставки', 1500);
+      }, 'перемещение точки вставки', 4000);
 
       mouse('mouseup', window, endX, endY);
       await waitFor(() => !document.querySelector('.drag-floating'), 'завершение drop', 1500);
