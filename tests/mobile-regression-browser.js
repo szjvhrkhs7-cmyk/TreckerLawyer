@@ -180,6 +180,12 @@
             if (!['auto', 'scroll'].includes(getComputedStyle(board).overflowY)) return fail('мобильная доска приоритетов не имеет собственного вертикального скролла');
             const todayHead = today.querySelector('.priority-day__head')?.getBoundingClientRect();
             if (!todayHead || todayHead.width < todayRect.width - 4) return fail('заголовок дня не занимает ширину мобильной карточки');
+            const todayMainZone = today.querySelector('.priority-zone--main');
+            const todayOtherZone = today.querySelector('.priority-zone--other');
+            if (!todayMainZone || !todayOtherZone) return fail('зоны текущего дня не отрисованы');
+            if (todayMainZone.getBoundingClientRect().height < 70 || todayOtherZone.getBoundingClientRect().height < 70) {
+              return fail(`зоны текущего дня схлопнуты: ${todayMainZone.getBoundingClientRect().height}/${todayOtherZone.getBoundingClientRect().height}`);
+            }
             const priorityActionButtons = [...today.querySelectorAll('.priority-card__actions button')];
             if (priorityActionButtons.some(button => button.getBoundingClientRect().height < 39)) return fail('действия приоритетов слишком маленькие для касания');
             if (!weekActions || weekActions.querySelectorAll('.btn').length !== 3) return fail('неполная навигация по неделям на мобильном');
