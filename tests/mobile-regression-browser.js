@@ -175,7 +175,9 @@
             const visibleCenter = (visibleTop + visibleBottom) / 2;
             const todayCenter = (todayRect.top + todayRect.bottom) / 2;
             if (Math.abs(todayCenter - visibleCenter) > (visibleBottom - visibleTop) * 0.14) return fail('при входе в приоритеты карточка текущего дня не расположена по центру');
-            if (todayRect.width < window.innerWidth - 40) return fail(`карточка текущего дня слишком узкая: ${todayRect.width}`);
+            const priorityBoardRect = board.getBoundingClientRect();
+            if (todayRect.width < priorityBoardRect.width - 4) return fail(`карточка текущего дня не занимает ширину доски: ${todayRect.width}/${priorityBoardRect.width}`);
+            if (!['auto', 'scroll'].includes(getComputedStyle(board).overflowY)) return fail('мобильная доска приоритетов не имеет собственного вертикального скролла');
             const todayHead = today.querySelector('.priority-day__head')?.getBoundingClientRect();
             if (!todayHead || todayHead.width < todayRect.width - 4) return fail('заголовок дня не занимает ширину мобильной карточки');
             const priorityActionButtons = [...today.querySelectorAll('.priority-card__actions button')];
