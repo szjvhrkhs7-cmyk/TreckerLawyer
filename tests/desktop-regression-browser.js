@@ -30,6 +30,7 @@
     { id: 'desktop-note-1', title: 'Позиция по рекламе', body: 'Рабочая заметка для визуальной проверки desktop-карточки.', createdAt: timestamp, updatedAt: timestamp },
     { id: 'desktop-note-2', title: 'Вопросы к бизнесу', body: 'Уточнить сценарий клиента, сроки и каналы уведомления.', createdAt: timestamp, updatedAt: timestamp }
   ]));
+  localStorage.removeItem('lawyerSidebarCollapsed');
   localStorage.setItem('lawyerCalendarEvents', JSON.stringify([
     { id: 'desktop-event-1', title: 'Проектный комитет', date: dateKey(today), startTime: '14:30', endTime: '15:30', color: 'blue', reminder: 15, createdAt: timestamp, updatedAt: timestamp },
     { id: 'desktop-event-2', title: 'Встреча с продуктом', date: dateKey(tomorrow), startTime: '11:00', endTime: '11:45', color: 'red', reminder: 15, createdAt: timestamp, updatedAt: timestamp }
@@ -61,8 +62,9 @@
       const brandname = document.querySelector('.brandname');
       const syncButton = document.getElementById('syncButton');
       const themeButton = document.getElementById('themeToggle');
+      const collapseButton = document.getElementById('sidebarCollapse');
       const brandIcon = brandmark?.querySelector('img');
-      if (!app || !sidebar || !page || !brandbar || !brandmark || !brandname || !syncButton || !themeButton || !brandIcon) return fail('не найдена базовая desktop-компоновка');
+      if (!app || !sidebar || !page || !brandbar || !brandmark || !brandname || !syncButton || !themeButton || !collapseButton || !brandIcon) return fail('не найдена базовая desktop-компоновка');
 
       const appRect = app.getBoundingClientRect();
       const sidebarRect = sidebar.getBoundingClientRect();
@@ -70,6 +72,9 @@
       if (appRect.left < -1 || appRect.right > window.innerWidth + 1) return fail('контейнер приложения выходит за viewport');
       if (appRect.width < 1100) return fail(`desktop-контейнер слишком узкий: ${appRect.width}`);
       if (sidebarRect.width < 220 || sidebarRect.width > 280) return fail(`неверная ширина sidebar: ${sidebarRect.width}`);
+      if (Math.abs(sidebarRect.top) > 1) return fail(`sidebar не начинается у верхней границы viewport: ${sidebarRect.top}`);
+      if (Math.abs(sidebarRect.height - window.innerHeight) > 2) return fail(`sidebar не занимает высоту viewport: ${sidebarRect.height}/${window.innerHeight}`);
+      if (getComputedStyle(sidebar).position !== 'sticky') return fail(`sidebar не sticky: ${getComputedStyle(sidebar).position}`);
       if (pageRect.width < 760) return fail(`рабочая область слишком узкая: ${pageRect.width}`);
       if (document.documentElement.scrollWidth > window.innerWidth + 2) return fail(`горизонтальный overflow: ${document.documentElement.scrollWidth}/${window.innerWidth}`);
 
@@ -80,6 +85,7 @@
       const nameRect = brandname.getBoundingClientRect();
       const syncRect = syncButton.getBoundingClientRect();
       const themeRect = themeButton.getBoundingClientRect();
+      const collapseRect = collapseButton.getBoundingClientRect();
       const identityCenterDelta = Math.abs((markRect.top + markRect.height / 2) - (nameRect.top + nameRect.height / 2));
       const controlsCenterDelta = Math.abs((syncRect.top + syncRect.height / 2) - (themeRect.top + themeRect.height / 2));
       if (brandRect.height < 100) return fail(`brandbar слишком сжат: ${brandRect.height}`);
@@ -88,8 +94,9 @@
       if (syncRect.top <= markRect.bottom + 3) return fail('системные кнопки не отделены от бренда второй строкой');
       if (syncRect.width < themeRect.width + 35) return fail(`кнопка синхронизации слишком узкая: ${syncRect.width}/${themeRect.width}`);
       if (syncRect.right > themeRect.left - 5) return fail('кнопки синхронизации и темы перекрываются');
+      if (themeRect.right > collapseRect.left - 5) return fail('кнопки темы и сворачивания перекрываются');
       if (getComputedStyle(syncButton.querySelector('span')).display === 'none') return fail('desktop-статус синхронизации скрыт');
-      if (markRect.left < brandRect.left - 1 || themeRect.right > brandRect.right + 1) return fail('элементы brandbar выходят за контейнер');
+      if (markRect.left < brandRect.left - 1 || collapseRect.right > brandRect.right + 1) return fail('элементы brandbar выходят за контейнер');
 
       const tabs = [...document.querySelectorAll('#tabs .tab')];
       const tabRects = tabs.map(tab => tab.getBoundingClientRect());
@@ -98,6 +105,18 @@
       if (!document.querySelector('[data-tab="tasks"]')?.classList.contains('active')) return fail('задачи не активны при запуске');
       if (tabRects.some(item => item.width < 190 || item.height < 42)) return fail(`слишком маленькая desktop-вкладка ${Math.min(...tabRects.map(item => item.width))}×${Math.min(...tabRects.map(item => item.height))}`);
       if (tabRects[1].top <= tabRects[0].top) return fail('desktop-навигация не вертикальная');
+
+      collapseButton.click();
+      await wait(220);
+      if (!document.body.classList.contains('sidebar-collapsed')) return fail('sidebar не сворачивается');
+      if (localStorage.getItem('lawyerSidebarCollapsed') !== '1') return fail('состояние sidebar не сохраняется');
+      const collapsedWidth = sidebar.getBoundingClientRect().width;
+      if (collapsedWidth < 78 || collapsedWidth > 90) return fail(`неверная ширина свернутого sidebar: ${collapsedWidth}`);
+      collapseButton.click();
+      await wait(220);
+      if (document.body.classList.contains('sidebar-collapsed')) return fail('sidebar не разворачивается обратно');
+      if (localStorage.getItem('lawyerSidebarCollapsed') !== '0') return fail('развернутое состояние sidebar не сохраняется');
+      if (sidebar.getBoundingClientRect().width < 220) return fail('sidebar не восстановил полную ширину');
 
       const taskRow = document.querySelector('.workspace-task-row:not(.is-done)');
       const taskSearch = document.getElementById('taskSearch');
@@ -158,6 +177,16 @@
       const priorityTitles = [...document.querySelectorAll('.priority-card__main strong')];
       if (priorityTitles.some(title => getComputedStyle(title).wordBreak === 'break-all')) return fail('название приоритета разбивается посимвольно');
       if (document.documentElement.scrollWidth > window.innerWidth + 2) return fail('приоритеты создают горизонтальный overflow страницы');
+
+      const maxScroll = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+      if (maxScroll < 120) return fail(`страница недостаточно высокая для проверки sticky sidebar: ${maxScroll}`);
+      window.scrollTo(0, Math.min(520, maxScroll));
+      await wait(80);
+      const scrolledSidebarRect = sidebar.getBoundingClientRect();
+      if (Math.abs(scrolledSidebarRect.top) > 1) return fail(`sidebar смещается при прокрутке: top=${scrolledSidebarRect.top}`);
+      if (Math.abs(scrolledSidebarRect.bottom - window.innerHeight) > 2) return fail(`sidebar отрывается от нижней границы при прокрутке: ${scrolledSidebarRect.bottom}/${window.innerHeight}`);
+      window.scrollTo(0, 0);
+      await wait(40);
 
       document.querySelector('[data-tab="priorities"]')?.dispatchEvent(new KeyboardEvent('keydown', { key: 'ArrowDown', bubbles: true }));
       await wait(100);
