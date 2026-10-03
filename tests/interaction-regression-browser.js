@@ -87,14 +87,15 @@
       handle.setPointerCapture = () => { pointerCaptureCalls += 1; };
 
       const handleRect = handle.getBoundingClientRect();
-      const secondRect = second.getBoundingClientRect();
       const startX = handleRect.left + handleRect.width / 2;
       const startY = handleRect.top + handleRect.height / 2;
       const endX = startX + 8;
-      const endY = secondRect.bottom - Math.min(14, secondRect.height * .12);
 
       mouse('mousedown', handle, startX, startY);
       const floating = await waitFor(() => document.querySelector('.drag-floating'), 'floating card', 1200);
+      const list = first.parentElement;
+      const secondRect = second.getBoundingClientRect();
+      const endY = secondRect.bottom + 20;
       if (pointerCaptureCalls !== 0) return fail('drag использует setPointerCapture');
 
       const floatingStyle = getComputedStyle(floating);
@@ -110,9 +111,11 @@
       }
 
       await waitFor(() => {
-        const order = [...document.querySelectorAll('.workspace-task-row:not(.is-done)')].map(row => row.dataset.sortId);
+        const order = [...list.children]
+          .filter(row => row.matches('.workspace-task-row:not(.is-done)[data-sort-id]'))
+          .map(row => row.dataset.sortId);
         return order[1] === draggedId;
-      }, 'перемещение точки вставки', 4000);
+      }, 'перемещение точки вставки', 2500);
 
       mouse('mouseup', window, endX, endY);
       await waitFor(() => !document.querySelector('.drag-floating'), 'завершение drop', 1500);
