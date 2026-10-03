@@ -338,8 +338,11 @@
       return;
     }
 
+    window.scrollTo(0, 0);
     const top = document.querySelector('.top');
     const tabs = document.getElementById('tabs');
+    const board = currentDay.closest('.priority-board');
+    if (!board) return;
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
       const dayRect = currentDay.getBoundingClientRect();
@@ -349,7 +352,7 @@
       const dayCenter = dayRect.top + dayRect.height / 2;
       const delta = dayCenter - viewportCenter;
       if (!Number.isFinite(delta) || Math.abs(delta) <= 1) break;
-      window.scrollBy(0, delta);
+      board.scrollTop += delta;
     }
   }
 
