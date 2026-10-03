@@ -49,10 +49,12 @@ jobs:
           fi
           "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=390,844 --virtual-time-budget=5000 --screenshot=/tmp/visual-qa/iphone-tasks.png 'http://127.0.0.1:8765/visual-preview.html?view=tasks'
           "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=390,844 --virtual-time-budget=5000 --screenshot=/tmp/visual-qa/iphone-priorities.png 'http://127.0.0.1:8765/visual-preview.html?view=priorities'
+          "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=390,844 --virtual-time-budget=5000 --screenshot=/tmp/visual-qa/iphone-projects.png 'http://127.0.0.1:8765/visual-preview.html?view=projects'
           test -s /tmp/visual-qa/desktop-tasks.png
           test -s /tmp/visual-qa/desktop-priorities.png
           test -s /tmp/visual-qa/iphone-tasks.png
           test -s /tmp/visual-qa/iphone-priorities.png
+          test -s /tmp/visual-qa/iphone-projects.png
       - name: Upload visual QA previews
         uses: actions/upload-artifact@v4
         with:
