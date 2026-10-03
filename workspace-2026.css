@@ -16,8 +16,12 @@
   --workspace-warning-soft: #fff6e8;
   --workspace-success: #337a58;
   --workspace-success-soft: #edf8f2;
-  --workspace-heading-font: Manrope, Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  --workspace-ui-font: Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --workspace-ui-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "DejaVu Sans", Helvetica, Arial, sans-serif;
+  --workspace-heading-font: var(--workspace-ui-font);
+  /* Metadata and dynamically inserted controls inherit the same UI font. */
+  --font: var(--workspace-ui-font);
+  --exec-ui: var(--workspace-ui-font);
+  --exec-editorial: var(--workspace-ui-font);
   --bg: var(--workspace-bg);
   --surface: var(--workspace-surface);
   --surface-raised: #ffffff;

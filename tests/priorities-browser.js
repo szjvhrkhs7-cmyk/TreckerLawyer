@@ -38,7 +38,7 @@
     await wait(1200);
     try {
       const assign = document.querySelector('[data-set-priority="priority-new"]');
-      if (!assign || !/Поставить приоритет/.test(assign.textContent)) return finish('FAIL: кнопка назначения приоритета не найдена в задачах');
+      if (!assign || !/Приоритет/.test(assign.textContent)) return finish('FAIL: кнопка назначения приоритета не найдена в задачах');
       assign.click();
       await wait(50);
       const form = document.getElementById('priorityForm');

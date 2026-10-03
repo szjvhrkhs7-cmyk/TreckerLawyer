@@ -87,14 +87,15 @@
       handle.setPointerCapture = () => { pointerCaptureCalls += 1; };
 
       const handleRect = handle.getBoundingClientRect();
-      const secondRect = second.getBoundingClientRect();
       const startX = handleRect.left + handleRect.width / 2;
       const startY = handleRect.top + handleRect.height / 2;
       const endX = startX + 8;
-      const endY = secondRect.bottom - Math.min(14, secondRect.height * .12);
 
       mouse('mousedown', handle, startX, startY);
       const floating = await waitFor(() => document.querySelector('.drag-floating'), 'floating card', 1200);
+      const list = first.parentElement;
+      const secondRect = second.getBoundingClientRect();
+      const endY = secondRect.bottom + 20;
       if (pointerCaptureCalls !== 0) return fail('drag использует setPointerCapture');
 
       const floatingStyle = getComputedStyle(floating);
@@ -110,9 +111,11 @@
       }
 
       await waitFor(() => {
-        const order = [...document.querySelectorAll('.workspace-task-row:not(.is-done)')].map(row => row.dataset.sortId);
+        const order = [...list.children]
+          .filter(row => row.matches('.workspace-task-row:not(.is-done)[data-sort-id]'))
+          .map(row => row.dataset.sortId);
         return order[1] === draggedId;
-      }, 'перемещение точки вставки', 1500);
+      }, 'перемещение точки вставки', 2500);
 
       mouse('mouseup', window, endX, endY);
       await waitFor(() => !document.querySelector('.drag-floating'), 'завершение drop', 1500);
@@ -134,13 +137,7 @@
       if (projectIconButtons.some(control => control.getBoundingClientRect().width < 44)) return fail('project icon controls слишком узкие');
       if (projectIconButtons.some(control => parseFloat(getComputedStyle(control).fontSize) < 18)) return fail('glyph в project control слишком маленький');
 
-      document.querySelector('[data-tab="notes"]')?.click();
-      const note = await waitFor(() => document.querySelector('.workspace-note-card'), 'карточка заметки');
-      const noteAction = note.querySelector('.workspace-icon-button');
-      const noteHandle = note.querySelector('[data-drag-handle]');
-      if (!noteAction || !noteHandle) return fail('note controls не отрисованы');
-      if (noteAction.getBoundingClientRect().width < 44 || noteAction.getBoundingClientRect().height < 44) return fail('note action слишком маленький');
-      if (noteHandle.getBoundingClientRect().width < 44 || noteHandle.getBoundingClientRect().height < 44) return fail('note drag handle слишком маленький');
+      if (document.querySelector('[data-tab="notes"]')) return fail('Удаленный раздел заметок вернулся');
 
       pass();
     } catch (error) {

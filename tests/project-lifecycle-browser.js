@@ -53,9 +53,8 @@
             toggle.click();
             if (!document.getElementById('completedProjects')?.textContent.includes('CI проект')) return fail('завершённый проект не отображается');
 
-            document.querySelector('[data-tab="notes"]')?.click();
-            if (!document.querySelector('[data-delete-note="ci-note-1"]')) return fail('нет явной кнопки удаления заметки');
-            if (!document.querySelector('.workspace-notes-page')) return fail('новый экран заметок не активен');
+            if (document.querySelector('[data-tab="notes"]')) return fail('удаленный раздел заметок вернулся');
+            if (!JSON.parse(localStorage.getItem('lawyerNotes') || '[]').some(note => note.id === 'ci-note-1')) return fail('завершение проекта изменило сохраненные заметки');
 
             document.querySelector('[data-tab="tasks"]')?.click();
             setTimeout(() => {
