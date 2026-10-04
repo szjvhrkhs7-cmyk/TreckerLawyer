@@ -118,6 +118,12 @@
   window.addEventListener('load', () => {
     setTimeout(() => {
       const view = new URLSearchParams(location.search).get('view') || 'tasks';
+      if (view === 'task-form') {
+        document.querySelector('[data-tab="tasks"]')?.click();
+        document.getElementById('fab')?.click();
+        setTimeout(() => document.querySelector('#taskSheet [name="extra"]')?.focus(), 250);
+        return;
+      }
       document.querySelector(`[data-tab="${view}"]`)?.click();
       if (view === 'priorities') setTimeout(() => reportDesktopPrioritiesLayout(), 700);
     }, 500);

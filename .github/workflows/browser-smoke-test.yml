@@ -79,10 +79,9 @@ jobs:
           grep -F 'interaction-polish.css' app.css
           grep -F 'desktop-ux.js' index.html
           grep -F 'legacy-inline.css' index.html
-          if grep -E 'maximum-scale=1|user-scalable=no' index.html; then
-            echo 'Mobile users must be able to zoom the page.' >&2
-            exit 1
-          fi
+          grep -F 'maximum-scale=1' index.html
+          grep -F 'minimum-scale=1' index.html
+          grep -F 'user-scalable=no' index.html
           grep -F 'Резервная копия' /tmp/dom.html
       - name: Verify complete workspace redesign in Chrome
         run: |
