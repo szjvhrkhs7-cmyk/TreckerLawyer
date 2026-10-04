@@ -5,10 +5,11 @@
   const priorityForm = document.getElementById('priorityForm');
   const prioritySheetTitle = document.getElementById('prioritySheetTitle');
   const tabs = document.getElementById('tabs');
+  const PRIORITY_WEEK_STORAGE = 'lawyerPriorityWeekAnchor';
   let selectedTask = null;
   let newTaskDefaults = null;
-  let weekAnchor = startOfWeek(new Date());
-  let revealTodayAfterRender = false;
+  let weekAnchor = loadWeekAnchor();
+  let revealTodayAfterRender = sameDay(weekAnchor, startOfWeek(new Date()));
 
   function pad(value) {
     return String(value).padStart(2, '0');
@@ -37,6 +38,23 @@
     const result = new Date(value);
     result.setDate(result.getDate() + amount);
     return result;
+  }
+
+  function loadWeekAnchor() {
+    try {
+      const stored = fromDateKey(localStorage.getItem(PRIORITY_WEEK_STORAGE));
+      return stored ? startOfWeek(stored) : startOfWeek(new Date());
+    } catch {
+      return startOfWeek(new Date());
+    }
+  }
+
+  function rememberWeekAnchor() {
+    try {
+      localStorage.setItem(PRIORITY_WEEK_STORAGE, dateKey(weekAnchor));
+    } catch {
+      // The selected week is a UI preference; the app still works without storage.
+    }
   }
 
   function sameDay(left, right) {
@@ -157,17 +175,20 @@
     const id = esc(String(task.id));
     const scope = esc(entry.scope);
     const project = projectTitle(task);
-    return `<article class="priority-card" data-priority-card="${id}" data-task-scope="${scope}" data-priority-date="${esc(task.priorityDate || '')}" data-priority-level="${esc(task.priorityLevel === 'other' ? 'other' : 'main')}">
-      ${priorityDragHandle(task)}
+    const completed = task.status === 'done';
+    return `<article class="priority-card${completed ? ' is-done' : ''}" data-priority-card="${id}" data-task-scope="${scope}" data-priority-date="${esc(task.priorityDate || '')}" data-priority-level="${esc(task.priorityLevel === 'other' ? 'other' : 'main')}">
+      ${completed ? '' : priorityDragHandle(task)}
       <button type="button" class="priority-card__main" data-priority-open="${id}" data-task-scope="${scope}">
         <strong>${esc(task.title || 'Без названия')}</strong>
         ${project ? `<span>${esc(project)}</span>` : ''}
       </button>
-      <div class="priority-card__actions">
-        <button type="button" class="priority-card__done" data-priority-done="${id}" data-task-scope="${scope}">Выполнить</button>
-        <button type="button" data-set-priority="${id}" data-task-scope="${scope}">Перенести</button>
-        <button type="button" class="is-danger" data-priority-delete="${id}" data-task-scope="${scope}" aria-label="Удалить задачу ${esc(task.title)}">Удалить</button>
-      </div>
+      ${completed
+        ? '<div class="priority-card__history"><span class="priority-card__done-badge">Выполнено</span></div>'
+        : `<div class="priority-card__actions">
+            <button type="button" class="priority-card__done" data-priority-done="${id}" data-task-scope="${scope}">Выполнить</button>
+            <button type="button" data-set-priority="${id}" data-task-scope="${scope}">Перенести</button>
+            <button type="button" class="is-danger" data-priority-delete="${id}" data-task-scope="${scope}" aria-label="Удалить задачу ${esc(task.title)}">Удалить</button>
+          </div>`}
     </article>`;
   }
 
@@ -338,28 +359,27 @@
       return;
     }
 
-    window.scrollTo(0, 0);
     const top = document.querySelector('.top');
     const tabs = document.getElementById('tabs');
-    const board = currentDay.closest('.priority-board');
-    if (!board) return;
 
-    const centerInBoard = () => {
-      const boardRect = board.getBoundingClientRect();
+    const centerInViewport = () => {
+      const topBottom = Math.max(0, top?.getBoundingClientRect().bottom || 0);
+      const bottomTop = Math.min(window.innerHeight, tabs?.getBoundingClientRect().top || window.innerHeight);
+      const availableHeight = Math.max(120, bottomTop - topBottom - 20);
       const dayRect = currentDay.getBoundingClientRect();
-      const relativeTop = dayRect.top - boardRect.top + board.scrollTop;
-      const target = relativeTop - Math.max(0, board.clientHeight - dayRect.height) / 2;
-      board.scrollTop = Math.max(0, target);
+      const documentTop = dayRect.top + window.scrollY;
+      const target = documentTop - topBottom - 10 - Math.max(0, availableHeight - dayRect.height) / 2;
+      window.scrollTo({ top: Math.max(0, target), left: 0, behavior: 'auto' });
     };
 
-    centerInBoard();
-    requestAnimationFrame(centerInBoard);
+    centerInViewport();
+    requestAnimationFrame(centerInViewport);
   }
 
   function renderPriorities() {
     const days = Array.from({ length: 7 }, (_, index) => addDays(weekAnchor, index));
     const today = defaultPriorityDay();
-    const entries = taskEntries().filter(({ task }) => task.status !== 'done' && fromDateKey(task.priorityDate));
+    const entries = taskEntries().filter(({ task }) => fromDateKey(task.priorityDate));
     const currentWeek = sameDay(weekAnchor, startOfWeek(today));
     page.innerHTML = `<section class="workspace-page priority-page">
       <header class="workspace-page-head priority-page-head">
@@ -427,6 +447,7 @@
       });
       save(LS.tasks, items);
       weekAnchor = startOfWeek(parsedDate);
+      rememberWeekAnchor();
       newTaskDefaults = null;
       hideOverlay(prioritySheet);
       render();
@@ -435,6 +456,7 @@
     if (!selectedTask) return;
     if (!saveTask(selectedTask, { priorityDate, priorityLevel })) return;
     weekAnchor = startOfWeek(parsedDate);
+    rememberWeekAnchor();
     selectedTask = null;
     hideOverlay(prioritySheet);
     render();
@@ -469,9 +491,13 @@
     const weekButton = event.target.closest('[data-priority-week]');
     if (weekButton) {
       const action = weekButton.dataset.priorityWeek;
-      if (action === 'today') revealTodayAfterRender = true;
+      revealTodayAfterRender = action === 'today';
       weekAnchor = action === 'today' ? startOfWeek(new Date()) : addDays(weekAnchor, action === 'prev' ? -7 : 7);
+      rememberWeekAnchor();
       render();
+      if (action !== 'today' && window.innerWidth < 900) {
+        requestAnimationFrame(() => window.scrollTo({ top: 0, left: 0, behavior: 'auto' }));
+      }
       return;
     }
 
@@ -500,8 +526,7 @@
     const tab = event.target.closest('[data-tab]');
     if (tab?.dataset.tab !== 'priorities') return;
     if (state.tab !== 'priorities') {
-      weekAnchor = startOfWeek(new Date());
-      revealTodayAfterRender = true;
+      revealTodayAfterRender = sameDay(weekAnchor, startOfWeek(new Date()));
     }
   }, true);
 

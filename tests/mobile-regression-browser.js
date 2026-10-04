@@ -1,10 +1,17 @@
 (() => {
   'use strict';
 
-  const now = new Date().toISOString();
+  const nowDate = new Date();
+  const now = nowDate.toISOString();
+  const pad = value => String(value).padStart(2, '0');
+  const dateKey = value => `${value.getFullYear()}-${pad(value.getMonth() + 1)}-${pad(value.getDate())}`;
+  const pastPriorityDate = new Date(nowDate);
+  pastPriorityDate.setDate(pastPriorityDate.getDate() - 7);
+  localStorage.removeItem('lawyerPriorityWeekAnchor');
   localStorage.setItem('lawyerTasks', JSON.stringify([
     { id: 'mobile-done-1', title: 'Завершённая задача', status: 'done', priority: 'normal', completedAt: now, createdAt: now, updatedAt: now },
-    { id: 'mobile-new-1', title: 'Новая задача', status: 'new', priority: 'normal', createdAt: now, updatedAt: now }
+    { id: 'mobile-history-1', title: 'Исторический приоритет', status: 'done', priority: 'normal', priorityDate: dateKey(pastPriorityDate), priorityLevel: 'main', completedAt: now, createdAt: now, updatedAt: now },
+    { id: 'mobile-new-1', title: 'Новая задача', status: 'new', priority: 'normal', priorityDate: dateKey(nowDate), priorityLevel: 'main', createdAt: now, updatedAt: now }
   ]));
   localStorage.setItem('lawyerProjects', '[]');
   localStorage.setItem('lawyerProjectTasks', '[]');
@@ -199,7 +206,8 @@
             if (Math.abs(tabsRectAfterPriority.bottom - window.innerHeight) > 2) return fail('нижняя навигация исчезает после перехода в приоритеты');
             const priorityBoardRect = board.getBoundingClientRect();
             if (todayRect.width < priorityBoardRect.width - 4) return fail(`карточка текущего дня не занимает ширину доски: ${todayRect.width}/${priorityBoardRect.width}`);
-            if (!['auto', 'scroll'].includes(getComputedStyle(board).overflowY)) return fail('мобильная доска приоритетов не имеет собственного вертикального скролла');
+            if (getComputedStyle(board).overflowY !== 'visible') return fail(`мобильная доска создает вложенный скролл: ${getComputedStyle(board).overflowY}`);
+            if (board.scrollHeight > board.clientHeight + 2) return fail(`мобильная доска остается внутренним scroll-контейнером: ${board.scrollHeight}/${board.clientHeight}`);
             const todayHead = today.querySelector('.priority-day__head')?.getBoundingClientRect();
             if (!todayHead || todayHead.width < todayRect.width - 4) return fail('заголовок дня не занимает ширину мобильной карточки');
             const todayMainZone = today.querySelector('.priority-zone--main');
@@ -214,10 +222,12 @@
             if (todayRect.height + 4 < expectedDayHeight) {
               return fail(`контент дня обрезается: day=${Math.round(todayRect.height)} parts=${Math.round(expectedDayHeight)} mainTop=${Math.round(mainZoneRect.top)} otherTop=${Math.round(otherZoneRect.top)}`);
             }
-            const boardCenter = (priorityBoardRect.top + priorityBoardRect.bottom) / 2;
+            const visibleTop = Math.max(0, topRectAfterPriority.bottom) + 10;
+            const visibleBottom = Math.min(window.innerHeight, tabsRectAfterPriority.top) - 10;
+            const visibleCenter = (visibleTop + visibleBottom) / 2;
             const todayCenter = (todayRect.top + todayRect.bottom) / 2;
-            if (Math.abs(todayCenter - boardCenter) > Math.max(32, priorityBoardRect.height * 0.12)) {
-              return fail(`текущий день не расположен по центру мобильной доски: day=${Math.round(todayCenter)} board=${Math.round(boardCenter)} scroll=${Math.round(board.scrollTop)}`);
+            if (todayRect.height < visibleBottom - visibleTop && Math.abs(todayCenter - visibleCenter) > Math.max(42, (visibleBottom - visibleTop) * 0.18)) {
+              return fail(`текущий день не расположен в видимой зоне: day=${Math.round(todayCenter)} viewport=${Math.round(visibleCenter)}`);
             }
             const priorityActionButtons = [...today.querySelectorAll('.priority-card__actions button')];
             if (priorityActionButtons.some(button => button.getBoundingClientRect().height < 39)) return fail('действия приоритетов слишком маленькие для касания');
@@ -228,7 +238,27 @@
             const lastDayRect = days.at(-1).getBoundingClientRect();
             if (board.scrollWidth > board.clientWidth + 1) return fail(`недельная доска требует горизонтальной прокрутки: ${board.scrollWidth}/${board.clientWidth}`);
             if (lastDayRect.right > boardRect.right + 1 || lastDayRect.left < boardRect.left) return fail('последний день недели не помещается в мобильную доску');
+            if (lastDayRect.bottom > boardRect.bottom + 2) return fail('последний день выходит за естественную высоту недельной доски');
+            const lastDayDocumentBottom = lastDayRect.bottom + window.scrollY;
+            const trailingSpace = document.documentElement.scrollHeight - lastDayDocumentBottom;
+            if (trailingSpace > 220) return fail(`после приоритетов остается слишком большая пустая область: ${Math.round(trailingSpace)}px`);
             if (document.documentElement.scrollWidth > window.innerWidth + 1) return fail('приоритеты создают горизонтальный overflow страницы');
+
+            const previousWeek = weekActions.querySelector('[data-priority-week="prev"]');
+            const nextWeek = weekActions.querySelector('[data-priority-week="next"]');
+            previousWeek?.click();
+            const historicalCard = document.querySelector('[data-priority-card="mobile-history-1"].is-done');
+            if (!historicalCard) return fail('завершенные приоритеты прошлой недели не сохраняются в истории');
+            if (!historicalCard.querySelector('.priority-card__done-badge')) return fail('историческая задача не отмечена как выполненная');
+            const savedWeek = localStorage.getItem('lawyerPriorityWeekAnchor');
+            if (!savedWeek) return fail('выбранная неделя приоритетов не сохраняется');
+
+            document.querySelector('[data-tab="tasks"]')?.click();
+            document.querySelector('[data-tab="priorities"]')?.click();
+            if (!document.querySelector('[data-priority-card="mobile-history-1"].is-done')) return fail('страница прошлой недели сбрасывается после возврата в приоритеты');
+
+            document.querySelector('[data-priority-week="next"]')?.click();
+            if (!document.querySelector('.priority-day.is-today[aria-current="date"]')) return fail('навигация вперед не возвращает текущую неделю');
 
             pass();
           } catch (error) {

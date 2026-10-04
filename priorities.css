@@ -622,3 +622,54 @@ body.drag-reordering .priority-drag-handle {
     font-size: 9px;
   }
 }
+
+/* Preserve completed priorities in week history without making them look active. */
+.priority-card.is-done {
+  grid-template-columns: minmax(0, 1fr) auto;
+  border-left-color: color-mix(in srgb, var(--workspace-success, var(--green)) 52%, var(--line));
+  background: color-mix(in srgb, var(--surface-raised) 97%, var(--green-soft, transparent));
+  opacity: .82;
+}
+
+.priority-card.is-done .priority-card__main {
+  grid-column: 1;
+  grid-row: 1;
+}
+
+.priority-card.is-done .priority-card__main strong {
+  color: var(--muted);
+}
+
+.priority-card__history {
+  grid-column: 2;
+  grid-row: 1;
+  align-self: center;
+  justify-self: end;
+}
+
+.priority-card__done-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: var(--green-soft);
+  color: var(--workspace-success, var(--green));
+  font-size: 9.5px;
+  font-weight: 750;
+  white-space: nowrap;
+}
+
+@media (max-width: 899px) {
+  .priority-card.is-done {
+    grid-template-columns: minmax(0, 1fr) auto !important;
+  }
+
+  .priority-card.is-done .priority-card__main {
+    grid-column: 1 !important;
+  }
+
+  .priority-card__history {
+    grid-column: 2 !important;
+  }
+}

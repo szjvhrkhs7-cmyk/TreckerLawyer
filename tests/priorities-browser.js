@@ -87,7 +87,11 @@
       await wait(80);
       document.querySelector('[data-tab="priorities"]')?.click();
       await wait(100);
-      if (!document.querySelector(`.priority-day.is-today[data-priority-date="${key(new Date())}"]`)) return finish('FAIL: при повторном входе не открылась текущая неделя');
+      if (document.querySelector('.priority-day.is-today')) return finish('FAIL: выбранная следующая неделя не сохранилась после повторного входа');
+      if (!localStorage.getItem('lawyerPriorityWeekAnchor')) return finish('FAIL: выбранная неделя не сохранена в localStorage');
+      document.querySelector('[data-priority-week="today"]')?.click();
+      await wait(100);
+      if (!document.querySelector(`.priority-day.is-today[data-priority-date="${key(new Date())}"]`)) return finish('FAIL: кнопка текущей недели не возвращает сегодняшний день');
 
       const addButton = document.querySelector(`[data-priority-add="main"][data-priority-date="${key(saturday)}"]`);
       if (!addButton) return finish('FAIL: суббота отсутствует или в ней нельзя добавить задачу');
@@ -113,7 +117,10 @@
       await wait(80);
       tasks = JSON.parse(localStorage.getItem('lawyerTasks') || '[]');
       if (tasks.find(task => task.id === 'priority-done')?.status !== 'done') return finish('FAIL: выполнение не отразилось в исходной задаче');
-      if (document.querySelector('[data-priority-card="priority-done"]')) return finish('FAIL: выполненная задача осталась в активных приоритетах');
+      const completedCard = document.querySelector('[data-priority-card="priority-done"].is-done');
+      if (!completedCard) return finish('FAIL: выполненная задача исчезла из истории недели');
+      if (!completedCard.querySelector('.priority-card__done-badge')) return finish('FAIL: выполненная задача не отмечена в истории');
+      if (completedCard.querySelector('[data-priority-drag]')) return finish('FAIL: выполненную историческую задачу все еще можно перетаскивать');
 
       document.querySelector('[data-priority-delete="priority-new"]')?.click();
       await wait(40);
