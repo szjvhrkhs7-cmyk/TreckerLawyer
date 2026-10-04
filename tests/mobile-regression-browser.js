@@ -29,7 +29,9 @@
     setTimeout(() => {
       try {
         const viewport = document.querySelector('meta[name="viewport"]')?.content || '';
-        if (viewport.includes('maximum-scale=1') || viewport.includes('user-scalable=no')) return fail('увеличение страницы на телефоне заблокировано');
+        if (!viewport.includes('maximum-scale=1') || !viewport.includes('minimum-scale=1') || !viewport.includes('user-scalable=no')) {
+          return fail(`мобильный viewport допускает нежелательное увеличение: ${viewport}`);
+        }
 
         const tabs = document.getElementById('tabs');
         const top = document.querySelector('.top');
