@@ -72,6 +72,14 @@
         if (summaryLabel && getComputedStyle(summaryLabel).whiteSpace === 'nowrap') return fail('подпись мобильной статистики обрезается вместо переноса');
         if (document.documentElement.scrollWidth > window.innerWidth + 1) return fail(`страница имеет горизонтальный overflow: ${document.documentElement.scrollWidth}/${window.innerWidth}`);
 
+        const viewportContent = document.querySelector('meta[name="viewport"]')?.content || '';
+        if (!viewportContent.includes('maximum-scale=1') || !viewportContent.includes('minimum-scale=1') || !viewportContent.includes('user-scalable=no')) {
+          return fail(`viewport допускает увеличение интерфейса: ${viewportContent}`);
+        }
+        if (getComputedStyle(document.body).touchAction !== 'pan-x pan-y' && getComputedStyle(document.body).touchAction !== 'pan-y pan-x') {
+          return fail(`body допускает gesture zoom: ${getComputedStyle(document.body).touchAction}`);
+        }
+
         const verifyCreateForm = (tab, sheetSelector, fieldSelector, value) => {
           document.querySelector(`[data-tab="${tab}"]`)?.click();
           document.getElementById('fab')?.click();
@@ -90,6 +98,14 @@
           const sheetRect = sheet.getBoundingClientRect();
           if (buttonRect.top < sheetRect.top - 1 || buttonRect.bottom > sheetRect.bottom + 1 || buttonRect.bottom > window.innerHeight) {
             return `кнопка создания в разделе ${tab} находится вне видимой области`;
+          }
+
+          const controls = [...overlay.querySelectorAll('input, textarea, select')];
+          const undersized = controls.find(control => parseFloat(getComputedStyle(control).fontSize) < 16);
+          if (undersized) return `поле ${undersized.name || undersized.id || undersized.tagName} меньше 16px и может вызвать iOS zoom`;
+          field.focus();
+          if (window.visualViewport && Math.abs(window.visualViewport.scale - 1) > 0.01) {
+            return `focus изменил масштаб viewport: ${window.visualViewport.scale}`;
           }
 
           field.value = value;
