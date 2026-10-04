@@ -9,7 +9,8 @@
   pastPriorityDate.setDate(pastPriorityDate.getDate() - 7);
   localStorage.removeItem('lawyerPriorityWeekAnchor');
   localStorage.setItem('lawyerTasks', JSON.stringify([
-    { id: 'mobile-done-1', title: 'Завершённая задача', status: 'done', priority: 'normal', priorityDate: dateKey(pastPriorityDate), priorityLevel: 'main', completedAt: now, createdAt: now, updatedAt: now },
+    { id: 'mobile-done-1', title: 'Завершённая задача', status: 'done', priority: 'normal', completedAt: now, createdAt: now, updatedAt: now },
+    { id: 'mobile-history-1', title: 'Исторический приоритет', status: 'done', priority: 'normal', priorityDate: dateKey(pastPriorityDate), priorityLevel: 'main', completedAt: now, createdAt: now, updatedAt: now },
     { id: 'mobile-new-1', title: 'Новая задача', status: 'new', priority: 'normal', priorityDate: dateKey(nowDate), priorityLevel: 'main', createdAt: now, updatedAt: now }
   ]));
   localStorage.setItem('lawyerProjects', '[]');
@@ -246,7 +247,7 @@
             const previousWeek = weekActions.querySelector('[data-priority-week="prev"]');
             const nextWeek = weekActions.querySelector('[data-priority-week="next"]');
             previousWeek?.click();
-            const historicalCard = document.querySelector('[data-priority-card="mobile-done-1"].is-done');
+            const historicalCard = document.querySelector('[data-priority-card="mobile-history-1"].is-done');
             if (!historicalCard) return fail('завершенные приоритеты прошлой недели не сохраняются в истории');
             if (!historicalCard.querySelector('.priority-card__done-badge')) return fail('историческая задача не отмечена как выполненная');
             const savedWeek = localStorage.getItem('lawyerPriorityWeekAnchor');
@@ -254,7 +255,7 @@
 
             document.querySelector('[data-tab="tasks"]')?.click();
             document.querySelector('[data-tab="priorities"]')?.click();
-            if (!document.querySelector('[data-priority-card="mobile-done-1"].is-done')) return fail('страница прошлой недели сбрасывается после возврата в приоритеты');
+            if (!document.querySelector('[data-priority-card="mobile-history-1"].is-done')) return fail('страница прошлой недели сбрасывается после возврата в приоритеты');
 
             document.querySelector('[data-priority-week="next"]')?.click();
             if (!document.querySelector('.priority-day.is-today[aria-current="date"]')) return fail('навигация вперед не возвращает текущую неделю');
