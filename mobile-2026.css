@@ -245,7 +245,7 @@
   }
 
   .workspace-toolbar {
-    grid-template-columns: minmax(0, 1fr) 158px !important;
+    grid-template-columns: minmax(0, 1fr) 170px !important;
     gap: 9px !important;
     margin-bottom: 12px !important;
   }
