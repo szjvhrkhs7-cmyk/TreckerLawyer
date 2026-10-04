@@ -152,6 +152,15 @@
             input.remove();
             if (inputSize < 16) return fail(`размер мобильного input меньше 16px: ${inputSize}`);
 
+            const sortControl = document.getElementById('taskSort');
+            if (!sortControl) return fail('мобильная сортировка задач не найдена');
+            const sortStyle = getComputedStyle(sortControl);
+            if (parseFloat(sortStyle.fontSize) < 16) return fail(`размер текста сортировки меньше 16px: ${sortStyle.fontSize}`);
+            if (sortStyle.appearance !== 'none' && sortStyle.webkitAppearance !== 'none') return fail(`нативная стрелка сортировки не отключена: ${sortStyle.appearance}`);
+            if (sortStyle.touchAction !== 'manipulation') return fail(`сортировка допускает double-tap zoom: ${sortStyle.touchAction}`);
+            const taskChip = document.querySelector('.workspace-toolbar .chip');
+            if (taskChip && getComputedStyle(taskChip).touchAction !== 'manipulation') return fail('кнопки интерфейса допускают double-tap zoom');
+
             restore.click();
             const tasks = JSON.parse(localStorage.getItem('lawyerTasks') || '[]');
             const restored = tasks.find(task => task.id === 'mobile-done-1');
