@@ -752,3 +752,71 @@
     font-size: 26px !important;
   }
 }
+
+
+/* iOS interaction polish: prevent focus/double-tap zoom and replace the native
+   select spinner with a control that matches the rest of the workspace. */
+@media (max-width: 899px) {
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
+  }
+
+  :where(button, a, input, select, textarea, summary, label, [role="button"], .chip, .tab) {
+    touch-action: manipulation;
+  }
+
+  :where(input, select, textarea) {
+    font-size: 16px !important;
+  }
+
+  .workspace-sort {
+    position: relative !important;
+    display: block !important;
+    min-width: 0 !important;
+  }
+
+  .workspace-sort::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    right: 15px;
+    width: 8px;
+    height: 8px;
+    border-right: 2px solid var(--muted);
+    border-bottom: 2px solid var(--muted);
+    border-radius: 1px;
+    transform: translateY(-66%) rotate(45deg);
+    pointer-events: none;
+  }
+
+  .workspace-sort select {
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 46px !important;
+    padding: 0 40px 0 14px !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 14px !important;
+    background: var(--surface) !important;
+    background-image: none !important;
+    color: var(--text) !important;
+    font-family: var(--workspace-ui-font, var(--font)) !important;
+    font-size: 16px !important;
+    font-weight: 560 !important;
+    line-height: 1.2 !important;
+    box-shadow: 0 2px 10px rgba(24, 50, 85, .035) !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+  }
+
+  .workspace-sort select:focus,
+  .workspace-sort select:focus-visible {
+    border-color: color-mix(in srgb, var(--workspace-accent) 55%, var(--line)) !important;
+    outline: 2px solid color-mix(in srgb, var(--workspace-accent) 20%, transparent) !important;
+    outline-offset: 1px !important;
+  }
+
+  :root[data-theme="dark"] .workspace-sort select {
+    box-shadow: none !important;
+  }
+}
