@@ -331,7 +331,29 @@
     if (!revealTodayAfterRender) return;
     revealTodayAfterRender = false;
     const currentDay = page.querySelector('.priority-day.is-today[aria-current="date"]');
-    currentDay?.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+    if (!currentDay) return;
+
+    if (window.innerWidth >= 900) {
+      currentDay.scrollIntoView({ behavior: 'auto', block: 'center', inline: 'nearest' });
+      return;
+    }
+
+    window.scrollTo(0, 0);
+    const top = document.querySelector('.top');
+    const tabs = document.getElementById('tabs');
+    const board = currentDay.closest('.priority-board');
+    if (!board) return;
+
+    const centerInBoard = () => {
+      const boardRect = board.getBoundingClientRect();
+      const dayRect = currentDay.getBoundingClientRect();
+      const relativeTop = dayRect.top - boardRect.top + board.scrollTop;
+      const target = relativeTop - Math.max(0, board.clientHeight - dayRect.height) / 2;
+      board.scrollTop = Math.max(0, target);
+    };
+
+    centerInBoard();
+    requestAnimationFrame(centerInBoard);
   }
 
   function renderPriorities() {

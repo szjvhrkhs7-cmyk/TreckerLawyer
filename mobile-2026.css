@@ -1,0 +1,754 @@
+/* Mobile polish for iPhone-sized layouts. Loaded last; desktop is untouched. */
+@media (max-width: 899px) {
+  :root {
+    --mobile-page-gutter: 14px;
+    --mobile-nav-height: 76px;
+    --mobile-header-offset: calc(58px + env(safe-area-inset-top));
+  }
+
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden !important;
+  }
+
+  body {
+    min-height: 100dvh;
+    padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 12px) !important;
+    background: var(--bg) !important;
+  }
+
+  .app {
+    width: 100% !important;
+    min-height: 100dvh !important;
+    margin: 0 !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: var(--bg) !important;
+    box-shadow: none !important;
+  }
+
+  /* Keep fixed bottom navigation truly viewport-fixed on iOS/WebKit. */
+  .top {
+    position: fixed !important;
+    top: 0 !important;
+    right: 0 !important;
+    left: 0 !important;
+    z-index: 80 !important;
+    width: 100% !important;
+    min-height: 58px !important;
+    padding: max(7px, env(safe-area-inset-top)) var(--mobile-page-gutter) 7px !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--line) 78%, transparent) !important;
+    border-radius: 0 0 16px 16px !important;
+    background: color-mix(in srgb, var(--surface) 98%, var(--bg)) !important;
+    box-shadow: 0 7px 24px rgba(22, 47, 75, .055) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+    filter: none !important;
+    transform: none !important;
+    perspective: none !important;
+    contain: none !important;
+    will-change: auto !important;
+  }
+
+  .brandbar {
+    display: grid !important;
+    grid-template-columns: 36px minmax(0, 1fr) 40px 40px !important;
+    align-items: center !important;
+    gap: 7px !important;
+    min-width: 0;
+    min-height: 44px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .brandmark {
+    width: 36px !important;
+    min-width: 36px !important;
+    height: 36px !important;
+    min-height: 36px !important;
+    border-radius: 11px !important;
+    box-shadow: 0 6px 16px rgba(18, 49, 82, .12) !important;
+  }
+
+  .brandname {
+    min-width: 0 !important;
+    max-width: none !important;
+    overflow: hidden !important;
+    color: var(--text) !important;
+    font-size: 13.5px !important;
+    font-weight: 730 !important;
+    line-height: 1.15 !important;
+    letter-spacing: -.012em !important;
+    text-overflow: ellipsis;
+    white-space: nowrap !important;
+  }
+
+  .brandname span {
+    display: none !important;
+  }
+
+  .sync-button,
+  .theme-toggle {
+    width: 40px !important;
+    min-width: 40px !important;
+    height: 40px !important;
+    min-height: 40px !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 1px solid transparent !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+    color: var(--muted) !important;
+    box-shadow: none !important;
+  }
+
+  .sync-button {
+    grid-column: 3 !important;
+    justify-self: end !important;
+  }
+
+  .theme-toggle {
+    grid-column: 4 !important;
+    justify-self: end !important;
+  }
+
+  .sync-button:hover,
+  .theme-toggle:hover,
+  .sync-button:active,
+  .theme-toggle:active {
+    border-color: var(--line) !important;
+    background: var(--surface-hover) !important;
+    color: var(--text) !important;
+  }
+
+  .sync-button span,
+  .sidebar-collapse {
+    display: none !important;
+  }
+
+  .sync-button .icon,
+  .theme-toggle .icon {
+    width: 19px !important;
+    height: 19px !important;
+  }
+
+  .navline {
+    margin: 5px 0 0 !important;
+    padding: 0 1px !important;
+  }
+
+  .navline:not(.hidden) {
+    display: flex !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .navline .back {
+    min-width: 44px;
+    min-height: 40px;
+    padding: 0 8px !important;
+    border-radius: 10px;
+    font-size: 0;
+  }
+
+  .navline .back .icon {
+    width: 20px;
+    height: 20px;
+  }
+
+  .navline .title {
+    min-width: 0;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: hidden;
+    color: var(--text) !important;
+    font-size: 14px !important;
+    font-weight: 700 !important;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .top > #mainTitle,
+  .top > #stats {
+    display: none !important;
+  }
+
+  .page {
+    width: 100% !important;
+    min-width: 0;
+    max-width: none !important;
+    padding: calc(var(--mobile-header-offset) + 16px) var(--mobile-page-gutter) calc(132px + env(safe-area-inset-bottom)) !important;
+    overflow-x: hidden !important;
+  }
+
+
+  .top:has(.navline:not(.hidden)) + .page {
+    padding-top: calc(var(--mobile-header-offset) + 52px) !important;
+  }
+
+  .workspace-page,
+  .priority-page {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .workspace-page-head {
+    gap: 10px !important;
+    margin-bottom: 15px !important;
+  }
+
+  .workspace-page-head h2 {
+    margin: 0 !important;
+    font-size: 28px !important;
+    font-weight: 760 !important;
+    line-height: 1.05 !important;
+    letter-spacing: -.035em !important;
+  }
+
+  .workspace-page-head p:not(.workspace-page-eyebrow) {
+    margin-top: 5px !important;
+    font-size: 12.5px !important;
+    line-height: 1.35 !important;
+  }
+
+  .workspace-page-eyebrow {
+    margin-bottom: 5px !important;
+    font-size: 9.5px !important;
+    letter-spacing: .075em !important;
+  }
+
+  .workspace-summary-strip {
+    gap: 7px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .workspace-summary-item {
+    min-height: 76px !important;
+    padding: 10px 10px !important;
+    border-radius: 13px !important;
+    box-shadow: 0 2px 10px rgba(24, 50, 85, .035) !important;
+  }
+
+  .workspace-summary-item strong {
+    font-size: 22px !important;
+    line-height: 1 !important;
+  }
+
+  .workspace-summary-item span {
+    font-size: 11px !important;
+    line-height: 1.2 !important;
+  }
+
+  .workspace-toolbar {
+    grid-template-columns: minmax(0, 1fr) 158px !important;
+    gap: 9px !important;
+    margin-bottom: 12px !important;
+  }
+
+  .workspace-toolbar .search,
+  .workspace-sort select {
+    min-height: 46px !important;
+    font-size: 16px !important;
+  }
+
+  .workspace-sort select {
+    padding-right: 28px !important;
+  }
+
+  .workspace-toolbar .filters {
+    grid-column: 1 / -1 !important;
+    display: flex !important;
+    flex-wrap: nowrap !important;
+    gap: 7px !important;
+    width: calc(100% + (2 * var(--mobile-page-gutter))) !important;
+    margin: 0 calc(-1 * var(--mobile-page-gutter)) !important;
+    padding: 0 var(--mobile-page-gutter) 3px !important;
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+    overscroll-behavior-inline: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .workspace-toolbar .filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  .workspace-toolbar .chip {
+    flex: 0 0 auto !important;
+    min-height: 40px !important;
+    padding: 0 11px !important;
+    border-radius: 11px !important;
+    font-size: 11.5px !important;
+    white-space: nowrap !important;
+  }
+
+  .workspace-result-count {
+    margin: 0 0 12px !important;
+    font-size: 11.5px !important;
+  }
+
+  .workspace-task-list {
+    gap: 9px !important;
+  }
+
+  .workspace-task-row,
+  .workspace-task-row.is-done {
+    gap: 9px 8px !important;
+    padding: 13px 12px !important;
+    border-radius: 15px !important;
+    box-shadow: 0 4px 18px rgba(24, 50, 85, .04) !important;
+  }
+
+  .workspace-task-main strong {
+    font-size: 15px !important;
+    line-height: 1.38 !important;
+    letter-spacing: -.01em !important;
+  }
+
+  .workspace-task-meta {
+    margin-top: 5px !important;
+    font-size: 10.8px !important;
+    line-height: 1.35 !important;
+  }
+
+  .workspace-status,
+  .workspace-priority {
+    min-height: 30px !important;
+    padding-inline: 10px !important;
+    font-size: 10.5px !important;
+  }
+
+  .workspace-task-detail-block {
+    padding-top: 10px !important;
+  }
+
+  .workspace-task-detail-label {
+    font-size: 10px !important;
+  }
+
+  .workspace-task-detail-text {
+    font-size: 13.5px !important;
+    line-height: 1.42 !important;
+  }
+
+  .workspace-task-row .workspace-row-actions {
+    gap: 7px !important;
+    padding-right: 0 !important;
+  }
+
+  .workspace-task-row .workspace-row-actions .btn {
+    min-height: 44px !important;
+    padding: 0 11px !important;
+    border-radius: 10px !important;
+    font-size: 11.5px !important;
+  }
+
+  /* Bottom navigation behaves like a native three-tab bar. */
+  .tabs {
+    position: fixed !important;
+    z-index: 90 !important;
+    right: 0 !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    display: grid !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 2px !important;
+    min-height: var(--mobile-nav-height) !important;
+    margin: 0 !important;
+    padding: 7px 8px calc(7px + env(safe-area-inset-bottom)) !important;
+    border: 0 !important;
+    border-top: 1px solid color-mix(in srgb, var(--line) 86%, transparent) !important;
+    border-radius: 18px 18px 0 0 !important;
+    background: var(--surface) !important;
+    box-shadow: 0 -10px 30px rgba(18, 44, 72, .085) !important;
+    -webkit-backdrop-filter: none !important;
+    backdrop-filter: none !important;
+  }
+
+  .tab {
+    position: relative !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    gap: 4px !important;
+    min-width: 0 !important;
+    min-height: 56px !important;
+    padding: 5px 4px !important;
+    overflow: visible !important;
+    border: 0 !important;
+    border-radius: 12px !important;
+    background: transparent !important;
+    color: var(--faint) !important;
+    font-size: 10.5px !important;
+    font-weight: 650 !important;
+    line-height: 1 !important;
+  }
+
+  .tab .icon {
+    display: block !important;
+    width: 21px !important;
+    height: 21px !important;
+    overflow: visible !important;
+  }
+
+  .tab.active {
+    background: var(--workspace-accent-soft) !important;
+    color: var(--workspace-accent) !important;
+  }
+
+  .tab .count,
+  .tab.active .count {
+    position: absolute !important;
+    top: 3px !important;
+    left: calc(50% + 6px) !important;
+    display: grid !important;
+    place-items: center !important;
+    min-width: 16px !important;
+    height: 16px !important;
+    padding: 0 4px !important;
+    border: 2px solid var(--surface) !important;
+    border-radius: 999px !important;
+    background: var(--workspace-accent) !important;
+    color: #fff !important;
+    font-size: 8px !important;
+    font-weight: 750 !important;
+  }
+
+  .fab {
+    right: 15px !important;
+    bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 12px) !important;
+    width: 52px !important;
+    height: 52px !important;
+    border-radius: 17px !important;
+    box-shadow: 0 12px 28px rgba(52, 120, 246, .28) !important;
+  }
+
+  /* Mobile priorities: use full width instead of a cramped left date rail. */
+  .page:has(.priority-page) {
+    padding-bottom: calc(var(--mobile-nav-height) + env(safe-area-inset-bottom) + 8px) !important;
+  }
+
+  .priority-page {
+    min-height: 0 !important;
+  }
+
+  body:has(.priority-page) .fab {
+    display: none !important;
+  }
+
+  .priority-page-head {
+    gap: 11px !important;
+    margin-bottom: 14px !important;
+  }
+
+  .priority-week-actions {
+    display: grid !important;
+    grid-template-columns: 44px minmax(0, 1fr) 44px !important;
+    gap: 7px !important;
+    width: 100% !important;
+  }
+
+  .priority-week-actions .btn {
+    min-height: 44px !important;
+    border-radius: 11px !important;
+  }
+
+  .priority-week-actions .btn:first-child,
+  .priority-week-actions .btn:last-child {
+    width: 44px !important;
+    min-width: 44px !important;
+  }
+
+  .priority-board {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: max(360px, calc(100dvh - var(--mobile-header-offset) - var(--mobile-nav-height) - 166px - env(safe-area-inset-bottom))) !important;
+    max-height: 590px !important;
+    padding: 1px 1px 72px !important;
+    overflow-x: hidden !important;
+    overflow-y: auto !important;
+    overscroll-behavior: contain;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .priority-board::-webkit-scrollbar {
+    display: none;
+  }
+
+  .priority-day {
+    display: block !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    overflow: hidden !important;
+    border: 1px solid var(--line) !important;
+    border-radius: 15px !important;
+    background: var(--surface) !important;
+    box-shadow: 0 4px 18px rgba(24, 50, 85, .045) !important;
+    min-height: 220px !important;
+    height: auto !important;
+    scroll-margin-top: 78px;
+  }
+
+  .priority-day::before {
+    width: 3px !important;
+  }
+
+  .priority-day__head {
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    min-height: 52px !important;
+    margin: 0 !important;
+    padding: 12px 13px 12px 16px !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--line) !important;
+    background: color-mix(in srgb, var(--surface-raised) 97%, var(--workspace-accent-soft)) !important;
+    text-align: left !important;
+  }
+
+  .priority-day__head strong {
+    font-size: 11px !important;
+    letter-spacing: .035em !important;
+  }
+
+  .priority-day__head span {
+    font-size: 11px !important;
+  }
+
+  .priority-day__today {
+    margin-left: auto !important;
+    padding: 5px 8px !important;
+    border-radius: 999px !important;
+    background: var(--workspace-accent-soft) !important;
+    color: var(--workspace-accent) !important;
+    font-size: 9px !important;
+    font-style: normal !important;
+    font-weight: 750 !important;
+    letter-spacing: .02em !important;
+  }
+
+  .priority-zone {
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 9px !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    height: auto !important;
+    min-height: 82px !important;
+    max-height: none !important;
+    padding: 13px 13px 14px 16px !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    content-visibility: visible !important;
+  }
+
+  .priority-zone__head {
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    width: 100% !important;
+    min-height: 38px !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .priority-zone--main {
+    min-height: 104px !important;
+  }
+
+  .priority-zone--other {
+    min-height: 92px !important;
+  }
+
+  .priority-zone__list {
+    display: grid !important;
+    width: 100% !important;
+    height: auto !important;
+    min-height: 58px !important;
+    max-height: none !important;
+    overflow: visible !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+  }
+
+  .priority-zone + .priority-zone {
+    min-height: 0 !important;
+    border-top: 1px solid var(--line) !important;
+  }
+
+  .priority-zone__head {
+    min-height: 32px;
+  }
+
+  .priority-zone h3 {
+    font-size: 9.5px !important;
+    letter-spacing: .055em !important;
+  }
+
+  .priority-zone__list {
+    min-height: 0 !important;
+    gap: 8px !important;
+  }
+
+  .priority-zone-empty {
+    min-height: 52px;
+    padding: 14px !important;
+    border-radius: 11px !important;
+    font-size: 11px !important;
+  }
+
+  .priority-add,
+  .priority-zone--main > .priority-zone__head .priority-add {
+    top: auto !important;
+    right: auto !important;
+    position: relative !important;
+    width: 42px !important;
+    min-width: 42px !important;
+    height: 42px !important;
+    min-height: 42px !important;
+    padding: 0 !important;
+    border-radius: 11px !important;
+  }
+
+  .priority-card {
+    grid-template-columns: minmax(0, 1fr) 30px !important;
+    gap: 8px 10px !important;
+    padding: 12px 11px 11px 13px !important;
+    border-radius: 12px !important;
+  }
+
+  .priority-card__main strong {
+    font-size: 13.5px !important;
+    line-height: 1.36 !important;
+  }
+
+  .priority-card__main span {
+    font-size: 10.5px !important;
+  }
+
+  .priority-drag-handle {
+    width: 30px !important;
+    min-width: 30px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+  }
+
+  .priority-card__actions {
+    gap: 6px !important;
+  }
+
+  .priority-card__actions button {
+    min-height: 44px !important;
+    padding: 0 10px !important;
+    border-radius: 9px !important;
+    font-size: 10.5px !important;
+  }
+
+  /* Projects should feel like tappable mobile cards, not desktop tiles squeezed down. */
+  .workspace-project-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .workspace-project-card {
+    min-height: 0 !important;
+    padding: 15px !important;
+    border-radius: 15px !important;
+  }
+
+  .workspace-project-title {
+    min-height: 42px;
+  }
+
+  .workspace-project-title strong {
+    font-size: 15px !important;
+    line-height: 1.35 !important;
+  }
+
+  .workspace-project-card .workspace-row-actions {
+    gap: 7px !important;
+    margin-top: 12px !important;
+  }
+
+  .workspace-project-card .workspace-row-actions .btn,
+  .workspace-project-card .workspace-row-actions button {
+    min-height: 42px !important;
+    border-radius: 10px !important;
+  }
+
+  .sheet,
+  #taskSheet .sheet,
+  #projectSheet .sheet,
+  #prioritySheet .sheet,
+  #syncSheet .sheet {
+    width: 100% !important;
+    max-width: none !important;
+    max-height: min(88dvh, 760px) !important;
+    padding-bottom: calc(18px + env(safe-area-inset-bottom)) !important;
+    border-radius: 20px 20px 0 0 !important;
+  }
+
+  .sheet h2 {
+    font-size: 20px !important;
+  }
+
+  .field input,
+  .field textarea,
+  .field select {
+    font-size: 16px !important;
+  }
+}
+
+@media (max-width: 359px) {
+  :root {
+    --mobile-page-gutter: 12px;
+  }
+
+  .brandbar {
+    grid-template-columns: 34px minmax(0, 1fr) 38px 38px !important;
+    gap: 5px !important;
+  }
+
+  .brandmark {
+    width: 34px !important;
+    min-width: 34px !important;
+    height: 34px !important;
+    min-height: 34px !important;
+  }
+
+  .brandname {
+    font-size: 12.5px !important;
+  }
+
+  .sync-button,
+  .theme-toggle {
+    width: 38px !important;
+    min-width: 38px !important;
+    height: 38px !important;
+    min-height: 38px !important;
+  }
+
+  .workspace-toolbar {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .workspace-sort {
+    grid-column: 1 !important;
+  }
+
+  .workspace-page-head h2 {
+    font-size: 26px !important;
+  }
+}

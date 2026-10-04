@@ -58,6 +58,8 @@
         if (brandRect.left < -1 || brandRect.right > window.innerWidth + 1) return fail('мобильная шапка выходит за viewport');
         if (syncRect.right > window.innerWidth + 1 || themeRect.right > window.innerWidth + 1) return fail('кнопки мобильной шапки выходят за экран');
         if (getComputedStyle(syncButton.querySelector('span')).display !== 'none') return fail('текст синхронизации перегружает мобильную шапку');
+        if (brandRect.height > 52) return fail(`мобильная шапка слишком высокая: ${brandRect.height}`);
+        if (getComputedStyle(top).backdropFilter && getComputedStyle(top).backdropFilter !== 'none') return fail('верхняя панель снова использует backdrop-filter');
 
         if (!firstTabIcon || parseFloat(getComputedStyle(firstTabIcon).width) < 22) return fail('иконки навигации слишком маленькие');
         if (getComputedStyle(firstTabIcon).overflow !== 'visible') return fail('иконки навигации могут обрезаться');
@@ -164,11 +166,34 @@
             if (!board || days.length !== 7) return fail('мобильная недельная доска не показывает все семь дней');
             if (!today) return fail('текущий день не отмечен на мобильном');
             const todayRect = today.getBoundingClientRect();
-            const visibleTop = Math.max(0, top.getBoundingClientRect().bottom);
-            const visibleBottom = tabs.getBoundingClientRect().top;
-            const visibleCenter = (visibleTop + visibleBottom) / 2;
+            const topRectAfterPriority = top.getBoundingClientRect();
+            const tabsRectAfterPriority = tabs.getBoundingClientRect();
+            if (topRectAfterPriority.bottom < 48 || topRectAfterPriority.top > 1) return fail('верхняя мобильная панель исчезает после перехода в приоритеты');
+            if (Math.abs(tabsRectAfterPriority.bottom - window.innerHeight) > 2) return fail('нижняя навигация исчезает после перехода в приоритеты');
+            const priorityBoardRect = board.getBoundingClientRect();
+            if (todayRect.width < priorityBoardRect.width - 4) return fail(`карточка текущего дня не занимает ширину доски: ${todayRect.width}/${priorityBoardRect.width}`);
+            if (!['auto', 'scroll'].includes(getComputedStyle(board).overflowY)) return fail('мобильная доска приоритетов не имеет собственного вертикального скролла');
+            const todayHead = today.querySelector('.priority-day__head')?.getBoundingClientRect();
+            if (!todayHead || todayHead.width < todayRect.width - 4) return fail('заголовок дня не занимает ширину мобильной карточки');
+            const todayMainZone = today.querySelector('.priority-zone--main');
+            const todayOtherZone = today.querySelector('.priority-zone--other');
+            if (!todayMainZone || !todayOtherZone) return fail('зоны текущего дня не отрисованы');
+            const mainZoneRect = todayMainZone.getBoundingClientRect();
+            const otherZoneRect = todayOtherZone.getBoundingClientRect();
+            if (mainZoneRect.height < 70 || otherZoneRect.height < 70) {
+              return fail(`зоны текущего дня схлопнуты: ${mainZoneRect.height}/${otherZoneRect.height}`);
+            }
+            const expectedDayHeight = todayHead.height + mainZoneRect.height + otherZoneRect.height;
+            if (todayRect.height + 4 < expectedDayHeight) {
+              return fail(`контент дня обрезается: day=${Math.round(todayRect.height)} parts=${Math.round(expectedDayHeight)} mainTop=${Math.round(mainZoneRect.top)} otherTop=${Math.round(otherZoneRect.top)}`);
+            }
+            const boardCenter = (priorityBoardRect.top + priorityBoardRect.bottom) / 2;
             const todayCenter = (todayRect.top + todayRect.bottom) / 2;
-            if (Math.abs(todayCenter - visibleCenter) > (visibleBottom - visibleTop) * 0.12) return fail('при входе в приоритеты карточка текущего дня не расположена по центру');
+            if (Math.abs(todayCenter - boardCenter) > Math.max(32, priorityBoardRect.height * 0.12)) {
+              return fail(`текущий день не расположен по центру мобильной доски: day=${Math.round(todayCenter)} board=${Math.round(boardCenter)} scroll=${Math.round(board.scrollTop)}`);
+            }
+            const priorityActionButtons = [...today.querySelectorAll('.priority-card__actions button')];
+            if (priorityActionButtons.some(button => button.getBoundingClientRect().height < 39)) return fail('действия приоритетов слишком маленькие для касания');
             if (!weekActions || weekActions.querySelectorAll('.btn').length !== 3) return fail('неполная навигация по неделям на мобильном');
             const weekRect = weekActions.getBoundingClientRect();
             if (weekRect.left < -1 || weekRect.right > window.innerWidth + 1) return fail('навигация по неделям выходит за экран');

@@ -1,0 +1,30 @@
+@media (max-width: 899px) {
+  .priority-day {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) !important;
+    grid-template-rows: auto auto auto !important;
+    align-content: start !important;
+    width: 100% !important;
+    min-width: 0 !important;
+    min-height: 0 !important;
+    height: max-content !important;
+    max-height: none !important;
+  }
+
+  .priority-day__head {
+    grid-column: 1 !important;
+    grid-row: 1 !important;
+  }
+
+  .priority-zone {
+    grid-column: 1 !important;
+  }
+
+  .priority-zone--main {
+    grid-row: 2 !important;
+  }
+
+  .priority-zone--other {
+    grid-row: 3 !important;
+  }
+}
