@@ -820,3 +820,38 @@
     box-shadow: none !important;
   }
 }
+
+
+/* iPhone: keep the application at a fixed visual scale during taps and form focus. */
+@media (max-width: 899px) {
+  html,
+  body {
+    touch-action: pan-x pan-y;
+  }
+
+  .overlay,
+  .sheet,
+  .form,
+  .field,
+  .grid2 {
+    max-width: 100%;
+  }
+
+  .form :where(input, textarea, select, button) {
+    font-size: 16px !important;
+    -webkit-text-size-adjust: 100%;
+    touch-action: manipulation;
+  }
+
+  .field textarea {
+    line-height: 1.35 !important;
+  }
+
+  #taskSheet .sheet,
+  #projectSheet .sheet,
+  #prioritySheet .sheet,
+  #syncSheet .sheet {
+    transform: none !important;
+    zoom: 1 !important;
+  }
+}
