@@ -225,6 +225,7 @@ const test = async () => {
     assert.equal((await stored('lawyerTasks')).length,1);
     log('confirmed attachment deletion, case completion/reopen and scoped cascade deletion');
     assert.deepEqual(errors,[],'no uncaught browser errors');assert.deepEqual(failures,[],'no failed application assets');
+    await require('./reference-cloud-browser.cjs')(browser,baseURL);
     console.log('REFERENCE_WORKSPACE_PASS');
   } finally {await browser.close();if(staticServer)await new Promise(resolve=>staticServer.close(resolve));}
 };
