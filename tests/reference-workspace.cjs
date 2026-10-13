@@ -44,23 +44,28 @@ const test = async () => {
     throw new Error('Timed out waiting for stored application state');
   };
   const stored = key => page.evaluate(key=>JSON.parse(localStorage.getItem(key)||'[]'),key);
-  const tab = name => page.locator(`#tabs [data-tab="${name}"]`).click();
+  const tab = async name => {
+    await page.locator(`#tabs [data-tab="${name}"]`).click();
+    await page.waitForTimeout(80);
+    assert.equal(await page.locator('#tabs [aria-selected="true"]').getAttribute('data-tab'),name,'active navigation must match the opened screen');
+  };
   const openCase = async () => {await tab('projects');await page.locator('[data-ref-case]').first().click();};
   const noOverflow = async () => assert.ok(await page.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1),'page must not overflow horizontally');
   const close = async () => {await page.keyboard.press('Escape');};
   await fs.mkdir(screenshotDir,{recursive:true});
   try {
     await page.goto(baseURL);
-    await page.waitForSelector('.ref-header');
-    assert.equal(await page.locator('#tabs .tab').count(),5);
-    assert.equal(await page.locator('[data-tab="sessions"],[data-tab="documents"],[data-tab="more"]').count(),0);
-    assert.match(await page.locator('#page').innerText(),/Обзор дня/);
+    await page.waitForSelector('.ref-today-body');
+    assert.equal(await page.locator('#tabs .tab').count(),3);
+    assert.equal(await page.locator('[data-tab="sessions"],[data-tab="documents"],[data-tab="more"],[data-tab="calendar"],[data-tab="search"],.brandmark').count(),0);
+    assert.doesNotMatch(await page.locator('#page').innerText(),/Обзор дня|Продолжить работу|Обновления по делам|Ближайшие события/);
+    assert.ok(await page.locator('#syncButton').isVisible());
     assert.equal(await page.locator('#releaseStyles').count(),1);
     assert.equal(await page.locator('#releaseWorkspace').count(),1);
     assert.ok(await page.locator('#tabs .icon').first().evaluate(el=>el.getBoundingClientRect().width)<=24);
     assert.ok(await page.locator('body').evaluate(el=>getComputedStyle(el).fontFamily.includes('sans-serif')));
     log('embedded mobile UI survives missing CSS and workspace JS asset requests');
-    log('empty startup, five working sections, removed sections absent');
+    log('simplified startup, three working sections, marked blocks and logo absent, cloud button accessible');
 
     await tab('projects');
     await page.locator('[data-ref-new-project]').click();
@@ -133,7 +138,7 @@ const test = async () => {
     assert.match(await page.locator('#helperContent').innerText(),/Материалы по делу: добавлено/);
     await close();log('helper chronology and card completeness use real records');
 
-    await tab('today');await page.locator('[data-ref-new-task]').click();
+    await tab('today');await page.locator('#fab').click();
     await page.locator('#task-title').fill('Ответ по возврату перевода');
     await page.locator('#task-extra').fill('Платежи, запрос операционного блока');
     await page.locator('#task-status').selectOption('inwork');
@@ -157,41 +162,29 @@ const test = async () => {
     assert.ok(await page.locator('.priority-week').count() || await page.locator('.priority-day').count());
     log('standalone task edit and preserved weekly priorities');
 
-    await tab('search');await page.locator('#globalSearch').fill('отправки');
-    assert.ok(await page.locator('#globalResults [data-ref-task]').count());
-    assert.ok(await page.locator('#globalResults [data-ref-found-note]').count());
-    await page.locator('#globalResults [data-ref-task]').first().click();
-    await page.locator('[data-task-detail-edit]').click();await page.locator('#task-title').fill('Получить подтверждение отправки');
+    await tab('projects');await page.locator('#caseSearch').fill('<script>alert(1)</script>');
+    assert.match(await page.locator('#refCaseList').innerText(),/Дело не найдено/);
+    await page.locator('#caseSearch').fill('');
+    await openCase();await page.locator('.ref-context [data-ref-task]').first().click();
+    await page.locator('[data-task-detail-edit]').click();await page.locator('#task-title').fill('Проверить комплект документов: обновлено');
     await page.locator('#taskForm [type="submit"]').click();
-    assert.equal((await stored('lawyerTasks')).length,1,'editing a project task from search must not create a root task');
-    assert.ok((await stored('lawyerProjectTasks')).some(task=>task.title==='Получить подтверждение отправки'));
-    await page.keyboard.press('Control+k');assert.equal(await page.locator('#globalSearch').evaluate(el=>el===document.activeElement),true);
-    await page.locator('#globalSearch').fill('<script>alert(1)</script>');assert.match(await page.locator('#globalResults').innerText(),/Ничего не найдено/);
-    log('global search, cross-scope edit, keyboard shortcut, escaped user input');
-
-    await tab('calendar');await page.locator('[data-calendar-new-for-day]').click();
-    await page.locator('#eventForm [name="title"]').fill('Согласование позиции');
-    await page.locator('#eventForm [name="date"]').fill('2026-10-20');
-    await page.locator('#eventForm [name="startTime"]').fill('10:00');
-    await page.locator('#eventForm [name="endTime"]').fill('09:00');
-    await page.locator('#eventForm [type="submit"]').click();
-    assert.equal((await stored('lawyerCalendarEvents')).length,0,'invalid event must not save');
-    await page.locator('#eventForm [name="endTime"]').fill('11:00');
-    await page.locator('#eventForm [type="submit"]').click();
+    assert.equal((await stored('lawyerTasks')).length,1,'editing a case task must not create a root task');
+    assert.ok((await stored('lawyerProjectTasks')).some(task=>task.title==='Проверить комплект документов: обновлено'));
+    await tab('today');await page.keyboard.press('Control+k');
+    assert.ok(await page.locator('.ref-today-body').isVisible(),'removed global search must not reopen through a shortcut');
+    // Removing the calendar UI must not delete previously stored events or their backup.
+    await page.evaluate(()=>save(LS.calendarEvents,[{id:'retained-event',title:'Согласование позиции',date:'2026-10-20',startTime:'10:00',endTime:'11:00',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}]));
+    await page.evaluate(()=>{switchTab('calendar');switchTab('search');render();});
+    assert.ok(await page.locator('.ref-today-body').isVisible());
     assert.equal((await stored('lawyerCalendarEvents')).length,1);
-    await page.locator('[data-calendar-next]').click();await page.locator('[data-calendar-prev]').click();
-    await page.locator('[data-calendar-day="2026-10-20"]').click();
-    await page.locator('[data-calendar-event]').click();
-    const icsPromise=page.waitForEvent('download');await page.locator('[data-export-current-event]').click();
-    assert.match(await fs.readFile(await (await icsPromise).path(),'utf8'),/SUMMARY:Согласование позиции/);
-    await close();log('calendar validation, creation, navigation, event export');
+    log('removed views cannot reopen, case task editing and local search work; existing event data retained');
 
     await openCase();
     await page.screenshot({path:path.join(screenshotDir,'desktop-case.png'),fullPage:true});
     await tab('today');await page.screenshot({path:path.join(screenshotDir,'desktop-today.png'),fullPage:true});
     for(const width of [320,360,390,430,768,1024,1440]) {
       await page.setViewportSize({width,height:844});
-      for(const name of ['today','tasks','projects','calendar','search']){await tab(name);await noOverflow();}
+      for(const name of ['today','tasks','projects']){await tab(name);await noOverflow();}
       await openCase();await noOverflow();
       if(width<=760){
         await page.locator('[data-ref-panel="context"]').click();

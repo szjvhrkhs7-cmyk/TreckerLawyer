@@ -4,7 +4,7 @@
   const baseRenderTasks = renderTasks;
   const baseOpenProject = openProject;
   const baseOpenTask = openTask;
-  const titles = { today: 'Сегодня', tasks: 'Задачи', projects: 'Дела', calendar: 'Календарь', search: 'Поиск', priorities: 'Приоритеты' };
+  const titles = { today: 'Сегодня', tasks: 'Задачи', projects: 'Дела', priorities: 'Приоритеты' };
   let draftTimer, pendingDraft = null, toastTimer, fileProjectId = null;
   let casePanel = 'draft';
   let selectionRange = null;
@@ -63,10 +63,7 @@
     const active = entries().filter(entry=>entry.task.status!=='done').sort((a,b)=>Number(overdue(b.task))-Number(overdue(a.task))||Number(b.task.priority==='high')-Number(a.task.priority==='high')||(a.task.dueDate||'9999').localeCompare(b.task.dueDate||'9999'));
     const attention = active.filter(entry=>overdue(entry.task)||entry.task.dueDate===localDay()||entry.task.priority==='high').slice(0,4);
     const focus = attention.length ? attention : active.filter(entry=>entry.task.status!=='waiting').slice(0,3);
-    const cases = allProjects().filter(project=>!doneProject(project)).sort((a,b)=>(b.updatedAt||b.createdAt).localeCompare(a.updatedAt||a.createdAt)).slice(0,3);
-    const events = globalThis.upcomingCalendarEvents?.().slice(0,3) || [];
-    const activity = [...allProjects().map(project=>({title:project.title,type:'Дело обновлено',time:project.updatedAt||project.createdAt,id:project.id})),...allNotes().map(note=>({title:note.title||stripHtml(note.body||note.content||'').slice(0,60)||'Заметка',type:'Заметка сохранена',time:note.updatedAt||note.createdAt,id:note.projectId}))].sort((a,b)=>String(b.time).localeCompare(String(a.time))).slice(0,4);
-    page.innerHTML = pageHeader('Обзор дня',new Date().toLocaleDateString('ru-RU',{day:'numeric',month:'long',weekday:'long'})) + `<div class="ref-body"><div class="ref-grid"><div class="ref-stack"><section class="ref-panel"><div class="ref-panel-heading"><h3>Требует внимания <span class="ref-count">${focus.length}</span></h3><button type="button" data-ref-tab="tasks">Все задачи →</button></div>${focus.map(taskRow).join('')||'<div class="ref-empty"><strong>Все под контролем</strong>Добавьте задачу или создайте новое дело.</div>'}</section><section class="ref-panel"><div class="ref-panel-heading"><h3>Продолжить работу</h3><button type="button" data-ref-tab="projects">Все дела →</button></div>${cases.map(projectRow).join('')||'<div class="ref-empty">Активных дел пока нет</div>'}</section><section class="ref-panel"><div class="ref-panel-heading"><h3>Ожидают ответа</h3></div>${active.filter(entry=>entry.task.status==='waiting').slice(0,3).map(taskRow).join('')||'<div class="ref-empty">Нет задач в ожидании</div>'}</section></div><aside class="ref-stack"><section class="ref-panel"><div class="ref-panel-heading"><h3>Обновления по делам</h3></div>${activity.map(item=>`<div class="ref-activity"><span class="ref-activity-icon">${icon('note')}</span><div><strong>${esc(item.type)}</strong><span>${esc(item.title)}</span></div><time>${esc(humanTime(item.time))}</time></div>`).join('')||'<div class="ref-empty">История появится после первых изменений</div>'}</section><section class="ref-panel"><div class="ref-panel-heading"><h3>Ближайшие события</h3><button type="button" data-ref-tab="calendar">Календарь →</button></div>${events.map(event=>`<button class="ref-row" type="button" data-ref-event="${esc(event.id)}"><span class="ref-case-icon">${icon('calendar')}</span><span class="ref-row-main"><strong>${esc(event.title)}</strong><small>${esc(fmtDate(event.date))} · ${esc(event.startTime)}</small></span>${icon('arrow-right')}</button>`).join('')||'<div class="ref-empty">На ближайшие 7 дней событий нет</div>'}</section><div class="ref-priority-link"><button class="btn" type="button" data-ref-tab="priorities">${icon('flag')}План приоритетов на неделю</button></div></aside></div></div>`;
+    page.innerHTML = `<div class="ref-body ref-today-body"><div class="ref-grid"><section class="ref-panel"><div class="ref-panel-heading"><h3>Требует внимания <span class="ref-count">${focus.length}</span></h3><button type="button" data-ref-tab="tasks">Все задачи →</button></div>${focus.map(taskRow).join('')||'<div class="ref-empty"><strong>Все под контролем</strong>Добавьте задачу или создайте новое дело.</div>'}</section><section class="ref-panel"><div class="ref-panel-heading"><h3>Ожидают ответа</h3></div>${active.filter(entry=>entry.task.status==='waiting').slice(0,3).map(taskRow).join('')||'<div class="ref-empty">Нет задач в ожидании</div>'}</section></div><div class="ref-priority-link"><button class="btn" type="button" data-ref-tab="priorities">${icon('flag')}План приоритетов на неделю</button></div></div>`;
   }
   function renderCases() {
     page.innerHTML = pageHeader('Мои дела','Запросы, задачи и материалы в одном месте','project') + `<div class="ref-body"><div class="search-wrap ref-project-search">${icon('search')}<input class="search" id="caseSearch" type="search" aria-label="Поиск по делам" placeholder="Найти дело" value="${esc(state.query)}"></div><div class="filters"><button class="chip ${!state.showCompletedProjects?'active':''}" data-ref-cases-filter="active" type="button">В работе</button><button class="chip ${state.showCompletedProjects?'active':''}" data-ref-cases-filter="done" type="button">Завершенные</button></div><div class="ref-case-list" id="refCaseList"></div></div>`;
@@ -103,22 +100,6 @@
       document.execCommand('insertText',false,text);
     });
     selectionRange=null;
-  }
-  function renderSearch() {
-    page.innerHTML = pageHeader('Поиск','Задачи, дела и заметки') + `<div class="ref-body"><div class="search-wrap">${icon('search')}<input class="search" id="globalSearch" type="search" aria-label="Поиск по всему пространству" placeholder="Название, обстоятельства или текст заметки" value="${esc(state.query)}"></div><div class="ref-search-results" id="globalResults" role="region" aria-label="Результаты поиска"></div></div>`;
-    const input=document.getElementById('globalSearch');
-    const draw=()=>{
-      state.query=input.value;const q=input.value.trim().toLocaleLowerCase('ru');
-      const result=document.getElementById('globalResults');
-      if(!q){result.innerHTML='<div class="ref-empty">Введите запрос, чтобы найти нужные материалы</div>';return;}
-      const match=value=>stripHtml(value||'').toLocaleLowerCase('ru').includes(q);
-      const foundTasks=entries().filter(entry=>match(`${entry.task.title} ${entry.task.extra} ${entry.task.notes}`));
-      const foundProjects=allProjects().filter(project=>match(`${project.title} ${project.description} ${project.draftHtml||''}`));
-      const foundNotes=allNotes().filter(note=>match(`${note.title||''} ${note.body||note.content||''}`));
-      const group=(title,html)=>html?`<section class="ref-search-group"><h3>${title}</h3>${html}</section>`:'';
-      result.innerHTML=group('Задачи',foundTasks.map(entry=>`<button class="ref-search-result" data-ref-task="${esc(entry.task.id)}" data-key="${entry.key}" type="button">${icon('check-square')}<span><strong>${esc(entry.task.title)}</strong><small>${esc(due(entry.task))}</small></span>${icon('arrow-right')}</button>`).join(''))+group('Дела',foundProjects.map(project=>`<button class="ref-search-result" data-ref-case="${esc(project.id)}" type="button">${icon('folder')}<span><strong>${esc(project.title)}</strong><small>${esc(project.description.slice(0,120))}</small></span>${icon('arrow-right')}</button>`).join(''))+group('Заметки',foundNotes.map(note=>`<button class="ref-search-result" data-ref-found-note="${esc(note.id)}" type="button">${icon('note')}<span><strong>${esc(note.title||'Заметка')}</strong><small>${esc(stripHtml(note.body||note.content||'').slice(0,140))}</small></span>${icon('arrow-right')}</button>`).join(''))||'<div class="ref-empty"><strong>Ничего не найдено</strong>Попробуйте другое слово или часть названия.</div>';
-    };
-    input.addEventListener('input',draw);draw();
   }
   function openNote() {
     const project=allProjects().find(item=>sameId(item.id,state.projectId));
@@ -207,10 +188,12 @@
     document.querySelectorAll('#tabs .tab').forEach(button=>{const selected=button.dataset.tab===active;button.classList.toggle('active',selected);button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;});
     tabs.classList.remove('hidden');
     document.title=`${project?.title||titles[state.tab]||APP_TITLE} · ${APP_TITLE}`;
-    fab.setAttribute('aria-label',state.tab==='projects'&&!project?'Новое дело':state.tab==='calendar'?'Новое событие':'Новая задача');
+    document.body.classList.toggle('reference-today',state.tab==='today'&&!project);
+    fab.setAttribute('aria-label',state.tab==='projects'&&!project?'Новое дело':'Новая задача');
   };
   render=function referenceRender(){
     flushDraft();
+    if(!titles[state.tab])state.tab='today';
     const project=allProjects().find(item=>sameId(item.id,state.projectId));
     if(state.projectId&&!project)state.projectId=null;
     updateHeader();
@@ -220,9 +203,7 @@
     if(state.tab==='today')renderToday();
     else if(state.tab==='projects')renderCases();
     else if(state.tab==='tasks'){baseRenderTasks();page.querySelector('.workspace-page-head')?.insertAdjacentHTML('beforeend',`<button class="ref-icon-button" type="button" data-ref-sync aria-label="Синхронизация">${icon('cloud')}</button>`);}
-    else if(state.tab==='calendar')globalThis.renderCalendar();
     else if(state.tab==='priorities')globalThis.renderPriorities();
-    else if(state.tab==='search')renderSearch();
     bindAutoGrow(page);
   };
   switchTab=function referenceSwitchTab(tab){
@@ -238,7 +219,7 @@
   globalThis.openProject=openProject;
   applyTheme=function referenceApplyTheme(){document.documentElement.dataset.theme='dark';document.documentElement.style.colorScheme='dark';themeColor.content='#17191c';};
   globalThis.applyTheme=applyTheme;applyTheme();
-  fab.onclick=()=>state.tab==='calendar'?globalThis.openCalendarEvent():state.tab==='projects'&&!state.projectId?openProject():openTask();
+  fab.onclick=()=>state.tab==='projects'&&!state.projectId?openProject():openTask();
   document.addEventListener('selectionchange',()=>{const editor=document.getElementById('caseDraft'),selection=window.getSelection();if(editor&&selection?.rangeCount&&editor.contains(selection.anchorNode)&&editor.contains(selection.focusNode))selectionRange=selection.getRangeAt(0).cloneRange();});
   page.addEventListener('mousedown',event=>{if(event.target.closest('[data-ref-format]'))event.preventDefault();});
   page.addEventListener('click',async event=>{
@@ -285,7 +266,6 @@
   }
   document.addEventListener('click',event=>{if(event.target.closest('[data-ref-close-note]'))hideOverlay(document.getElementById('noteSheet'));if(event.target.closest('#closeHelper'))hideOverlay(document.getElementById('helperSheet'));});
   document.addEventListener('keydown',event=>{
-    if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='k'&&!document.querySelector('.overlay.show')){event.preventDefault();switchTab('search');document.getElementById('globalSearch')?.focus();}
     if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='s'&&state.projectId){event.preventDefault();flushDraft();}
   });
   document.addEventListener('visibilitychange',()=>{if(document.hidden)flushDraft();});
