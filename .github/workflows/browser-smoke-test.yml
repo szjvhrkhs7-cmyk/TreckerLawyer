@@ -1,4 +1,4 @@
-name: Browser smoke test
+name: Reference design and behavior checks
 
 on:
   push:
@@ -10,242 +10,43 @@ permissions:
   contents: read
 
 jobs:
-  smoke:
+  regression:
     runs-on: ubuntu-latest
-    timeout-minutes: 8
+    timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Verify cloud sync logic
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Storage, ordering and cloud regression checks
         run: |
+          node tests/smoke.cjs
           node tests/sync.cjs
           node tests/sync-recovery.cjs
           node tests/calendar-cloud-bridge.cjs
-      - name: Verify Supabase auth endpoint
+      - name: Prepare browser test runner
+        run: npm install --prefix "$RUNNER_TEMP/tracker-test-deps" --ignore-scripts --no-audit --no-fund playwright@1.51.1
+      - name: Check user actions and seven responsive widths
         run: |
-          set -euo pipefail
-          SUPABASE_URL="$(sed -n "s/.*const SUPABASE_URL = '\([^']*\)'.*/\1/p" sync-core.js | head -n1)"
-          SUPABASE_KEY="$(sed -n "s/.*const SUPABASE_KEY = '\([^']*\)'.*/\1/p" sync-core.js | head -n1)"
-          test -n "$SUPABASE_URL"
-          test -n "$SUPABASE_KEY"
-          curl --fail --silent --show-error --max-time 15 \
-            -H "apikey: $SUPABASE_KEY" \
-            "$SUPABASE_URL/auth/v1/settings" >/dev/null
-      - name: Verify Supabase data endpoint
-        run: |
-          set -euo pipefail
-          SUPABASE_URL="$(sed -n "s/.*const SUPABASE_URL = '\([^']*\)'.*/\1/p" sync-core.js | head -n1)"
-          SUPABASE_KEY="$(sed -n "s/.*const SUPABASE_KEY = '\([^']*\)'.*/\1/p" sync-core.js | head -n1)"
-          STATUS="$(curl --silent --show-error --max-time 15 \
-            -o /tmp/supabase-data.json -w '%{http_code}' \
-            -H "apikey: $SUPABASE_KEY" \
-            "$SUPABASE_URL/rest/v1/lawyer_store?select=storage_key&limit=1")"
-          case "$STATUS" in
-            200|401|403) ;;
-            *)
-              echo "Unexpected lawyer_store response: HTTP $STATUS" >&2
-              cat /tmp/supabase-data.json >&2 || true
-              exit 1
-              ;;
-          esac
-      - name: Serve app
-        run: |
-          python3 -m http.server 8765 >/tmp/http.log 2>&1 &
-          echo $! >/tmp/http.pid
-          sleep 1
-      - name: Render app in Chrome
-        run: |
-          set -euo pipefail
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          if [ -z "$CHROME" ]; then
-            echo 'Chrome/Chromium is not available on the runner' >&2
-            exit 1
-          fi
-          "$CHROME" --headless --no-sandbox --disable-gpu --virtual-time-budget=5000 --dump-dom http://127.0.0.1:8765/ > /tmp/dom.html
-          grep -F 'workspace-tasks-page' /tmp/dom.html
-          grep -F 'data-tab="tasks"' index.html
-          if grep -F 'data-tab="today"' index.html; then
-            echo 'Today tab must not be present in the primary navigation.' >&2
-            exit 1
-          fi
-          grep -F 'task-home.js?v=20261003-workspace' index.html
-          grep -F 'task-home.css?v=20261003-workspace' index.html
-          grep -F 'workspace-2026.js' index.html
-          grep -F 'workspace-pages.js' sync.js
-          grep -F 'workspace-task-restore.js' sync.js
-          grep -F 'drag-sortable-fix.js?v=20260901-ios-drag-3' sync.js
-          grep -F 'workspace-pages.css' app.css
-          grep -F 'workspace-polish.css' app.css
-          grep -F 'desktop-polish.css' app.css
-          grep -F 'interaction-polish.css' app.css
-          grep -F 'desktop-ux.js' index.html
-          grep -F 'legacy-inline.css' index.html
-          grep -F 'maximum-scale=1' index.html
-          grep -F 'minimum-scale=1' index.html
-          grep -F 'user-scalable=no' index.html
-          grep -F 'Резервная копия' /tmp/dom.html
-      - name: Verify complete workspace redesign in Chrome
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20261003-workspace"></script>'
-          if app_tag not in html:
-              raise SystemExit('Expected application script tag was not found')
-          html = html.replace(app_tag, '<script src="tests/workspace-browser.js"></script>\n' + app_tag, 1)
-          Path('workspace-test.html').write_text(html, encoding='utf-8')
-          PY
-          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --virtual-time-budget=8000 --dump-dom http://127.0.0.1:8765/workspace-test.html > /tmp/workspace.html
-          grep -F 'WORKSPACE_PASS' /tmp/workspace.html
-          if grep -F 'FAIL:' /tmp/workspace.html; then
-            echo 'Workspace browser test reported a failure.' >&2
-            exit 1
-          fi
-      - name: Verify linked priorities workflow in Chrome
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20261003-workspace"></script>'
-          if app_tag not in html:
-              raise SystemExit('Expected application script tag was not found')
-          html = html.replace(app_tag, '<script src="tests/priorities-browser.js"></script>\n' + app_tag, 1)
-          Path('priorities-test.html').write_text(html, encoding='utf-8')
-          PY
-          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --window-size=1440,900 --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8765/priorities-test.html > /tmp/priorities.html
-          grep -F 'PRIORITIES_PASS' /tmp/priorities.html
-          if grep -F 'FAIL:' /tmp/priorities.html; then
-            echo 'Priorities browser test reported a failure.' >&2
-            exit 1
-          fi
-      - name: Verify desktop layout and UX in Chrome
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20261003-workspace"></script>'
-          if app_tag not in html:
-              raise SystemExit('Expected application script tag was not found')
-          html = html.replace(app_tag, '<script src="tests/desktop-regression-browser.js"></script>\n' + app_tag, 1)
-          Path('desktop-regression-test.html').write_text(html, encoding='utf-8')
-          preview = Path('index.html').read_text(encoding='utf-8').replace(app_tag, '<script src="tests/desktop-preview-data.js"></script>\n' + app_tag, 1)
-          Path('desktop-preview.html').write_text(preview, encoding='utf-8')
-          PY
-          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --window-size=1440,900 --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8765/desktop-regression-test.html > /tmp/desktop-regression.html
-          grep -F 'DESKTOP_REGRESSION_PASS' /tmp/desktop-regression.html
-          if grep -F 'FAIL:' /tmp/desktop-regression.html; then
-            echo 'Desktop regression browser test reported a failure.' >&2
-            exit 1
-          fi
-          "$CHROME" --headless --no-sandbox --disable-gpu --hide-scrollbars --window-size=1440,900 --virtual-time-budget=7000 --screenshot=/tmp/desktop-workspace.png http://127.0.0.1:8765/desktop-preview.html
-          test -s /tmp/desktop-workspace.png
-      - name: Upload desktop visual preview
+          test -n "$CHROME"
+          NODE_PATH="$RUNNER_TEMP/tracker-test-deps/node_modules" TEST_BROWSER_EXECUTABLE="$CHROME" TEST_SCREENSHOT_DIR="$RUNNER_TEMP/reference-qa" node tests/reference-workspace.cjs
+      - name: Upload actual interface screenshots
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: desktop-workspace-preview
-          path: /tmp/desktop-workspace.png
-          if-no-files-found: ignore
-          retention-days: 3
-      - name: Verify mobile layout and completed task restore
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20261003-workspace"></script>'
-          if app_tag not in html:
-              raise SystemExit('Expected application script tag was not found')
-          html = html.replace(app_tag, '<script src="tests/mobile-regression-browser.js"></script>\n' + app_tag, 1)
-          Path('mobile-regression-test.html').write_text(html, encoding='utf-8')
-          PY
-          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=9000 --dump-dom http://127.0.0.1:8765/mobile-regression-test.html > /tmp/mobile-regression.html
-          if ! grep -F 'MOBILE_REGRESSION_PASS' /tmp/mobile-regression.html; then
-            echo 'Mobile regression browser test did not pass.' >&2
-            grep -o 'id="mobile-regression-result"[^>]*>[^<]*' /tmp/mobile-regression.html >&2 || true
-            exit 1
-          fi
-          if grep -F 'FAIL:' /tmp/mobile-regression.html; then
-            echo 'Mobile regression browser test reported a failure.' >&2
-            grep -o 'id="mobile-regression-result"[^>]*>[^<]*' /tmp/mobile-regression.html >&2 || true
-            exit 1
-          fi
-      - name: Verify smooth card drag and mobile controls
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20261003-workspace"></script>'
-          if app_tag not in html:
-              raise SystemExit('Expected application script tag was not found')
-          html = html.replace(app_tag, '<script src="tests/interaction-regression-browser.js"></script>\n' + app_tag, 1)
-          Path('interaction-regression-test.html').write_text(html, encoding='utf-8')
-          PY
-          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --window-size=390,844 --virtual-time-budget=10000 --dump-dom http://127.0.0.1:8765/interaction-regression-test.html > /tmp/interaction-regression.html
-          if ! grep -F 'INTERACTION_REGRESSION_PASS' /tmp/interaction-regression.html; then
-            echo 'Interaction regression did not complete; rendered DOM follows.' >&2
-            cat /tmp/interaction-regression.html >&2
-            exit 1
-          fi
-          if grep -F 'FAIL:' /tmp/interaction-regression.html; then
-            echo 'Interaction regression browser test reported a failure.' >&2
-            exit 1
-          fi
-      - name: Verify project completion lifecycle in Chrome
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          html = Path('index.html').read_text(encoding='utf-8')
-          app_tag = '<script src="app-core.js?v=20261003-workspace"></script>'
-          sync_tag = '<script src="sync.js?v=20261003-workspace"></script>'
-          if app_tag not in html or sync_tag not in html:
-              raise SystemExit('Expected application script tags were not found')
-          html = html.replace(app_tag, '<script src="tests/project-lifecycle-browser.js"></script>\n' + app_tag, 1)
-          html = html.replace(sync_tag, '<script src="project-lifecycle.js?v=ci"></script>\n<script src="workspace-pages.js?v=ci"></script>\n<script src="workspace-task-restore.js?v=ci"></script>', 1)
-          Path('project-lifecycle-test.html').write_text(html, encoding='utf-8')
-          PY
-          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          "$CHROME" --headless --no-sandbox --disable-gpu --virtual-time-budget=7000 --dump-dom http://127.0.0.1:8765/project-lifecycle-test.html > /tmp/project-lifecycle.html
-          grep -F 'PROJECT_LIFECYCLE_PASS' /tmp/project-lifecycle.html
-          if grep -F 'FAIL:' /tmp/project-lifecycle.html; then
-            echo 'Project lifecycle browser test reported a failure.' >&2
-            exit 1
-          fi
-      - name: Verify task filters, sorting and undo in Chrome
-        run: |
-          set -euo pipefail
-          python3 - <<'PY'
-          from pathlib import Path
-          import re
-          html = Path('index.html').read_text(encoding='utf-8')
-          html, count = re.subn(r'(<script src="app-core\.js[^>]+></script>)', r'<script src="tests/workspace-ux-browser.js"></script>\n\1', html, count=1)
-          if count != 1:
-              raise SystemExit('Application script tag was not found')
-          Path('workspace-ux-test.html').write_text(html, encoding='utf-8')
-          PY
-          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          for SIZE in 1440,900 390,844 320,740; do
-            "$CHROME" --headless --no-sandbox --disable-gpu --window-size="$SIZE" --virtual-time-budget=12000 --dump-dom http://127.0.0.1:8765/workspace-ux-test.html > /tmp/workspace-ux.html
-            grep -F 'WORKSPACE_UX_PASS' /tmp/workspace-ux.html
-            if grep -F 'FAIL:' /tmp/workspace-ux.html; then
-              echo "Workspace UX failed at $SIZE" >&2
-              exit 1
-            fi
-          done
+          name: reference-design-screenshots
+          path: ${{ runner.temp }}/reference-qa/*.png
+          if-no-files-found: warn
+          retention-days: 7
+
+  cloud-endpoints:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
-      - name: Verify real pointer interactions
-        run: |
-          npm install --prefix /tmp/workspace-test-runner --no-save --package-lock=false playwright-core@1.62.1
-          CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
-          NODE_PATH=/tmp/workspace-test-runner/node_modules TEST_BROWSER_EXECUTABLE="$CHROME" node tests/workspace-pointer.cjs
+          node-version: 22
+      - name: Read-only checks of existing cloud endpoints
+        run: node tests/cloud-endpoints.cjs

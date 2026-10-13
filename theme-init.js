@@ -1,7 +1,2 @@
-(()=>{
-      let saved=null;
-      try{saved=localStorage.getItem('lawyerTheme')}catch{}
-      const theme=saved==='light'||saved==='dark'?saved:(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
-      document.documentElement.dataset.theme=theme;
-      document.documentElement.style.colorScheme=theme;
-    })();
+document.documentElement.dataset.theme='dark';
+document.documentElement.style.colorScheme='dark';
