@@ -11,4 +11,4 @@ const key=source.match(/const SUPABASE_KEY = '([^']+)'/)[1];
  console.log('Data endpoint HTTP',data.status);
  if(![200,401,403].includes(data.status))throw new Error('Cloud data endpoint is unavailable');
  console.log('CLOUD_ENDPOINTS_PASS');
-})().catch(error=>{console.error(error.message);process.exitCode=1;});
+})().catch(error=>{console.error(error.message, error.cause?.code || error.cause?.message || '');process.exitCode=1;});
