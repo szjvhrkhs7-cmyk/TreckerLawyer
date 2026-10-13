@@ -178,8 +178,8 @@ function testSyncSecurityShape() {
   assert.doesNotMatch(syncSource, /service_role|sb_secret_|BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/i);
   assert.match(html, /Content-Security-Policy/);
   assert.match(appSource, /function icsSafe/);
-  assert.doesNotMatch(html, /data-tab="(?:sessions|documents|more|notes)"/);
-  assert.match(html, /data-tab="calendar"/);
+  assert.doesNotMatch(html, /data-tab="(?:sessions|documents|more|notes|calendar|search)"/);
+  assert.deepEqual([...html.matchAll(/data-tab="([^"]+)"/g)].map(match=>match[1]), ['today','tasks','projects']);
   assert.match(html, /reference-workspace\.js/);
   assert.match(syncSource, /\[LS\.calendarEvents, 'calendarEvents'\]/);
 }

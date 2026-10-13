@@ -67,7 +67,7 @@ module.exports = async function verifyCloudAndFocus(browser,baseURL) {
     await poll(()=>rows.get('projects').value[0].draftHtml.includes('без сети'));
     await b.page.reload();await poll(()=>b.page.evaluate(()=>JSON.parse(localStorage.getItem('lawyerProjects'))[0].draftHtml.includes('без сети')));
 
-    await b.page.locator('[data-tab="calendar"]').click();await b.page.locator('[data-calendar-new-for-day]').click();await b.page.locator('#eventForm [name="title"]').fill('Облачное событие');await b.page.locator('#eventForm [name="startTime"]').fill('10:00');await b.page.locator('#eventForm [name="endTime"]').fill('11:00');await b.page.locator('#eventForm [type="submit"]').click();
+    await b.page.evaluate(()=>save(LS.calendarEvents,[{id:'retained-cloud-event',title:'Облачное событие',date:'2026-10-20',startTime:'10:00',endTime:'11:00',createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()}]));
     await poll(()=>rows.get('noteOrder')?.value.some(item=>typeof item==='string'&&item.includes('Облачное событие')));
     await a.page.reload();await poll(()=>a.page.evaluate(()=>JSON.parse(localStorage.getItem('lawyerCalendarEvents')||'[]').some(event=>event.title==='Облачное событие')));
     assert.ok(requests.some(request=>request.method==='POST'));
@@ -87,11 +87,10 @@ module.exports = async function verifyCloudAndFocus(browser,baseURL) {
     await phone.locator('#fab').click();await checkFocusedControls('#taskForm');await phone.keyboard.press('Escape');
     await phone.locator('[data-tab="tasks"]').click();await checkFocusedControls('#page');
     await phone.locator('[data-tab="projects"]').click();await phone.locator('#fab').click();await checkFocusedControls('#projectForm');await phone.locator('#project-title').fill('Проверка телефона');await phone.locator('#projectForm [type="submit"]').click();await phone.locator('[data-ref-case]').click();await checkFocusedControls('#page');await phone.locator('[data-ref-panel="context"]').click();await phone.locator('.ref-context [data-ref-note]').click();await checkFocusedControls('#noteForm');await phone.keyboard.press('Escape');
-    await phone.locator('[data-tab="calendar"]').click();await phone.locator('#fab').click();await checkFocusedControls('#eventForm');await phone.keyboard.press('Escape');
-    await phone.locator('[data-tab="search"]').click();await checkFocusedControls('#page');
-    await poll(()=>phone.evaluate(()=>Boolean(window.lawyerCloud)));await phone.locator('[data-ref-sync]').click();await checkFocusedControls('#syncContent');
+    await phone.locator('[data-tab="today"]').click();
+    await poll(()=>phone.evaluate(()=>Boolean(window.lawyerCloud)));await phone.locator('#syncButton').click();await checkFocusedControls('#syncContent');
     const viewport=await phone.locator('meta[name="viewport"]').getAttribute('content');assert.ok(!/user-scalable=no|maximum-scale=1/.test(viewport),'manual pinch zoom remains available');
     assert.equal(await phone.locator('#tabs .tab').first().evaluate(el=>getComputedStyle(el).touchAction),'manipulation');
-    console.log('PASS mobile focus: tasks, cases, editor, notes, calendar, search and cloud login use >=16px; viewport scale unchanged; touch controls avoid double-tap zoom');
+    console.log('PASS mobile focus: tasks, cases, editor, notes and cloud login use >=16px; viewport scale unchanged; three touch tabs avoid double-tap zoom');
   }finally{for(const context of contexts)await context.close();}
 };
