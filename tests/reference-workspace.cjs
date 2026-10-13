@@ -29,6 +29,17 @@ const test = async () => {
   page.on('pageerror',error=>errors.push(error.message));
   page.on('requestfailed',request=>{if(request.url().startsWith(baseURL))failures.push(request.url());});
   const log = title => console.log('PASS', title);
+  // Poll from the runner: older Playwright versions compile waitForFunction with eval,
+  // which is correctly rejected by the application's strict CSP.
+  const waitFor = async (predicate, timeout = 6000) => {
+    const started = Date.now();
+    while(Date.now()-started < timeout) {
+      const result = await page.evaluate(predicate);
+      if(result) return result;
+      await new Promise(resolve => setTimeout(resolve,50));
+    }
+    throw new Error('Timed out waiting for stored application state');
+  };
   const stored = key => page.evaluate(key=>JSON.parse(localStorage.getItem(key)||'[]'),key);
   const tab = name => page.locator(`#tabs [data-tab="${name}"]`).click();
   const openCase = async () => {await tab('projects');await page.locator('[data-ref-case]').first().click();};
@@ -54,14 +65,14 @@ const test = async () => {
     log('case creation and opening');
 
     await page.locator('#caseDraft').fill('Обстоятельства\nКлиент направил заявление о возврате средств.\nВопросы для проверки\nУсловия договора.\nПроект ответа\nСогласовать позицию с руководителем.');
-    await page.waitForFunction(()=>JSON.parse(localStorage.getItem('lawyerProjects'))[0].draftHtml?.includes('Клиент направил'));
+    await waitFor(()=>JSON.parse(localStorage.getItem('lawyerProjects'))[0].draftHtml?.includes('Клиент направил'));
     await page.locator('#caseDraft').focus();
     await page.keyboard.press('Control+Home');
     await page.keyboard.down('Shift');await page.keyboard.press('End');await page.keyboard.up('Shift');
     await page.locator('[data-ref-format="bold"]').click();
-    await page.waitForFunction(()=>/<(?:b|strong)>/i.test(JSON.parse(localStorage.getItem('lawyerProjects'))[0].draftHtml));
+    await waitFor(()=>/<(?:b|strong)>/i.test(JSON.parse(localStorage.getItem('lawyerProjects'))[0].draftHtml));
     await page.locator('[data-ref-format="italic"]').click();
-    await page.waitForFunction(()=>/<(?:i|em)>/i.test(JSON.parse(localStorage.getItem('lawyerProjects'))[0].draftHtml));
+    await waitFor(()=>/<(?:i|em)>/i.test(JSON.parse(localStorage.getItem('lawyerProjects'))[0].draftHtml));
     await tab('today');await openCase();
     assert.match(await page.locator('#caseDraft').innerText(),/Клиент направил/);
     const beforeReload=(await stored('lawyerProjects'))[0].draftHtml;
@@ -99,7 +110,7 @@ const test = async () => {
     await page.locator('[data-ref-upload]').click();
     const fileChooser=await fileChooserPromise;
     await fileChooser.setFiles({name:'ДДУ.pdf',mimeType:'application/pdf',buffer:pdf});
-    await page.waitForFunction(()=>JSON.parse(localStorage.getItem('lawyerProjects'))[0].attachments?.length===1);
+    await waitFor(()=>JSON.parse(localStorage.getItem('lawyerProjects'))[0].attachments?.length===1);
     await page.waitForSelector('[data-ref-file]');
     await page.reload();await openCase();
     const fileDownload=page.waitForEvent('download');await page.locator('[data-ref-file]').click();
@@ -125,12 +136,12 @@ const test = async () => {
     await page.locator('#taskForm [type="submit"]').click();
     assert.equal((await stored('lawyerTasks'))[0].title,'Ответ по возврату перевода: обновлено');
     await page.locator('#activeTasks [data-done-task]').first().click();
-    await page.waitForFunction(()=>JSON.parse(localStorage.getItem('lawyerTasks'))[0].status==='done');
+    await waitFor(()=>JSON.parse(localStorage.getItem('lawyerTasks'))[0].status==='done');
     await page.getByRole('button',{name:'Отменить выполнение задачи «Ответ по возврату перевода: обновлено»',exact:true}).click();
-    await page.waitForFunction(()=>JSON.parse(localStorage.getItem('lawyerTasks'))[0].status==='inwork');
+    await waitFor(()=>JSON.parse(localStorage.getItem('lawyerTasks'))[0].status==='inwork');
     await page.locator('#activeTasks [data-done-task]').first().click();
     await page.locator('#completedTasks [data-restore-task]').first().click();
-    await page.waitForFunction(()=>JSON.parse(localStorage.getItem('lawyerTasks'))[0].status==='new');
+    await waitFor(()=>JSON.parse(localStorage.getItem('lawyerTasks'))[0].status==='new');
 
     await page.locator('[data-set-priority]').first().click();
     assert.equal(await page.locator('#prioritySheet').getAttribute('aria-hidden'),'false');await close();
@@ -203,13 +214,13 @@ const test = async () => {
     await openCase();await page.locator('[data-ref-delete-file]').click();await page.locator('#confirmCancel').click();
     assert.equal((await stored('lawyerProjects'))[0].attachments.length,1);
     await page.locator('[data-ref-delete-file]').click();await page.locator('#confirmAccept').click();
-    await page.waitForFunction(()=>JSON.parse(localStorage.getItem('lawyerProjects'))[0].attachments.length===0);
+    await waitFor(()=>JSON.parse(localStorage.getItem('lawyerProjects'))[0].attachments.length===0);
     await page.locator('[data-ref-project-status]').first().click();await page.locator('#confirmAccept').click();
     assert.equal((await stored('lawyerProjects'))[0].status,'done');
     assert.ok((await stored('lawyerProjectTasks')).some(task=>task.status!=='done'));
     await page.locator('[data-ref-project-status]').first().click();assert.equal((await stored('lawyerProjects'))[0].status,'inwork');
     await tab('projects');await page.locator('[data-ref-delete-case]').click();await page.locator('#confirmAccept').click();
-    await page.waitForFunction(()=>JSON.parse(localStorage.getItem('lawyerProjects')).length===0);
+    await waitFor(()=>JSON.parse(localStorage.getItem('lawyerProjects')).length===0);
     assert.equal((await stored('lawyerProjectTasks')).length,0);assert.equal((await stored('lawyerNotes')).length,0);
     assert.equal((await stored('lawyerTasks')).length,1);
     log('confirmed attachment deletion, case completion/reopen and scoped cascade deletion');
