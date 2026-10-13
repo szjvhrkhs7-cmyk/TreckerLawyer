@@ -5,7 +5,7 @@ const vm = require('node:vm');
 const html = fs.readFileSync(new URL('../index.html', `file://${__filename}`), 'utf8');
 const appSource = fs.readFileSync(new URL('../app-core.js', `file://${__filename}`), 'utf8');
 const css = fs.readFileSync(new URL('../app.css', `file://${__filename}`), 'utf8');
-const themeCss = fs.readFileSync(new URL('../merriweather-theme.css', `file://${__filename}`), 'utf8');
+const themeCss = fs.readFileSync(new URL('../reference-workspace.css', `file://${__filename}`), 'utf8');
 const resetCacheHtml = fs.readFileSync(new URL('../reset-cache.html', `file://${__filename}`), 'utf8');
 const syncSource = fs.readFileSync(new URL('../sync-core.js', `file://${__filename}`), 'utf8');
 const manifest = JSON.parse(fs.readFileSync(new URL('../manifest.webmanifest', `file://${__filename}`), 'utf8'));
@@ -15,12 +15,9 @@ for (const [index, match] of [...html.matchAll(/<script(?:\s[^>]*)?>([\s\S]*?)<\
 }
 assert.doesNotThrow(() => new Function(syncSource), 'sync.js must parse');
 assert.equal(manifest.name, 'Трекер юриста');
-assert.match(themeCss, /--font:\s*var\(--merriweather\)/);
-assert.match(themeCss, /font-family:\s*"Merriweather"/);
-assert.doesNotMatch(html, /fonts\.googleapis\.com|fonts\.gstatic\.com|family=Inter/);
-assert.doesNotMatch(themeCss, /--font:\s*Inter/);
-assert.match(resetCacheHtml, /font-family:"Iowan Old Style",Iowan/);
-assert.doesNotMatch(resetCacheHtml, /font-family:Inter/);
+assert.doesNotMatch(html, /fonts\.googleapis\.com|fonts\.gstatic\.com/);
+assert.doesNotMatch(html, /user-scalable=no/);
+assert.match(html, /reference-workspace\.css/);
 assert.deepEqual(manifest.icons.map(icon => icon.src), ['tracker-icon-graphite-192.png', 'tracker-icon-graphite-512.png']);
 assert.match(html, /apple-touch-icon[^>]+tracker-icon-graphite-180\.png/);
 assert.match(resetCacheHtml, /tracker-icon-graphite-180\.png/);
@@ -181,7 +178,9 @@ function testSyncSecurityShape() {
   assert.doesNotMatch(syncSource, /service_role|sb_secret_|BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY/i);
   assert.match(html, /Content-Security-Policy/);
   assert.match(appSource, /function icsSafe/);
-  assert.doesNotMatch(html, /data-tab="(?:calendar|notes)"|calendar-core\.js|id="(?:noteSheet|eventSheet|sidebarAgenda)"/);
+  assert.doesNotMatch(html, /data-tab="(?:sessions|documents|more|notes)"/);
+  assert.match(html, /data-tab="calendar"/);
+  assert.match(html, /reference-workspace\.js/);
   assert.match(syncSource, /\[LS\.calendarEvents, 'calendarEvents'\]/);
 }
 

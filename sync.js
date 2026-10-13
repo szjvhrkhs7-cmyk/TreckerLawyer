@@ -22,19 +22,6 @@
     }
   }
 
-  // Local UX enhancements must remain available even when the cloud is offline.
-  loadScript('drag-sortable-fix.js?v=20260901-ios-drag-3')
-    .catch(error => console.error('Drag recovery module loading failed', error));
-
-  loadScript('project-lifecycle.js?v=20261001-sections')
-    .then(() => loadScript('workspace-pages.js?v=20261003-workspace'))
-    .then(() => loadScript('workspace-task-restore.js?v=20261003-workspace'))
-    .then(() => loadScript('task-completion.js?v=20261003-workspace'))
-    .catch(error => console.error('Workspace page modules loading failed', error));
-
-  loadScript('qwen-enhancements.js?v=20260901-workspace-final')
-    .catch(error => console.error('Local enhancement module loading failed', error));
-
   // Cloud modules are isolated so a network or Supabase failure cannot disable local UI modules.
   loadScript('sync-recovery.js?v=20260910-session-recovery-1')
     .then(() => window.lawyerCloudRecoveryReady || Promise.resolve())

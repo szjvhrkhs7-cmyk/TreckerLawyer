@@ -1,13 +1,13 @@
 {
   "name": "Трекер юриста",
   "short_name": "Трекер",
-  "description": "Задачи, проекты, заметки и календарь юриста",
+  "description": "Дела, задачи, заключения и календарь юриста",
   "lang": "ru",
-  "start_url": "./?source=pwa&v=20260901-workspace-2026",
+  "start_url": "./?source=pwa&v=20261013-dark-reference",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#f6f8fb",
-  "theme_color": "#f6f8fb",
+  "background_color": "#17191c",
+  "theme_color": "#17191c",
   "icons": [
     {
       "src": "tracker-icon-graphite-192.png",
