@@ -50,14 +50,7 @@ jobs:
             echo "style-src must not allow unsafe-inline" >&2
             exit 1
           fi
-          if grep -Eqi '<style([[:space:]>])' index.html; then
-            echo 'Inline style blocks are not allowed.' >&2
-            exit 1
-          fi
-          if grep -Eqi '[[:space:]]style[[:space:]]*=' index.html; then
-            echo 'Inline style attributes are not allowed.' >&2
-            exit 1
-          fi
+          node tests/embedded-assets.cjs
       - name: Reject dynamic code execution primitives
         run: |
           set -euo pipefail

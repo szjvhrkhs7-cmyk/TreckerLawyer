@@ -24,6 +24,9 @@ const test = async () => {
   await startServer();
   const browser = await playwright.chromium.launch({ headless:true, executablePath:process.env.TEST_BROWSER_EXECUTABLE || undefined, args:['--no-sandbox'] });
   const context = await browser.newContext({ viewport:{width:1440,height:1000}, acceptDownloads:true });
+  // Simulate the missing UI assets seen on the production phone screenshot.
+  // The release must remain styled and functional without these requests.
+  await context.route(/\/(?:priorities\.css|calendar\.css|reference-workspace\.(?:css|js))(?:\?|$)/, route => route.abort());
   const page = await context.newPage();
   const errors = [], failures = [];
   page.on('pageerror',error=>errors.push(error.message));
@@ -52,6 +55,11 @@ const test = async () => {
     assert.equal(await page.locator('#tabs .tab').count(),5);
     assert.equal(await page.locator('[data-tab="sessions"],[data-tab="documents"],[data-tab="more"]').count(),0);
     assert.match(await page.locator('#page').innerText(),/Обзор дня/);
+    assert.equal(await page.locator('#releaseStyles').count(),1);
+    assert.equal(await page.locator('#releaseWorkspace').count(),1);
+    assert.ok(await page.locator('#tabs .icon').first().evaluate(el=>el.getBoundingClientRect().width)<=24);
+    assert.ok(await page.locator('body').evaluate(el=>getComputedStyle(el).fontFamily.includes('sans-serif')));
+    log('embedded mobile UI survives missing CSS and workspace JS asset requests');
     log('empty startup, five working sections, removed sections absent');
 
     await tab('projects');
