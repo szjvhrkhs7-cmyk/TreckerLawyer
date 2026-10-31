@@ -3,7 +3,7 @@
   "short_name": "Трекер",
   "description": "Дела, задачи, заключения и календарь юриста",
   "lang": "ru",
-  "start_url": "./?source=pwa&v=20261013-dark-reference",
+  "start_url": "./?source=pwa&v=20261031-glass",
   "scope": "./",
   "display": "standalone",
   "background_color": "#17191c",
