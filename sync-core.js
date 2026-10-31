@@ -108,10 +108,10 @@
     syncState = nextState;
     syncLabel = label;
     const buttonLabels = {
-      local: 'Локально',
+      local: 'На устройстве',
       connecting: 'Подключение',
       syncing: 'Синхронизация',
-      synced: 'Сохранено',
+      synced: 'В облаке',
       offline: 'Без сети',
       error: 'Ошибка'
     };
