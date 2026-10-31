@@ -179,7 +179,7 @@ function testSyncSecurityShape() {
   assert.match(html, /Content-Security-Policy/);
   assert.match(appSource, /function icsSafe/);
   assert.doesNotMatch(html, /data-tab="(?:sessions|documents|more|notes|calendar|search)"/);
-  assert.deepEqual([...html.matchAll(/data-tab="([^"]+)"/g)].map(match=>match[1]), ['today','tasks','projects']);
+  assert.deepEqual([...html.matchAll(/data-tab="([^"]+)"/g)].map(match=>match[1]), ['today','tasks','priorities','projects']);
   assert.match(html, /reference-workspace\.js/);
   assert.match(syncSource, /\[LS\.calendarEvents, 'calendarEvents'\]/);
 }
