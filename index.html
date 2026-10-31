@@ -9,12 +9,12 @@
   <meta name="apple-mobile-web-app-title" content="Трекер юриста">
   <meta id="themeColor" name="theme-color" content="#17191c">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://cfkpxrvinkcutbtqpufa.supabase.co; img-src 'self' data: blob:; style-src 'self' 'sha256-71o4RvgceVjY9pSXdAQLteNieOS+oHYkMzevCB0O6cA='; font-src 'self' https://raw.githubusercontent.com; script-src 'self' 'sha256-maoJEyV9z+C1MXxUlMoSAbBoetYZw2YZ0FC6JWQ1sZk='; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://cfkpxrvinkcutbtqpufa.supabase.co; img-src 'self' data: blob:; style-src 'self' 'sha256-TNr1v6l1xnfMo4TmcHp1ZKOdyg+AvtcWOIgtI7PEahY='; font-src 'self' https://raw.githubusercontent.com; script-src 'self' 'sha256-maoJEyV9z+C1MXxUlMoSAbBoetYZw2YZ0FC6JWQ1sZk='; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
   <title>Трекер юриста</title>
   <link rel="icon" type="image/png" sizes="192x192" href="tracker-icon-graphite-192.png?v=20260901-graphite">
   <link rel="apple-touch-icon" sizes="180x180" href="tracker-icon-graphite-180.png?v=20260901-graphite">
   <link rel="apple-touch-icon-precomposed" sizes="180x180" href="tracker-icon-graphite-180.png?v=20260901-graphite">
-  <link rel="manifest" href="manifest.webmanifest?v=20260901-workspace-2026">
+  <link rel="manifest" href="manifest.webmanifest?v=20261031-glass">
   <style id="releaseStyles">
 /* priorities.css */
 .workspace-priority-action {
@@ -808,6 +808,259 @@ body.drag-reordering .priority-drag-handle {
 
 /* Prevent WebKit focus auto-zoom without disabling user pinch zoom. */
 @media(max-width:760px){input,textarea,select,[contenteditable="true"],.search,.workspace-sort select,#syncContent input,.priority-sheet input,.priority-sheet select,.ref-note-preview input[type="date"]{font-size:16px!important}}
+
+/* Libra capsule system. Presentation only; storage and sync contracts stay intact. */
+:root {
+  --glass-solid: #27292d;
+  --glass-fill: rgba(42, 44, 48, .78);
+  --glass-edge: rgba(255, 255, 255, .15);
+  --glass-highlight: rgba(255, 255, 255, .07);
+  --glass-shadow: 0 12px 36px rgba(0, 0, 0, .25), inset 0 1px 0 var(--glass-highlight);
+  --capsule-radius: 999px;
+  --surface: #202226;
+  --surface-raised: #2b2d32;
+  --line: #3a3d43;
+  --faint: #a6aab3;
+}
+html { scroll-padding-top: 100px; }
+body {
+  background: radial-gradient(ellipse at 15% 0, rgba(185, 138, 83, .065), transparent 55%), var(--bg);
+}
+.app, body.sidebar-collapsed .app {
+  margin: 0 auto;
+  max-width: 1600px;
+  min-height: 100dvh;
+}
+.top, body.sidebar-collapsed .top {
+  position: sticky;
+  inset: 0 0 auto;
+  width: auto;
+  min-height: 92px;
+  padding: max(18px, env(safe-area-inset-top)) 28px 14px;
+  border: 0;
+  background: none;
+  display: flex;
+  flex-direction: row;
+  justify-content: center;
+  align-items: center;
+  z-index: 45;
+  pointer-events: none;
+}
+.top > * { pointer-events: auto; }
+.brandbar {
+  position: absolute;
+  right: 30px;
+  top: max(20px, env(safe-area-inset-top));
+  height: 48px;
+  margin: 0;
+  padding: 0 !important;
+  border: 0;
+}
+.brandname, .sidebar-bottom { display: none; }
+.tabs {
+  position: static;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  flex-direction: row;
+  width: min(440px, 100%);
+  gap: 4px;
+  padding: 6px;
+  border: 1px solid var(--glass-edge);
+  border-radius: var(--capsule-radius);
+  background: var(--glass-solid);
+  box-shadow: var(--glass-shadow);
+  isolation: isolate;
+}
+.tab {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 10px 12px;
+  min-height: 44px;
+  border-radius: var(--capsule-radius);
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--muted);
+}
+.tab .icon { width: 20px; height: 20px; }
+.tab .count { display: none; }
+.tab.active, .tab.active:hover {
+  color: var(--accent);
+  background: rgba(244, 188, 100, .13);
+  box-shadow: inset 0 0 0 1px rgba(244, 188, 100, .15);
+}
+.tab:focus-visible { outline-offset: -3px; }
+.ref-header {
+  margin: 4px 32px 0;
+  padding: 22px 0;
+  background: none;
+}
+.ref-header h2 { font-size: clamp(24px, 2.2vw, 32px); font-weight: 650; }
+.ref-body { max-width: none; }
+.ref-today-body { padding-top: 24px; }
+.ref-panel, .ref-case-card, .workspace-task-row, .ref-helper-card {
+  border-radius: 22px;
+  border-color: var(--line);
+  background: var(--surface);
+}
+.ref-panel { box-shadow: 0 8px 24px rgba(0, 0, 0, .08); }
+.ref-panel-heading { min-height: 68px; padding: 18px 22px; }
+.ref-panel-heading button { min-height: 44px; padding: 8px; border-radius: 18px; }
+.ref-row { padding: 18px 22px; }
+.ref-row-main { min-height: 44px; }
+.ref-row-main strong { line-height: 1.5; }
+.ref-row-main small, .ref-due { font-size: 12px; }
+.ref-check { width: 44px; height: 44px; min-width: 44px; }
+.ref-case-task-list .ref-check { width: 44px; height: 44px; }
+.ref-count, .ref-case-status, .ref-editor-label, .workspace-status, .workspace-priority {
+  border-radius: var(--capsule-radius);
+}
+.btn, .chip, .search, .workspace-sort select {
+  border-radius: var(--capsule-radius);
+  min-height: 44px;
+}
+.btn { padding: 10px 18px; }
+.filters { gap: 8px; flex-wrap: wrap; }
+.chip { padding: 9px 15px; font-size: 12px; }
+.search { height: 48px; }
+.search-wrap > .icon { top: 15px; }
+.ref-icon-button, .workspace-icon-button, .reference-today #syncButton {
+  width: 44px;
+  min-height: 44px;
+  border: 1px solid var(--glass-edge);
+  border-radius: 50%;
+  background: var(--glass-solid);
+}
+.fab {
+  width: 56px;
+  height: 56px;
+  right: max(28px, env(safe-area-inset-right));
+  bottom: max(28px, env(safe-area-inset-bottom));
+  border: 1px solid rgba(255, 255, 255, .2);
+  box-shadow: 0 8px 28px rgba(0, 0, 0, .28), inset 0 1px 0 rgba(255, 255, 255, .2);
+}
+.ref-case-layout {
+  margin: 22px 32px 32px;
+  gap: 16px;
+  min-height: calc(100dvh - 270px);
+}
+.ref-context, .ref-assistant, .ref-editor-column {
+  min-width: 0;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--surface);
+}
+.ref-editor-column { overflow: hidden; }
+.ref-editor { min-height: 360px; line-height: 1.8; }
+.ref-editor-toolbar { background: var(--surface-raised); }
+.ref-editor-toolbar button { min-width: 44px; min-height: 44px; border-radius: 16px; }
+.ref-editor-toolbar .toolbar-export { min-width: 90px; }
+.sheet, .confirm-box { border-radius: 28px; }
+.field input, .field textarea, .field select { border-radius: 16px; }
+.overlay { padding: 24px; }
+.reference-toast, .workspace-toast { border-radius: 24px; }
+@supports ((backdrop-filter: blur(16px)) or (-webkit-backdrop-filter: blur(16px))) {
+  .tabs, .ref-case-tabs, .reference-today #syncButton, .ref-header-actions > .ref-icon-button {
+    background: var(--glass-fill);
+    -webkit-backdrop-filter: blur(20px) saturate(125%);
+    backdrop-filter: blur(20px) saturate(125%);
+  }
+}
+@media (min-width: 761px) and (max-width: 1200px) {
+  .ref-case-layout { grid-template-columns: 220px minmax(0, 1fr); }
+  .ref-assistant { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) {
+  html { scroll-padding-top: 12px; scroll-padding-bottom: 110px; }
+  body { padding-bottom: calc(112px + env(safe-area-inset-bottom, 0px)); }
+  .app, body.sidebar-collapsed .app { min-height: 0; margin: 0; }
+  .top, body.sidebar-collapsed .top {
+    position: relative;
+    min-height: env(safe-area-inset-top, 0px);
+    padding: env(safe-area-inset-top, 0px) 0 0;
+    display: block;
+  }
+  .brandbar {
+    position: relative;
+    top: auto;
+    right: auto;
+    height: 0;
+    justify-content: flex-end;
+    padding: 0 20px !important;
+  }
+  .reference-today .brandbar { height: 56px; padding-top: 10px !important; }
+  .tabs {
+    position: fixed;
+    left: max(16px, env(safe-area-inset-left));
+    right: max(16px, env(safe-area-inset-right));
+    bottom: calc(12px + env(safe-area-inset-bottom, 0px));
+    width: auto;
+    max-width: 440px;
+    height: auto;
+    margin: 0 auto;
+    padding: 6px;
+    gap: 4px;
+    z-index: 45;
+  }
+  .tab { min-height: 56px; padding: 7px 4px; flex-direction: column; gap: 4px; font-size: 11px; }
+  .tab .icon { width: 21px; height: 21px; }
+  .ref-header { margin: 0 20px; padding: 24px 0 20px; }
+  .ref-body { padding: 20px; }
+  .ref-today-body { padding-top: 16px; }
+  .ref-grid, .ref-stack { gap: 16px; }
+  .ref-panel-heading { padding: 12px 16px; min-height: 64px; gap: 6px; }
+  .ref-panel-heading h3 { font-size: 14px; }
+  .ref-panel-heading button { font-size: 11px; }
+  .ref-row { padding: 16px; gap: 12px; }
+  .ref-case-card { padding: 16px; }
+  .ref-case-card .ref-case-main { flex-basis: calc(100% - 55px); }
+  .fab { right: max(20px, env(safe-area-inset-right)); bottom: calc(100px + env(safe-area-inset-bottom, 0px)); width: 48px; height: 48px; }
+  .ref-case-layout { margin: 16px 16px 24px; display: block; min-height: 0; }
+  .ref-context, .ref-assistant { padding: 20px 16px; }
+  .ref-case-tabs {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 4px;
+    margin: 16px 16px 0;
+    padding: 5px;
+    border: 1px solid var(--glass-edge);
+    border-radius: var(--capsule-radius);
+    background: var(--glass-solid);
+    box-shadow: var(--glass-shadow);
+    overflow: visible;
+  }
+  .ref-case-tabs button { min-height: 44px; padding: 8px 3px; border: 0; border-radius: var(--capsule-radius); font-size: 12px; }
+  .ref-case-tabs button.active { background: rgba(244, 188, 100, .13); }
+  .ref-editor-heading { padding: 20px 16px 16px; }
+  .ref-editor { padding: 20px 16px; font-size: 16px; }
+  .ref-editor-toolbar { padding: 6px; }
+  .ref-editor-footer { padding: 16px; }
+  .workspace-task-row { padding: 16px; }
+  .overlay { padding: max(12px, env(safe-area-inset-top)) 0 0; }
+  .sheet { border-radius: 28px 28px 0 0; padding-bottom: calc(22px + env(safe-area-inset-bottom, 0px)); }
+  .sheet-actions { padding-bottom: 8px; }
+  .workspace-toast, .reference-toast { bottom: calc(100px + env(safe-area-inset-bottom, 0px)); }
+}
+@media (max-width: 360px) {
+  .ref-body { padding-inline: 14px; }
+  .ref-header { margin-inline: 14px; }
+  .ref-row { padding: 14px 12px; gap: 8px; }
+  .ref-panel-heading { padding-inline: 12px; }
+  .ref-panel-heading h3 { font-size: 13px; }
+  .ref-case-tabs button { font-size: 11px; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  .tabs, .ref-case-tabs, .reference-today #syncButton, .ref-header-actions > .ref-icon-button {
+    background: var(--glass-solid);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
 
 </style>
   <script src="theme-init.js?v=20261013-dark-reference"></script>
