@@ -36,7 +36,7 @@
         if (previous.completedAt) restored.completedAt = previous.completedAt;
         else delete restored.completedAt;
         items[index] = restored;
-        save(key, items);
+        if(save(key, items)===false){toast.textContent='Не удалось отменить выполнение. Данные не изменены.';return;}
         render();
         [...page.querySelectorAll('[data-edit-task]')].find(button => sameId(button.dataset.editTask, previous.id))?.focus({ preventScroll: true });
         toast.textContent = 'Выполнение отменено';
@@ -45,6 +45,8 @@
       toast.hideTimer = setTimeout(() => toast.classList.remove('show'), 2600);
     };
   }
+
+  globalThis.lawyerCompletionUndo = completionUndo;
 
   function taskTitleForButton(button) {
     const rowTitle = button.closest('.workspace-task-row')?.querySelector('.workspace-task-main strong')?.textContent?.trim();
