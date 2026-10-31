@@ -20,6 +20,8 @@ jobs:
           node-version: 22
       - name: Storage, ordering and cloud regression checks
         run: |
+          node tests/completion-undo.cjs
+          node tests/workflow-model.cjs
           node tests/smoke.cjs
           node tests/sync.cjs
           node tests/sync-recovery.cjs

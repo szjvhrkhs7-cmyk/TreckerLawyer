@@ -181,14 +181,14 @@
         <span class="workspace-task-meta">
           <span class="workspace-due ${overdue(task) ? 'is-danger' : ''}">${esc(taskDueLabel(task))}</span>
           ${project ? `<span>${esc(project.title)}</span>` : ''}
-          ${task.priorityDate ? `<span>В плане на ${esc(fmtDate(task.priorityDate))}</span>` : ''}
+          ${task.priorityDate ? `<span>План ${esc(fmtDate(task.priorityDate))}</span>` : ''}${task.status==='waiting'&&task.waitingFor?`<span>Ждём: ${esc(task.waitingFor)}</span>`:''}${task.status==='waiting'&&task.checkDate?`<span>Проверить ${esc(fmtDate(task.checkDate))}</span>`:''}
         </span>
       </button>
       <span class="workspace-status workspace-status--${tone}">${esc(statusText[task.status] || task.status)}</span>
       <span class="workspace-priority workspace-priority--${esc(task.priority)}">${esc(priorityText[task.priority] || task.priority)}</span>
       ${taskDetails(task)}
       <div class="workspace-row-actions">
-        ${!done && task.status !== 'done' ? `<button type="button" class="btn workspace-priority-action" data-set-priority="${id}" data-task-scope="${task.projectId ? 'project' : 'root'}" aria-label="${task.priorityDate ? 'Изменить' : 'Назначить'} приоритет для задачи «${esc(task.title)}»">Приоритет</button>` : ''}
+        ${!done && task.status !== 'done' ? `<button type="button" class="btn workspace-priority-action" data-set-priority="${id}" data-task-scope="${task.projectId ? 'project' : 'root'}" aria-label="${task.priorityDate ? 'Изменить' : 'Назначить'} приоритет для задачи «${esc(task.title)}»">В план</button>` : ''}
         ${!done && task.status !== 'done' ? `<button type="button" class="btn ok" data-done-task="${id}">Завершить</button>` : ''}
         <button type="button" class="workspace-icon-button" data-edit-task="${id}" aria-label="Открыть задачу ${esc(task.title)}"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-right"></use></svg></button>
       </div>
@@ -219,7 +219,7 @@
 
     page.innerHTML = `<section class="workspace-page workspace-tasks-page">
       <header class="workspace-page-head">
-        <div><h2>${heading}</h2><p>${activeCount ? `Активных задач: ${activeCount}` : 'Можно запланировать новые задачи'}</p></div>
+        <div><h2>${heading}</h2>${activeCount ? `<p>${activeCount} активных</p>` : ''}</div>
         <button type="button" class="btn primary workspace-page-add" data-workspace-new-task><svg class="icon" aria-hidden="true"><use href="#i-plus"></use></svg>Новая задача</button>
       </header>
       <section class="workspace-summary-strip" aria-label="Статистика задач">

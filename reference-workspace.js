@@ -7,6 +7,7 @@
   const titles = { today: 'Сегодня', tasks: 'Задачи', projects: 'Дела', priorities: 'Приоритеты' };
   let draftTimer, pendingDraft = null, toastTimer, fileProjectId = null;
   let casePanel = 'draft';
+  let helperHidden = true;
   let selectionRange = null;
   const icon = name => `<svg class="icon" aria-hidden="true"><use href="#i-${name}"></use></svg>`;
   const localDay = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
@@ -33,15 +34,18 @@
     clearTimeout(draftTimer);
     if(!pendingDraft) return true;
     const current = pendingDraft;
-    const saved = updateProject(current.id,{draftHtml:sanitizeNoteHtml(current.html)});
+    const project=allProjects().find(p=>sameId(p.id,current.id));
+    if(!project)return false;
+    const patch=LawyerWorkflow.draftPatch(project,sanitizeNoteHtml(current.html),now());
+    const saved = !patch || updateProject(current.id,patch);
     if(saved) pendingDraft = null;
     const label = document.getElementById('draftSaveStatus');
-    if(label) label.textContent = saved ? `Сохранено ${new Date().toLocaleTimeString('ru-RU',{hour:'2-digit',minute:'2-digit'})}` : 'Не удалось сохранить';
+    if(label) label.textContent = saved ? 'На устройстве' : 'Не удалось сохранить';
     return saved;
   }
   function pageHeader(title, subtitle, action = 'task') {
     const button = action === 'project' ? `<button class="btn primary" data-ref-new-project type="button">${icon('plus')}Новое дело</button>` : action === 'event' ? `<button class="btn primary" data-ref-new-event type="button">${icon('plus')}Событие</button>` : `<button class="btn primary" data-ref-new-task type="button">${icon('plus')}Задача</button>`;
-    return `<header class="ref-header"><div><h2>${esc(title)}</h2><p>${esc(subtitle)}</p></div><div class="ref-header-actions"><button class="ref-icon-button" type="button" data-ref-sync aria-label="Синхронизация и учетная запись" title="Синхронизация">${icon('cloud')}</button>${button}</div></header>`;
+    return `<header class="ref-header"><div><h2>${esc(title)}</h2></div><div class="ref-header-actions">${button}</div></header>`;
   }
   function due(task) {
     if(!task.dueDate) return 'Без срока';
@@ -53,18 +57,20 @@
   function taskRow(entry) {
     const task = entry.task, isDone = task.status === 'done';
     const project = allProjects().find(item => sameId(item.id,task.projectId));
-    return `<article class="ref-row ${isDone?'is-done':''}"><button class="ref-check" type="button" data-ref-toggle-task="${esc(task.id)}" data-key="${entry.key}" aria-label="${isDone?'Возобновить':'Завершить'} задачу ${esc(task.title)}">${isDone?icon('check'):''}</button><button class="ref-row-main" type="button" data-ref-task="${esc(task.id)}" data-key="${entry.key}"><strong>${esc(task.title)}</strong><small>${esc((state.projectId?null:project?.title) || task.extra || statusText[task.status])}</small><span class="ref-due ${overdue(task)?'is-danger':''}">${icon('calendar')}${esc(due(task))}</span></button>${icon('arrow-right')}</article>`;
+    return `<article class="ref-row ${isDone?'is-done':''}"><button class="ref-check" type="button" data-ref-toggle-task="${esc(task.id)}" data-key="${entry.key}" aria-label="${isDone?'Возобновить':'Завершить'} задачу ${esc(task.title)}">${isDone?icon('check'):''}</button><button class="ref-row-main" type="button" data-ref-task="${esc(task.id)}" data-key="${entry.key}"><strong>${esc(task.title)}</strong>${(state.projectId?null:project?.title)||task.waitingFor?`<small>${esc((state.projectId?null:project?.title)||'Ждём: '+task.waitingFor)}</small>`:''}<span class="ref-due ${overdue(task)?'is-danger':''}">${icon('calendar')}${esc(due(task))}${task.status==='waiting'&&task.checkDate?' · Проверить '+esc(fmtDate(task.checkDate)):''}</span></button>${icon('arrow-right')}</article>`;
   }
   function projectRow(project) {
     const sub = projectTasks(project.id), active = sub.filter(task=>task.status!=='done'), next = active.sort((a,b)=>(a.dueDate||'9999').localeCompare(b.dueDate||'9999'))[0];
     return `<button class="ref-row" type="button" data-ref-case="${esc(project.id)}"><span class="ref-case-icon">${icon('folder')}</span><span class="ref-row-main"><strong>${esc(project.title)}</strong><small>${next?`Следующий шаг: ${esc(next.title)}`:`${active.length} активных задач`}</small></span>${icon('arrow-right')}</button>`;
   }
   function renderToday() {
-    const active = entries().filter(entry=>entry.task.status!=='done').sort((a,b)=>Number(overdue(b.task))-Number(overdue(a.task))||Number(b.task.priority==='high')-Number(a.task.priority==='high')||(a.task.dueDate||'9999').localeCompare(b.task.dueDate||'9999'));
-    const attention = active.filter(entry=>overdue(entry.task)||entry.task.dueDate===localDay()||entry.task.priority==='high').slice(0,4);
-    const focus = attention.length ? attention : active.filter(entry=>entry.task.status!=='waiting').slice(0,3);
-    page.innerHTML = `<div class="ref-body ref-today-body"><div class="ref-grid"><section class="ref-panel"><div class="ref-panel-heading"><h3>Требует внимания <span class="ref-count">${focus.length}</span></h3><button type="button" data-ref-tab="tasks">Все задачи →</button></div>${focus.map(taskRow).join('')||'<div class="ref-empty"><strong>Все под контролем</strong>Добавьте задачу или создайте новое дело.</div>'}</section><section class="ref-panel"><div class="ref-panel-heading"><h3>Ожидают ответа</h3></div>${active.filter(entry=>entry.task.status==='waiting').slice(0,3).map(taskRow).join('')||'<div class="ref-empty">Нет задач в ожидании</div>'}</section></div><div class="ref-priority-link"><button class="btn" type="button" data-ref-tab="priorities">${icon('flag')}План приоритетов на неделю</button></div></div>`;
+    const active=entries().filter(e=>e.task.status!=='done').sort((a,b)=>Number(overdue(b.task))-Number(overdue(a.task))||(a.task.dueDate||'9999').localeCompare(b.task.dueDate||'9999'));
+    const planned=LawyerWorkflow.ordered(active.filter(e=>e.task.priorityDate===localDay()).map(e=>({...e,scope:e.key===LS.tasks?'root':'project'})));
+    const attention=active.filter(e=>e.task.priorityDate!==localDay()&&(overdue(e.task)||e.task.dueDate===localDay()||e.task.priority==='high'));
+    const waiting=active.filter(e=>e.task.status==='waiting'&&e.task.priorityDate!==localDay());
+    page.innerHTML=`<div class="ref-body ref-today-body"><div class="ref-grid ${waiting.length?'':'ref-grid--single'}"><section class="ref-panel"><div class="ref-panel-heading"><h3>На сегодня <span class="ref-count">${planned.length}</span></h3><button type="button" data-ref-tab="priorities">Изменить план</button></div>${planned.map(taskRow).join('')||'<div class="ref-empty">На сегодня ничего не запланировано</div>'}${attention.length?`<div class="ref-panel-heading ref-section-divider"><h3>Требует внимания <span class="ref-count">${attention.length}</span></h3><button type="button" data-ref-tab="tasks">Все задачи</button></div>${attention.slice(0,5).map(taskRow).join('')}`:''}</section>${waiting.length?`<section class="ref-panel"><div class="ref-panel-heading"><h3>Ожидают ответа <span class="ref-count">${waiting.length}</span></h3></div>${waiting.slice(0,5).map(taskRow).join('')}</section>`:''}</div></div>`;
   }
+
   function renderCases() {
     page.innerHTML = pageHeader('Мои дела','Запросы, задачи и материалы в одном месте','project') + `<div class="ref-body"><div class="search-wrap ref-project-search">${icon('search')}<input class="search" id="caseSearch" type="search" aria-label="Поиск по делам" placeholder="Найти дело" value="${esc(state.query)}"></div><div class="filters"><button class="chip ${!state.showCompletedProjects?'active':''}" data-ref-cases-filter="active" type="button">В работе</button><button class="chip ${state.showCompletedProjects?'active':''}" data-ref-cases-filter="done" type="button">Завершенные</button></div><div class="ref-case-list" id="refCaseList"></div></div>`;
     const input = document.getElementById('caseSearch');
@@ -81,12 +87,12 @@
     page.querySelector('.filters').style.marginBottom='20px';
   }
   function caseFiles(project) {
-    return (Array.isArray(project.attachments)?project.attachments:[]).map(file=>`<div class="ref-file"><span class="ref-file-icon ${String(file.name).toLowerCase().endsWith('.docx')?'docx':''}">${esc(String(file.name).split('.').pop().toUpperCase().slice(0,5))}</span><button class="ref-file-name" type="button" data-ref-file="${esc(file.id)}"><strong>${esc(file.name)}</strong><span>${(Number(file.size||0)/1024/1024).toFixed(1)} МБ · Скачать</span></button><button class="ref-icon-button" type="button" data-ref-delete-file="${esc(file.id)}" aria-label="Удалить файл ${esc(file.name)}">${icon('close')}</button></div>`).join('')||'<p class="ref-caption">Добавьте документы по делу</p>';
+    return (Array.isArray(project.attachments)?project.attachments:[]).map(file=>`<div class="ref-file"><span class="ref-file-icon ${String(file.name).toLowerCase().endsWith('.docx')?'docx':''}">${esc(String(file.name).split('.').pop().toUpperCase().slice(0,5))}</span><button class="ref-file-name" type="button" data-ref-file="${esc(file.id)}"><strong>${esc(file.name)}</strong><span>${(Number(file.size||0)/1024/1024).toFixed(1)} МБ · Только на устройстве</span></button><button class="ref-icon-button" type="button" data-ref-delete-file="${esc(file.id)}" aria-label="Удалить файл ${esc(file.name)}">${icon('close')}</button></div>`).join('')||'<p class="ref-caption">Добавьте документы по делу</p>';
   }
   function renderCase(project) {
     const sub = projectTasks(project.id), active = sub.filter(task=>task.status!=='done'), next = [...active].sort((a,b)=>(a.dueDate||'9999').localeCompare(b.dueDate||'9999'))[0];
     const notes = allNotes().filter(note=>sameId(note.projectId,project.id)).sort(noteSort);
-    page.innerHTML = `<header class="ref-header ref-case-header"><div class="ref-breadcrumb"><button type="button" data-ref-tab="projects">${icon('arrow-left')} Дела</button><span>/</span><span>${esc(project.title)}</span><span class="ref-case-status ${doneProject(project)?'is-done':''}">${doneProject(project)?'Завершено':'В работе'}</span></div><div class="ref-case-headline"><div><h2>${esc(project.title)}</h2><p>${next?`${esc(next.title)} · ${esc(due(next))}`:'Контекст, задачи и проект заключения'}</p></div><div class="ref-header-actions"><button class="ref-icon-button" type="button" data-ref-edit-case="${esc(project.id)}" aria-label="Изменить дело">${icon('edit')}</button><button class="btn" type="button" data-ref-project-status="${esc(project.id)}">${icon('check')}${doneProject(project)?'Возобновить дело':'Завершить дело'}</button></div></div></header><nav class="ref-case-tabs" aria-label="Содержимое дела">${[['draft','Заключение'],['context','Контекст'],['helper','Помощник']].map(([id,label])=>`<button class="${casePanel===id?'active':''}" type="button" data-ref-panel="${id}" aria-pressed="${casePanel===id}">${label}</button>`).join('')}</nav><div class="ref-case-layout" data-mobile-panel="${casePanel}"><aside class="ref-context"><h3>Контекст дела</h3><span class="ref-context-label">Запрос бизнеса</span><p class="ref-description">${esc(project.description||'Добавьте описание, чтобы сохранить обстоятельства и цель работы.')}</p><button class="btn" type="button" data-ref-edit-case="${esc(project.id)}">${icon('edit')}Изменить описание</button><section class="ref-context-section"><header><h4>Материалы</h4><button class="ref-icon-button" type="button" data-ref-upload aria-label="Добавить файл">${icon('plus')}</button></header>${caseFiles(project)}<p class="ref-caption">Файлы хранятся в этом браузере. Резервная копия содержит их названия, без содержимого.</p></section><section class="ref-context-section"><header><h4>Следующие шаги</h4><button class="ref-icon-button" type="button" data-ref-new-task aria-label="Добавить задачу дела">${icon('plus')}</button></header><div class="ref-case-task-list">${sub.map(task=>taskRow({task,key:LS.projectTasks})).join('')||'<p class="ref-caption">Добавьте первый шаг по делу</p>'}</div></section><section class="ref-context-section"><header><h4>Заметки</h4><button class="ref-icon-button" type="button" data-ref-note aria-label="Добавить заметку">${icon('plus')}</button></header>${notes.slice(0,5).map(note=>`<div class="ref-case-note">${esc(stripHtml(note.body||note.content||note.title||''))}<time>${esc(humanTime(note.updatedAt||note.createdAt))}</time></div>`).join('')||'<p class="ref-caption">Встречи, уточнения и рабочие мысли</p>'}</section><div class="ref-mobile-actions"><button class="btn" type="button" data-ref-project-status="${esc(project.id)}">${doneProject(project)?'Возобновить дело':'Завершить дело'}</button></div></aside><section class="ref-editor-column"><div class="ref-editor-heading"><h3>Проект заключения</h3><span class="ref-editor-label">Черновик</span></div><div class="ref-editor-toolbar" role="toolbar" aria-label="Форматирование заключения"><button type="button" data-ref-format="bold" aria-label="Полужирный" title="Полужирный"><strong>B</strong></button><button type="button" data-ref-format="italic" aria-label="Курсив" title="Курсив"><em>I</em></button><span class="toolbar-divider"></span><button type="button" data-ref-format="insertUnorderedList" aria-label="Маркированный список" title="Маркированный список">${icon('tasks')}</button><button type="button" data-ref-format="insertOrderedList" aria-label="Нумерованный список" title="Нумерованный список">1.</button><span class="toolbar-divider"></span><button type="button" data-ref-format="undo" aria-label="Отменить изменение" title="Отменить">↶</button><button type="button" data-ref-format="redo" aria-label="Повторить изменение" title="Повторить">↷</button><button class="toolbar-export" type="button" data-ref-export-draft>Скачать текст</button></div><div class="ref-editor" id="caseDraft" role="textbox" aria-multiline="true" aria-label="Текст заключения" contenteditable="true" spellcheck="true" data-placeholder="Обстоятельства\n\nВопросы для проверки\n\nПроект ответа">${sanitizeNoteHtml(project.draftHtml||'')}</div><footer class="ref-editor-footer"><span>${icon('check')}<span id="draftSaveStatus">${project.draftHtml?'Все изменения сохранены':'Черновик сохраняется автоматически'}</span></span><button type="button" data-ref-note>${icon('note')}Добавить заметку</button></footer></section><aside class="ref-assistant"><h3><span class="ref-spark" aria-hidden="true">✦</span>Помощник</h3><div class="ref-helper-card"><h4>${icon('calendar')}Собрать хронологию</h4><p>Даты создания дела, задач и заметок из вашего рабочего пространства.</p><button class="btn" type="button" data-ref-helper="timeline">${icon('calendar')}Показать события</button></div><div class="ref-helper-card"><h4>${icon('check-square')}Проверить комплектность</h4><p>Проверка описания, вложений, следующего шага и срока задачи.</p><button class="btn" type="button" data-ref-helper="checklist">${icon('check')}Проверить дело</button></div><div class="ref-helper-card"><h4>${icon('note')}Зафиксировать следующий шаг</h4><p>Сохраните заметку и при необходимости создайте задачу после проверки.</p><button class="btn" type="button" data-ref-note>${icon('plus')}Добавить заметку</button></div><p class="ref-caption">Помощник проверяет заполнение карточки. Он не анализирует право и содержимое файлов.</p></aside></div>`;
+    page.innerHTML = `<header class="ref-header ref-case-header"><div class="ref-breadcrumb"><button type="button" data-ref-tab="projects">${icon('arrow-left')} Дела</button><span>/</span><span>${esc(project.title)}</span><span class="ref-case-status ${doneProject(project)?'is-done':''}">${doneProject(project)?'Завершено':'В работе'}</span></div><div class="ref-case-headline"><div><h2>${esc(project.title)}</h2>${next?`<p>${esc(next.title)} · ${esc(due(next))}</p>`:''}</div><div class="ref-header-actions"><button type="button" class="btn ref-tools-toggle" data-ref-toggle-tools aria-pressed="${!helperHidden}">Инструменты</button><button class="ref-icon-button" type="button" data-ref-edit-case="${esc(project.id)}" aria-label="Изменить дело">${icon('edit')}</button><button class="btn" type="button" data-ref-project-status="${esc(project.id)}">${icon('check')}${doneProject(project)?'Возобновить дело':'Завершить дело'}</button></div></div></header><nav class="ref-case-tabs" aria-label="Содержимое дела">${[['draft','Заключение'],['context','Контекст'],['helper','Инструменты']].map(([id,label])=>`<button class="${casePanel===id?'active':''}" type="button" data-ref-panel="${id}" aria-pressed="${casePanel===id}">${label}</button>`).join('')}</nav><div class="ref-case-layout" data-mobile-panel="${casePanel}" data-helper-hidden="${helperHidden}"><aside class="ref-context"><h3>Контекст дела</h3><span class="ref-context-label">Запрос бизнеса</span><p class="ref-description">${esc(project.description||'Описание не добавлено')}</p><button class="btn" type="button" data-ref-edit-case="${esc(project.id)}">${icon('edit')}Изменить описание</button><section class="ref-context-section"><header><h4>Материалы</h4><button class="ref-icon-button" type="button" data-ref-upload aria-label="Добавить файл">${icon('plus')}</button></header>${caseFiles(project)}</section><section class="ref-context-section"><header><h4>Следующие шаги</h4><button class="ref-icon-button" type="button" data-ref-new-task aria-label="Добавить задачу дела">${icon('plus')}</button></header><div class="ref-case-task-list">${sub.map(task=>taskRow({task,key:LS.projectTasks})).join('')||'<p class="ref-caption">Добавьте первый шаг по делу</p>'}</div></section><section class="ref-context-section"><header><h4>Заметки</h4><button class="ref-icon-button" type="button" data-ref-note aria-label="Добавить заметку">${icon('plus')}</button></header>${notes.slice(0,5).map(note=>`<div class="ref-case-note">${esc(stripHtml(note.body||note.content||note.title||''))}<time>${esc(humanTime(note.updatedAt||note.createdAt))}</time></div>`).join('')||'<p class="ref-caption">Нет заметок</p>'}</section><div class="ref-mobile-actions"><button class="btn" type="button" data-ref-project-status="${esc(project.id)}">${doneProject(project)?'Возобновить дело':'Завершить дело'}</button></div></aside><section class="ref-editor-column"><div class="ref-editor-heading"><h3>Проект заключения</h3><button type="button" class="ref-revisions-button" data-ref-revisions>Версии</button></div><div class="ref-editor-toolbar" role="toolbar" aria-label="Форматирование заключения"><button type="button" data-ref-format="bold" aria-label="Полужирный" title="Полужирный"><strong>B</strong></button><button type="button" data-ref-format="italic" aria-label="Курсив" title="Курсив"><em>I</em></button><span class="toolbar-divider"></span><button type="button" data-ref-format="insertUnorderedList" aria-label="Маркированный список" title="Маркированный список">${icon('tasks')}</button><button type="button" data-ref-format="insertOrderedList" aria-label="Нумерованный список" title="Нумерованный список">1.</button><span class="toolbar-divider"></span><button type="button" data-ref-format="undo" aria-label="Отменить изменение" title="Отменить">↶</button><button type="button" data-ref-format="redo" aria-label="Повторить изменение" title="Повторить">↷</button><button class="toolbar-export" type="button" data-ref-export-draft>Скачать текст</button></div><div class="ref-editor" id="caseDraft" role="textbox" aria-multiline="true" aria-label="Текст заключения" contenteditable="true" spellcheck="true" data-placeholder="Обстоятельства\n\nВопросы для проверки\n\nПроект ответа">${sanitizeNoteHtml(project.draftHtml||'')}</div><footer class="ref-editor-footer"><span>${icon('check')}<span id="draftSaveStatus">${project.draftHtml?'На устройстве':'Автосохранение'}</span></span><button type="button" data-ref-note>${icon('note')}Добавить заметку</button></footer></section><aside class="ref-assistant"><h3>Инструменты</h3><div class="ref-helper-card"><h4>${icon('calendar')}Собрать хронологию</h4><button class="btn" type="button" data-ref-helper="timeline">${icon('calendar')}Показать события</button></div><div class="ref-helper-card"><h4>${icon('check-square')}Проверить комплектность</h4><button class="btn" type="button" data-ref-helper="checklist">${icon('check')}Проверить дело</button></div><div class="ref-helper-card"><h4>${icon('note')}Зафиксировать следующий шаг</h4><button class="btn" type="button" data-ref-note>${icon('plus')}Добавить заметку</button></div></aside></div>`;
     const editor = document.getElementById('caseDraft');
     editor.addEventListener('input',()=>{
       pendingDraft={id:project.id,html:editor.innerHTML};
@@ -183,7 +189,7 @@
     const project=allProjects().find(item=>sameId(item.id,state.projectId));
     tasksCount.textContent=String(entries().filter(entry=>entry.task.status!=='done').length);
     projectsCount.textContent=String(allProjects().filter(item=>!doneProject(item)).length);
-    fab.classList.toggle('hidden',Boolean(project));
+    fab.classList.toggle('hidden',Boolean(project)||state.tab==='priorities'||window.innerWidth>760&&state.tab!=='today');
     const active=project?'projects':state.tab;
     document.querySelectorAll('#tabs .tab').forEach(button=>{const selected=button.dataset.tab===active;button.classList.toggle('active',selected);button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;});
     tabs.classList.remove('hidden');
@@ -192,7 +198,7 @@
     fab.setAttribute('aria-label',state.tab==='projects'&&!project?'Новое дело':'Новая задача');
   };
   render=function referenceRender(){
-    flushDraft();
+    if(!flushDraft())return;
     if(!titles[state.tab])state.tab='today';
     const project=allProjects().find(item=>sameId(item.id,state.projectId));
     if(state.projectId&&!project)state.projectId=null;
@@ -202,7 +208,7 @@
     if(project){renderCase(project);return;}
     if(state.tab==='today')renderToday();
     else if(state.tab==='projects')renderCases();
-    else if(state.tab==='tasks'){baseRenderTasks();page.querySelector('.workspace-page-head')?.insertAdjacentHTML('beforeend',`<button class="ref-icon-button" type="button" data-ref-sync aria-label="Синхронизация">${icon('cloud')}</button>`);}
+    else if(state.tab==='tasks')baseRenderTasks();
     else if(state.tab==='priorities')globalThis.renderPriorities();
     bindAutoGrow(page);
   };
@@ -219,12 +225,15 @@
   globalThis.openProject=openProject;
   applyTheme=function referenceApplyTheme(){document.documentElement.dataset.theme='dark';document.documentElement.style.colorScheme='dark';themeColor.content='#17191c';};
   globalThis.applyTheme=applyTheme;applyTheme();
-  fab.onclick=()=>state.tab==='projects'&&!state.projectId?openProject():openTask();
+  fab.onclick=()=>state.tab==='projects'&&!state.projectId?openProject():state.tab==='priorities'?globalThis.openPriorityCreator():openTask();
   document.addEventListener('selectionchange',()=>{const editor=document.getElementById('caseDraft'),selection=window.getSelection();if(editor&&selection?.rangeCount&&editor.contains(selection.anchorNode)&&editor.contains(selection.focusNode))selectionRange=selection.getRangeAt(0).cloneRange();});
   page.addEventListener('mousedown',event=>{if(event.target.closest('[data-ref-format]'))event.preventDefault();});
   page.addEventListener('click',async event=>{
-    const target=event.target.closest('[data-ref-tab],[data-ref-new-task],[data-ref-new-project],[data-ref-new-event],[data-ref-sync],[data-ref-case],[data-ref-task],[data-ref-toggle-task],[data-ref-edit-case],[data-ref-delete-case],[data-ref-project-status],[data-ref-cases-filter],[data-ref-panel],[data-ref-format],[data-ref-export-draft],[data-ref-note],[data-ref-helper],[data-ref-upload],[data-ref-file],[data-ref-delete-file],[data-ref-found-note],[data-ref-event]');
+    const target=event.target.closest('[data-ref-revisions],[data-ref-restore-revision],[data-ref-toggle-tools],[data-ref-tab],[data-ref-new-task],[data-ref-new-project],[data-ref-new-event],[data-ref-sync],[data-ref-case],[data-ref-task],[data-ref-toggle-task],[data-ref-edit-case],[data-ref-delete-case],[data-ref-project-status],[data-ref-cases-filter],[data-ref-panel],[data-ref-format],[data-ref-export-draft],[data-ref-note],[data-ref-helper],[data-ref-upload],[data-ref-file],[data-ref-delete-file],[data-ref-found-note],[data-ref-event]');
     if(!target)return;event.preventDefault();event.stopImmediatePropagation();
+    if(target.hasAttribute('data-ref-toggle-tools')){helperHidden=!helperHidden;document.querySelector('.ref-case-layout').dataset.helperHidden=helperHidden;target.setAttribute('aria-pressed',String(!helperHidden));return;}
+    if(target.hasAttribute('data-ref-revisions')){showRevisions();return;}
+    if(target.dataset.refRestoreRevision){restoreRevision(target.dataset.refRestoreRevision);return;}
     if(target.dataset.refTab){switchTab(target.dataset.refTab);return;}
     if(target.hasAttribute('data-ref-new-task')){openTask();return;}
     if(target.hasAttribute('data-ref-new-project')){openProject();return;}
@@ -236,7 +245,7 @@
       const entry=taskById(target.dataset.refToggleTask,target.dataset.key);if(!entry)return;
       const list=load(entry.key),index=list.findIndex(task=>sameId(task.id,entry.task.id));const completed=entry.task.status==='done';
       list[index]={...list[index],status:completed?'inwork':'done',completedAt:completed?undefined:now(),updatedAt:now()};
-      if(save(entry.key,list)!==false){render();toast(completed?'Задача возобновлена':'Задача завершена');}return;
+      if(save(entry.key,list)!==false){render();if(!completed)globalThis.lawyerCompletionUndo?.(entry.key,entry.task,list[index]);else toast('Задача возобновлена');}return;
     }
     if(target.dataset.refEditCase){openProject(allProjects().find(project=>sameId(project.id,target.dataset.refEditCase)));return;}
     if(target.dataset.refDeleteCase){const id=target.dataset.refDeleteCase;askConfirm('Дело, его задачи и заметки будут удалены. Продолжить?',()=>{deleteCase(id);});return;}
@@ -258,15 +267,32 @@
     if(target.dataset.refFoundNote){const note=allNotes().find(item=>sameId(item.id,target.dataset.refFoundNote));if(!note)return;document.getElementById('helperTitle').textContent=note.title||'Заметка';document.getElementById('helperContent').innerHTML=`<p class="ref-description">${esc(stripHtml(note.body||note.content||''))}</p>`;showOverlay(document.getElementById('helperSheet'));return;}
     if(target.dataset.refEvent){const item=globalThis.allCalendarEvents().find(event=>sameId(event.id,target.dataset.refEvent));if(item)globalThis.openCalendarEvent(item);}
   },true);
+  function showRevisions(){
+    if(!flushDraft())return;
+    const project=allProjects().find(p=>sameId(p.id,state.projectId));if(!project)return;
+    document.getElementById('helperTitle').textContent='Версии заключения';
+    document.getElementById('helperContent').innerHTML=(project.draftHistory||[]).map(v=>`<article class="ref-revision"><time>${esc(humanTime(v.savedAt))}</time><p>${esc(stripHtml(v.html).slice(0,220))}</p><button type="button" class="btn" data-ref-restore-revision="${esc(v.id)}">Восстановить</button></article>`).join('')||'<p class="ref-caption">Предыдущих версий пока нет</p>';
+    showOverlay(document.getElementById('helperSheet'));
+  }
+  function restoreRevision(id){
+    if(!flushDraft())return;
+    const project=allProjects().find(p=>sameId(p.id,state.projectId)),revision=project?.draftHistory?.find(v=>v.id===id);
+    if(!revision)return;
+    const patch=LawyerWorkflow.draftPatch(project,sanitizeNoteHtml(revision.html),now());
+    if(patch&&updateProject(project.id,patch)){hideOverlay(document.getElementById('helperSheet'));render();toast('Версия восстановлена. Текущий текст сохранён в истории.');}
+  }
   async function deleteCase(id){
     const project=allProjects().find(item=>sameId(item.id,id));if(!project)return;
     flushDraft();save(LS.projects,allProjects().filter(item=>!sameId(item.id,id)));save(LS.projectTasks,load(LS.projectTasks).filter(item=>!sameId(item.projectId,id)));save(LS.notes,allNotes().filter(item=>!sameId(item.projectId,id)));
     for(const file of project.attachments||[]){try{await fileStore('delete',file.id);}catch{}}
     if(sameId(state.projectId,id))state.projectId=null;render();toast('Дело удалено');
   }
-  document.addEventListener('click',event=>{if(event.target.closest('[data-ref-close-note]'))hideOverlay(document.getElementById('noteSheet'));if(event.target.closest('#closeHelper'))hideOverlay(document.getElementById('helperSheet'));});
+  document.addEventListener('click',event=>{const restore=event.target.closest('[data-ref-restore-revision]');if(restore)restoreRevision(restore.dataset.refRestoreRevision);if(event.target.closest('[data-ref-close-note]'))hideOverlay(document.getElementById('noteSheet'));if(event.target.closest('#closeHelper'))hideOverlay(document.getElementById('helperSheet'));});
   document.addEventListener('keydown',event=>{
-    if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='s'&&state.projectId){event.preventDefault();flushDraft();}
+    if((event.metaKey||event.ctrlKey)&&event.key.toLowerCase()==='s'&&state.projectId){event.preventDefault();flushDraft();return;}
+    if(event.metaKey||event.ctrlKey||event.altKey||event.target.closest('input,textarea,select,[contenteditable="true"]')||document.querySelector('.overlay.show'))return;
+    if(event.key.toLowerCase()==='n'){event.preventDefault();fab.onclick();}
+    if(event.key==='/'){const search=document.getElementById('taskSearch')||document.getElementById('caseSearch');if(search){event.preventDefault();search.focus();}}
   });
   document.addEventListener('visibilitychange',()=>{if(document.hidden)flushDraft();});
   window.addEventListener('pagehide',flushDraft);

@@ -56,7 +56,7 @@ const test = async () => {
   try {
     await page.goto(baseURL);
     await page.waitForSelector('.ref-today-body');
-    assert.equal(await page.locator('#tabs .tab').count(),3);
+    assert.equal(await page.locator('#tabs .tab').count(),4);
     assert.equal(await page.locator('[data-tab="sessions"],[data-tab="documents"],[data-tab="more"],[data-tab="calendar"],[data-tab="search"],.brandmark').count(),0);
     assert.doesNotMatch(await page.locator('#page').innerText(),/Обзор дня|Продолжить работу|Обновления по делам|Ближайшие события/);
     assert.ok(await page.locator('#syncButton').isVisible());
@@ -65,7 +65,7 @@ const test = async () => {
     assert.ok(await page.locator('#tabs .icon').first().evaluate(el=>el.getBoundingClientRect().width)<=24);
     assert.ok(await page.locator('body').evaluate(el=>getComputedStyle(el).fontFamily.includes('sans-serif')));
     log('embedded mobile UI survives missing CSS and workspace JS asset requests');
-    log('simplified startup, three working sections, marked blocks and logo absent, cloud button accessible');
+    log('simplified startup, four working sections, marked blocks and logo absent, cloud button accessible');
 
     await tab('projects');
     await page.locator('[data-ref-new-project]').click();
@@ -130,6 +130,7 @@ const test = async () => {
     const downloaded=await fileDownload;assert.deepEqual(await fs.readFile(await downloaded.path()),pdf);
     log('upload, local blob persistence, download after reload');
 
+    await page.locator('[data-ref-toggle-tools]').click();
     await page.locator('[data-ref-helper="timeline"]').click();
     assert.match(await page.locator('#helperContent').innerText(),/Дело создано/);
     assert.match(await page.locator('#helperContent').innerText(),/Проверить комплект/);
@@ -158,7 +159,7 @@ const test = async () => {
 
     await page.locator('[data-set-priority]').first().click();
     assert.equal(await page.locator('#prioritySheet').getAttribute('aria-hidden'),'false');await close();
-    await tab('today');await page.locator('[data-ref-tab="priorities"]').click();
+    await tab('priorities');
     assert.ok(await page.locator('.priority-week').count() || await page.locator('.priority-day').count());
     log('standalone task edit and preserved weekly priorities');
 
@@ -227,6 +228,7 @@ const test = async () => {
     log('confirmed attachment deletion, case completion/reopen and scoped cascade deletion');
     assert.deepEqual(errors,[],'no uncaught browser errors');assert.deepEqual(failures,[],'no failed application assets');
     await require('./reference-cloud-browser.cjs')(browser,baseURL);
+    await require('./workflow-browser.cjs')(browser,baseURL);
     console.log('REFERENCE_WORKSPACE_PASS');
   } finally {await browser.close();if(staticServer)await new Promise(resolve=>staticServer.close(resolve));}
 };
