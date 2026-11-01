@@ -26,6 +26,7 @@ jobs:
           node tests/smoke.cjs
           node tests/sync.cjs
           node tests/sync-recovery.cjs
+          node tests/ios-viewport.cjs
           node tests/calendar-cloud-bridge.cjs
       - name: Prepare browser test runner
         run: npm install --prefix "$RUNNER_TEMP/tracker-test-deps" --ignore-scripts --no-audit --no-fund playwright@1.51.1

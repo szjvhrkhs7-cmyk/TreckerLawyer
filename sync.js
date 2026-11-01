@@ -16,7 +16,7 @@
     const calendarKey = LS.calendarEvents;
     LS.calendarEvents = `${calendarKey}__cloud-disabled`;
     try {
-      await loadScript('sync-core.js?v=20261031-workflow');
+      await loadScript('sync-core.js?v=20261101-outage-retry');
     } finally {
       LS.calendarEvents = calendarKey;
     }

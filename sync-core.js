@@ -34,6 +34,8 @@
   let flushTimer = null;
   let retryTimer = null;
   let syncPromise = null;
+  let syncRetryTimer = null;
+  let syncFailures = 0;
   let flushPromise = null;
   let revision = 0;
   const pending = new Map();
@@ -402,6 +404,8 @@
         } finally {
           applyingRemote = false;
         }
+        clearTimeout(syncRetryTimer);
+        syncFailures = 0;
         if (changed) render();
         if (pending.size) await flushPending();
         else {
@@ -411,6 +415,15 @@
       } catch (error) {
         console.warn('Cloud sync failed', error);
         setStatus(navigator.onLine ? 'error' : 'offline', friendlyError(error));
+        // A failed read must recover too, even when there is no pending upload.
+        // Authentication/permission errors need user action rather than a retry loop.
+        const temporary = error.status >= 500 || error.status === 429 ||
+          error.name === 'AbortError' || error instanceof TypeError;
+        if (temporary && session && navigator.onLine && !refreshRetryAt) {
+          clearTimeout(syncRetryTimer);
+          const delay = Math.min(60000, 5000 * (2 ** Math.min(syncFailures++, 4)));
+          syncRetryTimer = setTimeout(() => syncFromCloud().catch(() => {}), delay);
+        }
         throw error;
       } finally {
         syncPromise = null;
@@ -422,6 +435,7 @@
   function friendlyError(error) {
     const message = String(error?.message || '').toLowerCase();
     if (!navigator.onLine || message.includes('failed to fetch')) return 'Нет сети, данные сохранены локально';
+    if (error?.status >= 500) return 'Облачное хранилище временно недоступно. Аккаунт и локальные данные сохранены, повторим подключение автоматически';
     if (message.includes('invalid login')) return 'Неверная электронная почта или пароль';
     if (message.includes('email not confirmed')) return 'Сначала подтвердите электронную почту';
     if (message.includes('already registered') || message.includes('already been registered')) return 'Аккаунт уже создан, нажмите «Войти»';
@@ -529,6 +543,8 @@
     } catch (error) {
       console.warn('Cloud logout failed', error);
     }
+    clearTimeout(syncRetryTimer);
+    syncFailures = 0;
     pending.clear();
     lastRemoteAt.clear();
     setStatus('local', 'Данные сохранены на этом устройстве');

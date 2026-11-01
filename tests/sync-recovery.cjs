@@ -82,6 +82,23 @@ async function main() {
     assert.equal(JSON.parse(h.localStorage.getItem('lawyerCloudSession')).refresh_token, 'refresh-2', 'online event recovers without login');
   }
 
+  let unavailable = true;
+  const outage = harness({ saved: freshSession, fetch: url => unavailable && url.includes('/rest/v1/lawyer_store?user_id=') ? response(503, { message: 'Service unavailable' }) : null });
+  await settle();
+  assert(outage.localStorage.getItem('lawyerCloudSession'), 'data outage keeps the signed-in session');
+  assert.match(outage.elements.get('syncButton').title, /временно недоступно/i, 'server outage is identified without asking the user to sign in again');
+  assert([...outage.timers.values()].some(t => t.delay === 5000), 'failed cloud reads retry automatically before the polling interval');
+  await outage.runTimer(5000);
+  assert([...outage.timers.values()].some(t => t.delay === 10000), 'repeated outages back off');
+  unavailable = false;
+  await outage.runTimer(10000);
+  assert.equal(outage.elements.get('syncButton').dataset.state, 'synced', 'cloud read retries resume queued local uploads after server recovery');
+  assert(outage.requests.some(r => r.url.includes('on_conflict=')), 'queued tasks upload after recovery');
+
+  const forbidden = harness({ saved: freshSession, fetch: url => url.includes('/rest/v1/lawyer_store?user_id=') ? response(403, { code: '42501' }) : null });
+  await settle();
+  assert(![...forbidden.timers.values()].some(t => t.delay === 5000), 'permission errors do not retry as outages');
+
   const revoked = harness({ fetch: url => url.includes('grant_type=refresh_token') ? response(400, { code: 'refresh_token_not_found' }) : null });
   await settle();
   assert.equal(revoked.localStorage.getItem('lawyerCloudSession'), null, 'revoked session requires login');
