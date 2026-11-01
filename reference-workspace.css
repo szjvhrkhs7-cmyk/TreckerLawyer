@@ -434,3 +434,7 @@ body { background:var(--bg); }
 }
 .btn { border-radius:10px; }
 .priority-day.is-selected-day .priority-day__head { border-bottom-color:var(--accent); }
+@media(max-width:760px) {
+  .priority-header-actions > .priority-week-actions { width:auto; flex:1 1 190px; }
+  .priority-header-actions > .btn { flex:0 0 auto; }
+}
