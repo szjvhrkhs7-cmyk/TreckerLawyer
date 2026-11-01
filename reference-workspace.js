@@ -4,7 +4,7 @@
   const baseRenderTasks = renderTasks;
   const baseOpenProject = openProject;
   const baseOpenTask = openTask;
-  const titles = { today: 'Сегодня', tasks: 'Задачи', projects: 'Дела', priorities: 'Приоритеты' };
+  const titles = { today: 'Сегодня', tasks: 'Задачи', priorities: 'Приоритеты' };
   let draftTimer, pendingDraft = null, toastTimer, fileProjectId = null;
   let casePanel = 'draft';
   let helperHidden = true;
@@ -180,15 +180,14 @@
   function openFoundTask(entry){
     if(!entry)return;
     flushDraft();
-    state.taskOriginProject=state.projectId;
+    if(state.taskOriginProject===undefined)state.taskOriginProject=state.projectId;
     // Existing task editing code chooses storage using this scope.
     state.projectId=entry.task.projectId||null;
     baseOpenTask(entry.task);
   }
   updateHeader=function referenceHeader(){
-    const project=allProjects().find(item=>sameId(item.id,state.projectId));
+    const project=null;
     tasksCount.textContent=String(entries().filter(entry=>entry.task.status!=='done').length);
-    projectsCount.textContent=String(allProjects().filter(item=>!doneProject(item)).length);
     fab.classList.toggle('hidden',Boolean(project)||state.tab==='priorities'||window.innerWidth>760&&state.tab!=='today');
     const active=project?'projects':state.tab;
     document.querySelectorAll('#tabs .tab').forEach(button=>{const selected=button.dataset.tab===active;button.classList.toggle('active',selected);button.setAttribute('aria-selected',String(selected));button.tabIndex=selected?0:-1;});
@@ -205,9 +204,9 @@
     updateHeader();
     page.classList.toggle('calendar-page',state.tab==='calendar'&&!project);
     page.classList.toggle('priorities-page',state.tab==='priorities'&&!project);
-    if(project){renderCase(project);return;}
+
     if(state.tab==='today')renderToday();
-    else if(state.tab==='projects')renderCases();
+
     else if(state.tab==='tasks')baseRenderTasks();
     else if(state.tab==='priorities')globalThis.renderPriorities();
     bindAutoGrow(page);
@@ -225,7 +224,7 @@
   globalThis.openProject=openProject;
   applyTheme=function referenceApplyTheme(){document.documentElement.dataset.theme='dark';document.documentElement.style.colorScheme='dark';themeColor.content='#17191c';};
   globalThis.applyTheme=applyTheme;applyTheme();
-  fab.onclick=()=>state.tab==='projects'&&!state.projectId?openProject():state.tab==='priorities'?globalThis.openPriorityCreator():openTask();
+  fab.onclick=()=>state.tab==='priorities'?globalThis.openPriorityCreator():openTask();
   document.addEventListener('selectionchange',()=>{const editor=document.getElementById('caseDraft'),selection=window.getSelection();if(editor&&selection?.rangeCount&&editor.contains(selection.anchorNode)&&editor.contains(selection.focusNode))selectionRange=selection.getRangeAt(0).cloneRange();});
   page.addEventListener('mousedown',event=>{if(event.target.closest('[data-ref-format]'))event.preventDefault();});
   page.addEventListener('click',async event=>{
@@ -239,7 +238,7 @@
     if(target.hasAttribute('data-ref-new-project')){openProject();return;}
     if(target.hasAttribute('data-ref-new-event')){globalThis.openCalendarEvent();return;}
     if(target.hasAttribute('data-ref-sync')){syncButton.click();return;}
-    if(target.dataset.refCase){if(!flushDraft())return;state.projectId=target.dataset.refCase;state.tab='projects';state.query='';casePanel='draft';render();window.scrollTo(0,0);return;}
+    if(target.dataset.refCase)return;
     if(target.dataset.refTask){openFoundTask(taskById(target.dataset.refTask,target.dataset.key));return;}
     if(target.dataset.refToggleTask){
       const entry=taskById(target.dataset.refToggleTask,target.dataset.key);if(!entry)return;

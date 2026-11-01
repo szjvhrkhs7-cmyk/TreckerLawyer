@@ -116,7 +116,7 @@
     priorityForm.innerHTML = `<div class="sheet-fields">
       <p class="priority-picker-task">${esc(entry.task.title)}</p>
       <div class="field"><label for="priorityDay">День</label><input id="priorityDay" name="priorityDate" type="date" required value="${esc(dateKey(chosenDate))}"></div>
-      <div class="field"><label for="priorityLevel">Зона</label><select id="priorityLevel" name="priorityLevel"><option value="main">Главное</option><option value="other">Остальные задачи</option></select></div>
+      <div class="field"><label for="priorityLevel">Важность</label><select id="priorityLevel" name="priorityLevel"><option value="main">Главная задача</option><option value="other">Обычная</option></select></div>
 
     </div><div class="sheet-actions">
       <button type="button" class="btn" data-cancel-priority>Отмена</button>
@@ -138,7 +138,7 @@
       <div class="field"><label for="priorityTaskExtra">Что требуется дополнительно</label><textarea id="priorityTaskExtra" name="extra" data-autogrow="true"></textarea></div>
       <div class="grid2">
         <div class="field"><label for="priorityDay">День</label><input id="priorityDay" name="priorityDate" type="date" required value="${esc(priorityDate)}"></div>
-        <div class="field"><label for="priorityLevel">Зона</label><select id="priorityLevel" name="priorityLevel"><option value="main">Главное</option><option value="other">Остальные задачи</option></select></div>
+        <div class="field"><label for="priorityLevel">Важность</label><select id="priorityLevel" name="priorityLevel"><option value="main">Главная задача</option><option value="other">Обычная</option></select></div>
       </div>
       <div class="field"><label for="priorityTaskUrgency">Срочность</label><select id="priorityTaskUrgency" name="priority"><option value="normal">Обычная</option><option value="low">Низкая</option><option value="medium">Средняя</option><option value="high">Важно / срочно</option></select></div>
 
@@ -186,22 +186,23 @@
     return `<article class="priority-card${completed ? ' is-done' : ''}" data-priority-card="${id}" data-task-scope="${scope}" data-priority-date="${esc(task.priorityDate || '')}" data-priority-level="${esc(task.priorityLevel === 'other' ? 'other' : 'main')}">
       ${completed ? '' : priorityDragHandle(task)}
       <button type="button" class="priority-card__main" data-priority-open="${id}" data-task-scope="${scope}">
-        <strong>${esc(task.title || 'Без названия')}</strong>
+        <strong>${task.priorityLevel!=='other'?'<svg class="priority-star" viewBox="0 0 24 24" role="img" aria-label="Главная задача"><path d="m12 2 3.1 6.3 6.9 1-5 4.9 1.2 6.8-6.2-3.3L5.8 21l1.2-6.8-5-4.9 6.9-1Z"/></svg>':''}${esc(task.title || 'Без названия')}</strong>
         ${project ? `<span>${esc(project)}</span>` : ''}${task.dueDate?`<span class="priority-card__deadline">Срок ${esc(fmtDate(task.dueDate))}</span>`:''}
       </button>
       ${completed
         ? '<div class="priority-card__history"><span class="priority-card__done-badge">Выполнено</span></div>'
-        : `<div class="priority-card__actions">
-            <button type="button" class="priority-card__done" data-priority-done="${id}" data-task-scope="${scope}">Готово</button>
+        : `<details class="priority-card__menu"><summary aria-label="Действия задачи ${esc(task.title)}">${'<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="19" cy="12" r="1"/></svg>'}</summary><div class="priority-card__actions">
+            <button type="button" data-priority-star="${id}" data-task-scope="${scope}">${task.priorityLevel==='other'?'Сделать главной':'Сделать обычной'}</button>
             <button type="button" data-set-priority="${id}" data-task-scope="${scope}">Перенести</button>
+            <button type="button" class="priority-card__done" data-priority-done="${id}" data-task-scope="${scope}">Завершить</button>
             <button type="button" class="is-danger" data-priority-delete="${id}" data-task-scope="${scope}" aria-label="Удалить задачу ${esc(task.title)}">Удалить</button>
-          </div>`}
+          </div></details>`}
+
     </article>`;
   }
 
-  function zone(entries, level, emptyText, priorityDate) {
-    const matching = entries.filter(entry => (entry.task.priorityLevel === 'other' ? 'other' : 'main') === level);
-    return `<div class="priority-zone__head"><h3>${level === 'main' ? 'Главное' : 'Остальные задачи'}</h3><button type="button" class="priority-add" data-priority-add="${level}" data-priority-date="${esc(priorityDate)}" aria-label="Добавить задачу: ${level === 'main' ? 'главное' : 'остальные задачи'}">+ Добавить</button></div><div class="priority-zone__list" data-priority-dropzone data-priority-date="${esc(priorityDate)}" data-priority-level="${level}">${matching.length ? matching.map(taskCard).join('') : `<p class="priority-zone-empty">${emptyText}</p>`}</div>`;
+  function zone(entries, priorityDate) {
+    return `<div class="priority-zone__list" data-priority-dropzone data-priority-date="${esc(priorityDate)}" data-priority-level="mixed">${entries.map(taskCard).join('')}</div>`;
   }
 
   function announce(message) {
@@ -267,7 +268,7 @@
         const dayButton=hit?.closest?.('[data-priority-day-target]');
         if(dayButton){
           const day=page.querySelector(`.priority-day[data-priority-date="${dayButton.dataset.priorityDayTarget}"]`);
-          return day?.querySelector(`[data-priority-level="${card.dataset.priorityLevel}"]`)||null;
+          return day?.querySelector(`[data-priority-dropzone]`)||null;
         }
         return hit?.closest?.('[data-priority-dropzone]') || null;
       };
@@ -321,7 +322,7 @@
         const zoneElement=card.parentElement;
         if(!zoneElement?.matches?.('[data-priority-dropzone]'))return false;
         const next=card.nextElementSibling?.matches?.('[data-priority-card]')?card.nextElementSibling:null;
-        return commitMove({id:card.dataset.priorityCard,scope:card.dataset.taskScope},zoneElement.dataset.priorityDate,zoneElement.dataset.priorityLevel,next?{id:next.dataset.priorityCard,scope:next.dataset.taskScope}:null);
+        return commitMove({id:card.dataset.priorityCard,scope:card.dataset.taskScope},zoneElement.dataset.priorityDate,card.dataset.priorityLevel,next?{id:next.dataset.priorityCard,scope:next.dataset.taskScope}:null);
       };
 
       function finish(event) {
@@ -394,11 +395,12 @@
     page.innerHTML = `<section class="workspace-page priority-page">
       <header class="workspace-page-head priority-page-head">
         <div><h2>Приоритеты</h2><p>${esc(weekLabel(days))}</p></div>
-        <div class="priority-week-actions" aria-label="Навигация по неделям">
+<div class="priority-header-actions"><div class="priority-week-actions" aria-label="Навигация по неделям">
           <button type="button" class="btn" data-priority-week="prev" aria-label="Предыдущая неделя"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-left"></use></svg></button>
           <button type="button" class="btn${currentWeek ? ' is-current-week' : ''}" data-priority-week="today" aria-pressed="${currentWeek}">Эта неделя</button>
           <button type="button" class="btn" data-priority-week="next" aria-label="Следующая неделя"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-arrow-right"></use></svg></button>
         </div>
+        <button type="button" class="btn primary" data-priority-create>Добавить</button></div>
       </header>
       <div class="priority-day-picker" aria-label="День плана">${days.map(day=>`<button type="button" data-priority-day-target="${dateKey(day)}" aria-pressed="${dateKey(day)===selectedDay}"><span>${esc(formatDay(day,{weekday:'short'}))}</span><strong>${day.getDate()}</strong></button>`).join('')}</div>
       <p id="priorityAnnouncement" class="visually-hidden" role="status" aria-live="polite"></p>
@@ -409,8 +411,7 @@
           const dayEntries = entries.filter(entry => entry.task.priorityDate === key);
           return `<section class="priority-day${isToday ? ' is-today' : ''}${key===selectedDay?' is-selected-day':''}" data-priority-date="${key}"${isToday ? ' aria-current="date"' : ''}>
             <header class="priority-day__head"><strong>${esc(formatDay(day, { weekday: 'long' }))}</strong><span>${esc(formatDay(day, { day: 'numeric', month: 'long' }))}</span>${isToday ? '<em class="priority-day__today">Сегодня</em>' : ''}</header>
-            <div class="priority-zone priority-zone--main">${zone(dayEntries, 'main', 'Нет задач', key)}</div>
-            <div class="priority-zone priority-zone--other">${zone(dayEntries, 'other', 'Нет задач', key)}</div>
+            ${zone(dayEntries,key)}
           </section>`;
         }).join('')}
       </div>
@@ -499,6 +500,7 @@
       return;
     }
     if (state.tab !== 'priorities' || state.projectId) return;
+    if(event.target.closest('[data-priority-create]')){openPriorityCreator(selectedDay||dateKey(defaultPriorityDay()),'other');return;}
 
     const dayButton=event.target.closest('[data-priority-day-target]');
     if(dayButton){selectedDay=dayButton.dataset.priorityDayTarget;render();page.querySelector(`[data-priority-day-target="${selectedDay}"]`)?.focus({preventScroll:true});return;}
@@ -522,13 +524,14 @@
       return;
     }
 
-    const target = event.target.closest('[data-priority-open], [data-priority-done], [data-priority-delete]');
+    const target = event.target.closest('[data-priority-open], [data-priority-done], [data-priority-delete], [data-priority-star]');
     if (!target) return;
     event.preventDefault();
     event.stopPropagation();
-    const id = target.dataset.priorityOpen || target.dataset.priorityDone || target.dataset.priorityDelete;
+    const id = target.dataset.priorityOpen || target.dataset.priorityDone || target.dataset.priorityDelete || target.dataset.priorityStar;
     const entry = findTask(id, target.dataset.taskScope || 'root');
     if (!entry) return;
+    if(target.dataset.priorityStar){if(saveTask(entry,{priorityLevel:entry.task.priorityLevel==='other'?'main':'other'})){render();announce('Важность изменена');}return;}
     if (target.dataset.priorityOpen) {
       openTask(entry.task);
       return;
@@ -570,9 +573,9 @@
       if(event.key==='ArrowUp'){if(i===0)return;before={id:cards[i-1].dataset.priorityCard,scope:cards[i-1].dataset.taskScope};}
       else {if(i===cards.length-1)return;const n=cards[i+2];before=n?{id:n.dataset.priorityCard,scope:n.dataset.taskScope}:null;}
     }
-    if(commitMove(ref,date,zone.dataset.priorityLevel,before)){selectedDay=date;weekAnchor=startOfWeek(fromDateKey(date));rememberWeekAnchor();render();focusHandle(ref);announce('Порядок задач сохранён');}
+    if(commitMove(ref,date,card.dataset.priorityLevel,before)){selectedDay=date;weekAnchor=startOfWeek(fromDateKey(date));rememberWeekAnchor();render();focusHandle(ref);announce('Порядок задач сохранён');}
   });
-  globalThis.openPriorityCreator = ()=>openPriorityCreator(selectedDay||dateKey(defaultPriorityDay()),'main');
+  globalThis.openPriorityCreator = ()=>openPriorityCreator(selectedDay||dateKey(defaultPriorityDay()),'other');
   globalThis.priorityTaskCount = priorityTaskCount;
   globalThis.renderPriorities = renderPriorities;
   globalThis.openPriorityPicker = openPriorityPicker;

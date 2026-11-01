@@ -34,3 +34,7 @@ assert.equal(typeof W.commitCollections,'function','priority writes need rollbac
 assert.equal(W.commitCollections(data,moved,(scope,value)=>{writes++;if(writes===2)return false;disk[scope]=structuredClone(value);return true;}),false);
 assert.deepEqual(disk,data,'failed second write rolls back the first collection');
 console.log('PASS workflow: scope-safe persistent order, unchanged deadlines, validation, bounded recoverable revisions');
+const mixed={root:[{id:'main',priorityDate:'2026-11-02',priorityLevel:'main',priorityOrder:0},{id:'ordinary',priorityDate:'2026-11-02',priorityLevel:'other',priorityOrder:1}],project:[]};
+const reordered=W.movePriority(mixed,{id:'ordinary',scope:'root'},{date:'2026-11-02',level:'other',before:{id:'main',scope:'root'}});
+assert.deepEqual(W.ordered(reordered.root.map(task=>({scope:'root',task}))).map(e=>e.task.id),['ordinary','main'],'one list orders across importance flags');
+assert.equal(reordered.root.find(t=>t.id==='main').priorityLevel,'main','reordering must not change another task importance');

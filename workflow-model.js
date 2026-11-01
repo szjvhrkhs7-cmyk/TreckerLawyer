@@ -9,14 +9,14 @@
     const entries=Object.entries(collections).flatMap(([scope,items])=>items.map(task=>({scope,task,id:task.id})));
     const current=entries.find(e=>same(e,ref));
     if(!current||['done','completed'].includes(current.task.status))return null;
-    const target=ordered(entries.filter(e=>!same(e,ref)&&e.task.priorityDate===destination.date&&(e.task.priorityLevel==='other'?'other':'main')===destination.level));
+    const target=ordered(entries.filter(e=>!same(e,ref)&&e.task.priorityDate===destination.date));
     const index=destination.before?target.findIndex(e=>same(e,destination.before)):-1;
     target.splice(index<0?target.length:index,0,current);
     const next={};
     for(const [scope,items] of Object.entries(collections))next[scope]=items.map(task=>{
       const order=target.findIndex(e=>same(e,{scope,id:task.id}));
       if(order<0)return {...task};
-      return {...task,priorityDate:destination.date,priorityLevel:destination.level,priorityOrder:order,updatedAt:timestamp};
+      return {...task,priorityDate:destination.date,priorityLevel:same({scope,id:task.id},ref)?destination.level:(task.priorityLevel==='other'?'other':'main'),priorityOrder:order,updatedAt:timestamp};
     });
     return next;
   }

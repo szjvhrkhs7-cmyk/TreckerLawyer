@@ -3,8 +3,9 @@
 
   const RESTORED_STATUS = 'new';
 
-  function findStoredTask(id) {
+  function findStoredTask(id,scope) {
     for (const key of [LS.tasks, LS.projectTasks]) {
+      if(scope&&key!==(scope==='project'?LS.projectTasks:LS.tasks))continue;
       const items = load(key);
       const index = items.findIndex(item => valid(item) && sameId(item.id, id));
       if (index >= 0) return { key, items, index, task: normTask(items[index]) };
@@ -25,13 +26,13 @@
     save(LS.projects, projects);
   }
 
-  function restoreTask(id) {
-    const stored = findStoredTask(id);
+  function restoreTask(id,scope) {
+    const stored = findStoredTask(id,scope);
     if (!stored || stored.task.status !== 'done') return false;
     const restored = { ...stored.items[stored.index], status: RESTORED_STATUS, updatedAt: now() };
     delete restored.completedAt;
     stored.items[stored.index] = restored;
-    save(stored.key, stored.items);
+    if(save(stored.key, stored.items)===false)return false;
     reopenParentProject(stored.task);
     return true;
   }
@@ -54,7 +55,7 @@
 
   function enhanceCompletedRows(root = page) {
     root?.querySelectorAll?.('.workspace-task-row.is-done[data-sort-id]').forEach(row => {
-      const id = row.dataset.sortId;
+      const id = row.dataset.taskId || row.dataset.sortId;
       const actions = row.querySelector('.workspace-row-actions');
       if (!actions || actions.querySelector('[data-restore-task]')) return;
       const button = document.createElement('button');
@@ -86,7 +87,8 @@
     event.preventDefault();
     event.stopPropagation();
     const id = button.dataset.restoreTask;
-    if (!restoreTask(id)) return;
+    const scope=button.closest('[data-task-scope]')?.dataset.taskScope || (taskSheet.contains(button)?(state.editingTask?.projectId?'project':'root'):null);
+    if (!restoreTask(id,scope)) return;
     if (taskSheet.contains(button)) hideOverlay(taskSheet);
     render();
     showRestoreToast();

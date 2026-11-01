@@ -20,6 +20,7 @@ jobs:
           node-version: 22
       - name: Storage, ordering and cloud regression checks
         run: |
+          node tests/task-scope.cjs
           node tests/completion-undo.cjs
           node tests/workflow-model.cjs
           node tests/smoke.cjs
@@ -32,7 +33,7 @@ jobs:
         run: |
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
           test -n "$CHROME"
-          NODE_PATH="$RUNNER_TEMP/tracker-test-deps/node_modules" TEST_BROWSER_EXECUTABLE="$CHROME" TEST_SCREENSHOT_DIR="$RUNNER_TEMP/reference-qa" node tests/reference-workspace.cjs
+          NODE_PATH="$RUNNER_TEMP/tracker-test-deps/node_modules" TEST_BROWSER_EXECUTABLE="$CHROME" TEST_SCREENSHOT_DIR="$RUNNER_TEMP/reference-qa" node tests/simple-workspace.cjs
       - name: Upload actual interface screenshots
         if: always()
         uses: actions/upload-artifact@v4

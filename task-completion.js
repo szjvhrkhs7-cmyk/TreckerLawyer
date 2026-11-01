@@ -84,7 +84,7 @@
     const action = event.target.closest('[data-done-task], [data-task-detail-done]');
     if (!action) return;
     if (typeof state !== 'undefined') state.showCompleted = true;
-    const task = action.hasAttribute('data-done-task') ? tasks().find(item => sameId(item.id, action.dataset.doneTask)) : state.editingTask;
+    const task = action.hasAttribute('data-done-task') ? scopedTask(action.dataset.doneTask,action) : state.editingTask;
     const id = task?.id;
     const key = task?.projectId ? LS.projectTasks : LS.tasks;
     const previous = load(key).find(item => sameId(item.id, id));
