@@ -15,8 +15,8 @@ module.exports = async function verifyCloudAndFocus(browser,baseURL) {
   const poll=async predicate=>{const start=Date.now();while(Date.now()-start<12000){if(await predicate())return;await new Promise(resolve=>setTimeout(resolve,60));}throw new Error('Cloud roundtrip timed out');};
   async function device(){
     const context=await browser.newContext({viewport:{width:1440,height:900}});contexts.push(context);
-    await context.addInitScript(({user})=>localStorage.setItem('lawyerCloudSession',JSON.stringify({access_token:'qa-access-token',refresh_token:'qa-refresh-token',expires_at:Math.floor(Date.now()/1000)+3600,user})),{user});
-    await context.route('https://cfkpxrvinkcutbtqpufa.supabase.co/**',async route=>{
+    await context.addInitScript(({user})=>localStorage.setItem('lawyerCloudSession_qwnkigorqsgugcctnfmj',JSON.stringify({access_token:'qa-access-token',refresh_token:'qa-refresh-token',expires_at:Math.floor(Date.now()/1000)+3600,user})),{user});
+    await context.route('https://qwnkigorqsgugcctnfmj.supabase.co/**',async route=>{
       const req=route.request(),url=new URL(req.url());
       const headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'GET,POST,OPTIONS'};
       if(req.method()==='OPTIONS'){await route.fulfill({status:204,headers});return;}

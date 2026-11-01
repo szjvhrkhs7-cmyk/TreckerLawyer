@@ -28,7 +28,7 @@ async function main() {
     taskOrder: 'lawyerTaskOrder', projectTaskOrder: 'lawyerProjectTaskOrder', projectOrder: 'lawyerProjectOrder', noteOrder: 'lawyerNoteOrder'
   };
   const localStorage = new Storage({
-    lawyerCloudSession: JSON.stringify({ access_token: 'access', refresh_token: 'refresh', expires_at: Math.floor(Date.now() / 1000) + 3600, user: { id: 'user/one', email: 'owner@example.test' } }),
+    lawyerCloudSession_qwnkigorqsgugcctnfmj: JSON.stringify({ access_token: 'access', refresh_token: 'refresh', expires_at: Math.floor(Date.now() / 1000) + 3600, user: { id: 'user/one', email: 'owner@example.test' } }),
     lawyerTasks: '[]',
     lawyerCalendarEvents: JSON.stringify([{ id: 'local-event', title: 'Calendar copy', date: '2026-08-31', startTime: '10:00', endTime: '11:00' }]),
     lawyerProjects: JSON.stringify([{ id: 'local-project', title: 'Local copy' }])

@@ -1,8 +1,8 @@
 (() => {
   'use strict';
 
-  const SUPABASE_URL = 'https://cfkpxrvinkcutbtqpufa.supabase.co';
-  const SESSION_KEY = 'lawyerCloudSession';
+  const SUPABASE_URL = 'https://qwnkigorqsgugcctnfmj.supabase.co';
+  const SESSION_KEY = 'lawyerCloudSession_qwnkigorqsgugcctnfmj';
   const DIAGNOSTIC_KEY = 'lawyerCloudDiagnostic';
   const RELOGIN_KEY = 'lawyerCloudNeedsRelogin';
   const originalFetch = globalThis.fetch.bind(globalThis);

@@ -1,10 +1,12 @@
 (() => {
   'use strict';
 
-  const SUPABASE_URL = 'https://cfkpxrvinkcutbtqpufa.supabase.co';
-  const SUPABASE_KEY = 'sb_publishable_VAKzxSJ53hXxd4Tvk0FFlw_D_sNbFq9';
-  const SESSION_KEY = 'lawyerCloudSession';
+  const SUPABASE_URL = 'https://qwnkigorqsgugcctnfmj.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_pmAp_voLq3GvpnSAeu4AIw_opSxTWXB';
+  const SESSION_KEY = 'lawyerCloudSession_qwnkigorqsgugcctnfmj';
   const DIRTY_KEY = 'lawyerCloudDirty';
+  const MIGRATION_KEY = 'lawyerCloudMigrated_qwnkigorqsgugcctnfmj';
+  const BACKUP_KEY = 'lawyerCloudBackup_before_qwnkigorqsgugcctnfmj';
   const storageEntries = [
     [LS.tasks, 'tasks'],
     [LS.projects, 'projects'],
@@ -23,6 +25,7 @@
   const syncContent = document.getElementById('syncContent');
 
   let session = null;
+  let backupReady = false;
   let applyingRemote = false;
   let syncState = 'local';
   let syncLabel = 'Данные сохраняются на устройстве';
@@ -49,6 +52,25 @@
     } catch {
       return {};
     }
+  }
+
+  function preserveLocalSnapshot() {
+    if (localStorage.getItem(BACKUP_KEY)) { backupReady = true; return; }
+    const values = Object.fromEntries(storageEntries.map(([key]) => [key, load(key)]));
+    // Finish the durable backup before any connection or reconciliation can run.
+    localStorage.setItem(BACKUP_KEY, JSON.stringify({ at: new Date().toISOString(), values }));
+    backupReady = true;
+  }
+
+  function mergeFirstConnection(remote, local) {
+    const identity = item => item && typeof item === 'object' && item.id != null
+      ? `id:${item.id}` : `value:${JSON.stringify(item)}`;
+    const merged = new Map(local.map(item => [identity(item), item]));
+    for (const item of remote) {
+      const key = identity(item);
+      if (!merged.has(key)) merged.set(key, item);
+    }
+    return [...merged.values()];
   }
 
   function readSession() {
@@ -340,6 +362,9 @@
             pending.delete(localKey);
             clearDirty(localKey, entry.timestamp);
             lastRemoteAt.set(localKey, entry.timestamp);
+            const migrated = readObject(MIGRATION_KEY);
+            migrated[localKey] = true;
+            localStorage.setItem(MIGRATION_KEY, JSON.stringify(migrated));
           }
         }
         lastSyncAt = new Date();
@@ -374,11 +399,30 @@
         const rows = await fetchCloudRows();
         const remoteByKey = new Map(rows.map(row => [row.storage_key, row]));
         let changed = false;
+        const migrated = readObject(MIGRATION_KEY);
         applyingRemote = true;
         try {
           for (const [localKey, storageKey] of storageEntries) {
             const remote = remoteByKey.get(storageKey);
             const localDirtyAt = dirty[localKey];
+            if (!migrated[localKey]) {
+              const localValue = load(localKey);
+              if (remote && !Array.isArray(remote.value)) throw new Error('INVALID_CLOUD_DATA');
+              if (remote && localValue.length) {
+                const merged = mergeFirstConnection(remote.value, localValue);
+                // Persist the merged copy and dirty queue before marking this key migrated.
+                localStorage.setItem(localKey, JSON.stringify(merged));
+                changed = true;
+                if (JSON.stringify(merged) !== JSON.stringify(remote.value)) {
+                  queueValue(localKey, merged, markDirty(localKey));
+                  continue;
+                }
+              }
+              if (remote || (!localValue.length && !localDirtyAt)) {
+                migrated[localKey] = true;
+                localStorage.setItem(MIGRATION_KEY, JSON.stringify(migrated));
+              }
+            }
             if (!remote) {
               const localValue = load(localKey);
               if (localValue.length || localDirtyAt) {
@@ -454,7 +498,7 @@
   function renderSyncPanel(message = '', messageType = '') {
     if (!session?.user) {
       syncContent.innerHTML = `
-        <p class="sync-intro">Войдите с одной и той же почтой на всех устройствах. Текущие данные останутся в браузере и будут скопированы в защищённое сетевое хранилище.</p>
+        <p class="sync-intro">${backupReady ? 'Адрес облака обновлён. Войдите с одной и той же почтой на всех устройствах. Локальная резервная копия сохранена, при первом подключении данные будут объединены с облачными.' : 'Не удалось создать резервную копию. Освободите место в браузере и повторите вход. До сохранения резервной копии подключение остановлено.'}</p>
         <form class="form" id="cloudAuthForm">
           <div class="field"><label for="cloudEmail">Электронная почта</label><input id="cloudEmail" name="email" type="email" autocomplete="email" required></div>
           <div class="field"><label for="cloudPassword">Пароль</label><input id="cloudPassword" name="password" type="password" minlength="6" autocomplete="current-password" required></div>
@@ -498,6 +542,11 @@
   }
 
   async function submitAuth(form, createAccount) {
+    try { preserveLocalSnapshot(); }
+    catch {
+      renderSyncPanel('Не удалось сохранить резервную копию. Освободите место в браузере и повторите вход.', 'error');
+      return;
+    }
     if (!form.reportValidity()) return;
     const data = new FormData(form);
     const email = String(data.get('email') || '').trim();
@@ -557,6 +606,15 @@
     const accessToken = params.get('access_token');
     const refreshToken = params.get('refresh_token');
     if (!accessToken || !refreshToken) return null;
+    let issuer = '';
+    try {
+      const payload = accessToken.split('.')[1];
+      issuer = JSON.parse(atob(payload.replace(/-/g, '+').replace(/_/g, '/'))).iss;
+    } catch {}
+    if (issuer !== `${SUPABASE_URL}/auth/v1`) {
+      history.replaceState(null, '', location.pathname + location.search);
+      return null;
+    }
     const expiresIn = Number(params.get('expires_in') || 3600);
     history.replaceState(null, '', location.pathname + location.search);
     return {
@@ -570,10 +628,15 @@
 
   async function initialize() {
     syncButton.onclick = () => { renderSyncPanel(); showOverlay(syncSheet); };
+    try { preserveLocalSnapshot(); }
+    catch {
+      setStatus('error', 'Не удалось создать резервную копию. Освободите место в браузере и обновите страницу. Локальные данные не изменены');
+      return;
+    }
     const redirected = sessionFromHash();
     saveSession(redirected || readSession());
     if (!session) {
-      setStatus('local', 'Данные сохраняются на устройстве');
+      setStatus('local', 'Адрес облака обновлён. Войдите для подключения, локальные данные сохранены');
       return;
     }
     setStatus('connecting', 'Восстанавливаем подключение');

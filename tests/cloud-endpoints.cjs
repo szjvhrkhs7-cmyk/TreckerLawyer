@@ -1,8 +1,19 @@
 // Read-only availability checks; does not authenticate a user or modify cloud records.
 const fs=require('node:fs');
+const assert=require('node:assert/strict');
 const source=fs.readFileSync('sync-core.js','utf8');
 const url=source.match(/const SUPABASE_URL = '([^']+)'/)[1];
 const key=source.match(/const SUPABASE_KEY = '([^']+)'/)[1];
+assert.equal(url,'https://qwnkigorqsgugcctnfmj.supabase.co');
+for(const file of ['sync-recovery.js','sync-diagnostic.js']){
+ const module=fs.readFileSync(file,'utf8');
+ assert.equal(module.match(/const SUPABASE_URL = '([^']+)'/)[1],url,file+' project matches');
+ assert.equal(module.match(/const SESSION_KEY = '([^']+)'/)[1],source.match(/const SESSION_KEY = '([^']+)'/)[1],file+' uses project-scoped session');
+ if(file==='sync-diagnostic.js')assert.equal(module.match(/const SUPABASE_KEY = '([^']+)'/)[1],key);
+}
+const html=fs.readFileSync('index.html','utf8');
+assert(html.includes("connect-src 'self' "+url+';'),'CSP permits configured backend');
+assert(!html.includes('cfkpxrvinkcutbtqpufa'),'CSP no longer permits obsolete project');
 (async()=>{
  const settings=await fetch(url+'/auth/v1/settings',{headers:{apikey:key},signal:AbortSignal.timeout(20000)});
  console.log('Auth settings HTTP',settings.status);

@@ -5,8 +5,8 @@ module.exports=async function(browser,baseURL){
  const poll=async fn=>{const t=Date.now();while(Date.now()-t<10000){if(await fn())return;await new Promise(r=>setTimeout(r,60));}throw Error('Cloud state timeout');};
  async function device(){
   const context=await browser.newContext({viewport:{width:1280,height:900}});contexts.push(context);
-  await context.addInitScript(({user})=>{if(!localStorage.getItem('lawyerCloudSession'))localStorage.setItem('lawyerCloudSession',JSON.stringify({access_token:'qa-access',refresh_token:'qa-refresh',expires_at:Math.floor(Date.now()/1000)+3600,user}));},{user});
-  await context.route('https://cfkpxrvinkcutbtqpufa.supabase.co/**',async route=>{
+  await context.addInitScript(({user})=>{if(!localStorage.getItem('lawyerCloudSession_qwnkigorqsgugcctnfmj'))localStorage.setItem('lawyerCloudSession_qwnkigorqsgugcctnfmj',JSON.stringify({access_token:'qa-access',refresh_token:'qa-refresh',expires_at:Math.floor(Date.now()/1000)+3600,user}));},{user});
+  await context.route('https://qwnkigorqsgugcctnfmj.supabase.co/**',async route=>{
    const req=route.request(),url=new URL(req.url()),headers={'access-control-allow-origin':'*','access-control-allow-headers':'*','access-control-allow-methods':'GET,POST,OPTIONS'};
    if(req.method()==='OPTIONS'){await route.fulfill({status:204,headers});return;}
    if(url.pathname.startsWith('/auth/v1/')){await route.fulfill({status:200,contentType:'application/json',headers,body:JSON.stringify(url.pathname.endsWith('/user')?user:{access_token:'qa-access',refresh_token:'qa-refresh',expires_at:Math.floor(Date.now()/1000)+3600,user})});return;}

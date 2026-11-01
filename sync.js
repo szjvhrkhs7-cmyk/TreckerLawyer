@@ -16,16 +16,16 @@
     const calendarKey = LS.calendarEvents;
     LS.calendarEvents = `${calendarKey}__cloud-disabled`;
     try {
-      await loadScript('sync-core.js?v=20261101-outage-retry');
+      await loadScript('sync-core.js?v=20261101-correct-project');
     } finally {
       LS.calendarEvents = calendarKey;
     }
   }
 
   // Cloud modules are isolated so a network or Supabase failure cannot disable local UI modules.
-  loadScript('sync-recovery.js?v=20260910-session-recovery-1')
+  loadScript('sync-recovery.js?v=20261101-correct-project')
     .then(() => window.lawyerCloudRecoveryReady || Promise.resolve())
-    .then(() => loadScript('sync-diagnostic.js?v=20260831-sync-diagnostic-1'))
+    .then(() => loadScript('sync-diagnostic.js?v=20261101-correct-project'))
     .then(() => loadCloudCoreWithoutCalendar())
     .then(() => loadScript('calendar-cloud-bridge.js?v=20260831-calendar-cloud-1'))
     .catch(error => console.error('Cloud sync module loading failed', error));
