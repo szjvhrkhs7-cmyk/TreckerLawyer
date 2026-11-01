@@ -174,7 +174,7 @@
     const id = esc(String(task.id));
     const tone = taskTone(task);
     const project = taskProject(task);
-    return `<article class="workspace-task-row workspace-task-row--${tone} ${done ? 'is-done' : ''}" data-sort-id="${id}">
+    return `<article class="workspace-task-row workspace-task-row--${tone} ${done ? 'is-done' : ''}" data-sort-id="${esc(state.projectId?String(task.id):taskSortKey(task))}" data-task-id="${id}" data-task-scope="${task.projectId?'project':'root'}">
       ${done ? '<span class="workspace-task-row__done-mark" aria-hidden="true"><svg class="icon" aria-hidden="true" focusable="false"><use href="#i-check"></use></svg></span>' : dragHandle(`задачу ${task.title}`)}
       <button type="button" class="workspace-task-main" data-edit-task="${id}">
         <strong>${esc(task.title || 'Без названия')}</strong>
@@ -363,8 +363,8 @@
     if (editTaskButton) {
       event.preventDefault();
       event.stopPropagation();
-      const task = tasks().find(item => sameId(item.id, editTaskButton.dataset.editTask));
-      if (task) workspaceOpenTask(task);
+      const task = scopedTask(editTaskButton.dataset.editTask,editTaskButton);
+      if (task) globalThis.openTask(task);
       return;
     }
     if (event.target.closest('[data-workspace-new-task]')) {
