@@ -25,6 +25,7 @@ jobs:
           node tests/workflow-model.cjs
           node tests/journal-model.cjs
           node tests/journal-release.cjs
+          node tests/date-forms.cjs
           node tests/journal-sync.cjs
           node tests/embedded-assets.cjs
           node tests/smoke.cjs
