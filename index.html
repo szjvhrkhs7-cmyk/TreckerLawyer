@@ -9,7 +9,7 @@
   <meta name="apple-mobile-web-app-title" content="Трекер юриста">
   <meta id="themeColor" name="theme-color" content="#f7f6f2">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://qwnkigorqsgugcctnfmj.supabase.co; img-src 'self' data: blob:; style-src 'self' 'sha256-/7BnhKG+z5sMB6qwQEU1oShdXT3gyHX6otVlj7Zrvbg='; font-src 'self' https://raw.githubusercontent.com; script-src 'self' 'sha256-/i58DcikVnpFeZY4XVWLmuYYul5HpEhJ/ql89L/Oe+E='; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://qwnkigorqsgugcctnfmj.supabase.co; img-src 'self' data: blob:; style-src 'self' 'sha256-LkoaXT43ZXb+2pr9RVUQdaOprHVGn6gYIAcNPy/pQds='; font-src 'self' https://raw.githubusercontent.com; script-src 'self' 'sha256-/i58DcikVnpFeZY4XVWLmuYYul5HpEhJ/ql89L/Oe+E='; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
   <title>Трекер юриста</title>
   <link rel="icon" type="image/png" sizes="32x32" href="tracker-bookmark-32.png?v=20261107-bookmark">
   <link rel="apple-touch-icon" sizes="180x180" href="tracker-bookmark-180.png?v=20261107-bookmark">
@@ -72,6 +72,23 @@
 /* Approved double-bookmark identity, variant 3. */
 .brandname{display:flex;align-items:center;gap:8px}
 .brand-logo{width:20px;height:24px;flex-shrink:0;color:var(--text)}
+
+/* Keep mobile content below the iOS status-bar blur, including standalone PWAs. */
+@media(max-width:600px),(display-mode:standalone){
+  :root{
+    --mobile-top-gap:24px;
+    --mobile-overlay-top:max(16px,calc(env(safe-area-inset-top,0px) + var(--mobile-top-gap)));
+    --mobile-overlay-bottom:max(16px,env(safe-area-inset-bottom,0px));
+  }
+  .brandbar{padding-top:calc(max(16px,env(safe-area-inset-top,0px)) + var(--mobile-top-gap))}
+  .overlay,.j-date-overlay{
+    padding-top:var(--mobile-overlay-top);
+    padding-bottom:var(--mobile-overlay-bottom);
+  }
+  .sheet,.confirm-box,.j-date-picker.sheet{
+    max-height:calc(100dvh - var(--mobile-overlay-top) - var(--mobile-overlay-bottom));
+  }
+}
 
 </style>
   <script src="theme-init.js?v=20261107-offline"></script>

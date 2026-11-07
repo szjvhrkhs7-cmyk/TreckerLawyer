@@ -53,3 +53,20 @@
 /* Approved double-bookmark identity, variant 3. */
 .brandname{display:flex;align-items:center;gap:8px}
 .brand-logo{width:20px;height:24px;flex-shrink:0;color:var(--text)}
+
+/* Keep mobile content below the iOS status-bar blur, including standalone PWAs. */
+@media(max-width:600px),(display-mode:standalone){
+  :root{
+    --mobile-top-gap:24px;
+    --mobile-overlay-top:max(16px,calc(env(safe-area-inset-top,0px) + var(--mobile-top-gap)));
+    --mobile-overlay-bottom:max(16px,env(safe-area-inset-bottom,0px));
+  }
+  .brandbar{padding-top:calc(max(16px,env(safe-area-inset-top,0px)) + var(--mobile-top-gap))}
+  .overlay,.j-date-overlay{
+    padding-top:var(--mobile-overlay-top);
+    padding-bottom:var(--mobile-overlay-bottom);
+  }
+  .sheet,.confirm-box,.j-date-picker.sheet{
+    max-height:calc(100dvh - var(--mobile-overlay-top) - var(--mobile-overlay-bottom));
+  }
+}
