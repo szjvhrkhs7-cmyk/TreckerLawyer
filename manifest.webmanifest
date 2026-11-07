@@ -3,20 +3,20 @@
   "short_name": "Трекер",
   "description": "Приоритеты, задачи и подзадачи юриста",
   "lang": "ru",
-  "start_url": "./?source=pwa&v=20261107-date-forms",
+  "start_url": "./?source=pwa&v=20261107-bookmark",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f7f6f2",
   "theme_color": "#f7f6f2",
   "icons": [
     {
-      "src": "tracker-icon-graphite-192.png",
+      "src": "tracker-bookmark-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
     },
     {
-      "src": "tracker-icon-graphite-512.png",
+      "src": "tracker-bookmark-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"

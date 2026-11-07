@@ -18,9 +18,9 @@ assert.equal(manifest.name, 'Трекер юриста');
 assert.doesNotMatch(html, /fonts\.googleapis\.com|fonts\.gstatic\.com/);
 assert.doesNotMatch(html, /user-scalable=no/);
 assert.match(html, /reference-workspace\.css/);
-assert.deepEqual(manifest.icons.map(icon => icon.src), ['tracker-icon-graphite-192.png', 'tracker-icon-graphite-512.png']);
-assert.match(html, /apple-touch-icon[^>]+tracker-icon-graphite-180\.png/);
-assert.match(resetCacheHtml, /tracker-icon-graphite-180\.png/);
+assert.deepEqual(manifest.icons.map(icon => icon.src), ['tracker-bookmark-192.png', 'tracker-bookmark-512.png']);
+assert.match(html, /apple-touch-icon[^>]+tracker-bookmark-180\.png/);
+assert.match(resetCacheHtml, /tracker-bookmark-180\.png/);
 
 class ClassList {
   constructor(owner) { this.owner = owner; this.values = new Set(); }
