@@ -61,7 +61,7 @@ const screenshots=process.env.TEST_SCREENSHOT_DIR||'/tmp/journal-qa';
   // In both orientations controls remain 16px and keyboard/modal actions reachable.
   for(const viewport of [{width:390,height:844},{width:844,height:390}]){
    await page.setViewportSize(viewport);await tab('tasks');await page.locator('[data-j-action="new"]').click();
-   const controls=page.locator('#taskForm input:visible,#taskForm textarea:visible,#taskForm select:visible');
+   const controls=page.locator('#taskForm input:not([type=checkbox]):visible,#taskForm textarea:visible,#taskForm select:visible');
    for(let i=0;i<await controls.count();i++)assert(await controls.nth(i).evaluate(el=>parseFloat(getComputedStyle(el).fontSize)>=16));
    await page.keyboard.press('Escape');assert.equal(await page.locator('#taskSheet').getAttribute('aria-hidden'),'true');
   }

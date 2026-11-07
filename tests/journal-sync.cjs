@@ -47,7 +47,9 @@ async function main() {
     try { const value = JSON.parse(localStorage.getItem(key) || '[]'); return Array.isArray(value) ? value : []; }
     catch { return []; }
   };
-  const shortTimeout = (callback, delay = 0) => delay > 1000 ? 0 : setTimeout(callback, delay);
+  const longTimers=new Map();let timerId=0;
+  const shortTimeout=(callback,delay=0)=>{if(delay>1000){const id=--timerId;longTimers.set(id,{callback,delay});return id;}return setTimeout(callback,delay);};
+  const clearTracked=id=>{longTimers.delete(id);clearTimeout(id);};
   const context = {
     LS: keys,
     localStorage,
@@ -58,7 +60,7 @@ async function main() {
     document: { visibilityState: 'visible', getElementById: id => elements.get(id) || new Element(), addEventListener() {} },
     window: { addEventListener() {} },
     render() {}, load, esc: value => String(value), showOverlay() {}, hideOverlay() {},
-    setTimeout: shortTimeout, clearTimeout, setInterval: () => 0, console, Date, JSON, Map, URLSearchParams, FormData
+    setTimeout: shortTimeout, clearTimeout:clearTracked, setInterval: () => 0, console, Date, JSON, Map, URLSearchParams, FormData
   };
   context.window.window = context.window;
   vm.runInNewContext(source, context, { filename: 'sync.js' });
@@ -71,6 +73,7 @@ async function main() {
   assert.equal(context.window.lawyerCloud.getState().enabled, true);
   await context.window.lawyerCloud.setEnabled(false);
   assert.equal(context.window.lawyerCloud.getState().paused, true);
+  assert.equal([...longTimers.values()].filter(t=>t.delay>60000).length,0,'pause cancels scheduled token refresh');
   assert.equal(context.window.lawyerCloud.getState().enabled, false);
   const count = requests.length;
   context.window.lawyerCloud.onLocalSave(keys.tasks, [{id:'paused', title:'Local edit while paused'}]);

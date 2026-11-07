@@ -144,7 +144,8 @@
     localStorage.setItem(PAUSED_KEY, enabled ? '0' : '1');
     paused = !enabled;
     clearTimeout(flushTimer); clearTimeout(retryTimer); clearTimeout(syncRetryTimer);
-    if (paused) { setStatus('local', 'Синхронизация приостановлена'); return; }
+    if (paused) { clearTimeout(refreshTimer); refreshTimer = null; setStatus('local', 'Синхронизация приостановлена'); return; }
+    scheduleRefresh();
     if (!session?.user) { setStatus('local', 'Войдите, чтобы включить синхронизацию'); renderSyncPanel(); showOverlay(syncSheet); return; }
     // An older operation may have been paused mid-flight. Let it leave its guarded section first.
     await Promise.allSettled([syncPromise, flushPromise].filter(Boolean));
@@ -193,7 +194,7 @@
 
   function scheduleRefresh() {
     clearTimeout(refreshTimer);
-    if (!session?.expires_at) return;
+    if (paused || !session?.expires_at) return;
     const delay = Math.max(15000, (Number(session.expires_at) * 1000) - Date.now() - 60000);
     refreshTimer = setTimeout(() => refreshSession().catch(() => {}), Math.min(delay, 2147483647));
   }
@@ -261,6 +262,7 @@
   }
 
   async function refreshSession() {
+    if (paused) return session;
     if (refreshPromise) return refreshPromise;
     const requestedToken = session?.refresh_token;
     const refresh = async () => {
