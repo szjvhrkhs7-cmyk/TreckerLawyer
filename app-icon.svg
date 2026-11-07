@@ -1,3 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Трекер юриста">
-  <image href="app-icon-512.png" width="512" height="512" preserveAspectRatio="xMidYMid slice"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Трекер юриста: две закладки">
+  <rect width="512" height="512" fill="#252421"/>
+  <path d="M144 112H276V336L210 290L144 336Z" fill="#F7F6F2"/>
+  <path d="M228 160H376V408L302 362L228 408Z" fill="#252421"/>
+  <path d="M236 168H368V400L302 354L236 400Z" fill="#C4511E"/>
 </svg>

@@ -49,3 +49,7 @@
 .j-date-footer .j-text{font-size:13px;min-height:36px}
 @media(max-width:520px){.grid2{grid-template-columns:minmax(0,1fr)}.sheet{padding:22px;max-width:100%}#prioritySheet .sheet{padding:22px}}
 @media(max-width:360px){.overlay{padding-inline:14px}.sheet,#prioritySheet .sheet{padding:18px}.j-date-overlay{padding:12px}.j-date-picker.sheet{padding:14px}}
+
+/* Approved double-bookmark identity, variant 3. */
+.brandname{display:flex;align-items:center;gap:8px}
+.brand-logo{width:20px;height:24px;flex-shrink:0;color:var(--text)}
