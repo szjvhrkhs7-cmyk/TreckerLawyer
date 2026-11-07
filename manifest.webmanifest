@@ -1,13 +1,13 @@
 {
   "name": "Трекер юриста",
   "short_name": "Трекер",
-  "description": "Дела, задачи, заключения и календарь юриста",
+  "description": "Приоритеты, задачи и подзадачи юриста",
   "lang": "ru",
-  "start_url": "./?source=pwa&v=20261101-simple",
+  "start_url": "./?source=pwa&v=20261107-journal",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#17191c",
-  "theme_color": "#17191c",
+  "background_color": "#f7f6f2",
+  "theme_color": "#f7f6f2",
   "icons": [
     {
       "src": "tracker-icon-graphite-192.png",

@@ -1,5 +1,10 @@
-document.documentElement.dataset.theme='dark';
-document.documentElement.style.colorScheme='dark';
+(() => {
+let journalTheme='light';
+try{if(localStorage.getItem('lawyerTheme')==='dark')journalTheme='dark';}catch{}
+document.documentElement.dataset.theme=journalTheme;
+document.documentElement.style.colorScheme=journalTheme;
+
+})();
 
 // WebKit can focus-zoom even with 16px controls after restoring a page.
 // Apply the scale hint only to iOS; Safari still permits intentional pinch zoom.

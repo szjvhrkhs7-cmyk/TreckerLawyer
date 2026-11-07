@@ -5,7 +5,7 @@ const crypto = require('node:crypto');
 const root = path.resolve(__dirname, '..');
 const hash = text => 'sha256-' + crypto.createHash('sha256').update(text).digest('base64');
 let html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
-const css = '\n' + ['priorities.css', 'calendar.css', 'reference-workspace.css'].map(name => `/* ${name} */\n${fs.readFileSync(path.join(root, name), 'utf8')}`).join('\n') + '\n';
+const css = '\n' + ['reference-workspace.css'].map(name => `/* ${name} */\n${fs.readFileSync(path.join(root, name), 'utf8')}`).join('\n') + '\n';
 const js = '\n/* reference-workspace.js */\n' + fs.readFileSync(path.join(root, 'reference-workspace.js'), 'utf8') + '\n';
 if (/<\/style/i.test(css) || /<\/script/i.test(js)) throw new Error('Unexpected closing tag in embedded asset');
 const style = `<style id="releaseStyles">${css}</style>`;
