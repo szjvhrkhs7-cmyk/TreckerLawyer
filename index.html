@@ -9,12 +9,12 @@
   <meta name="apple-mobile-web-app-title" content="Трекер юриста">
   <meta id="themeColor" name="theme-color" content="#f7f6f2">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://qwnkigorqsgugcctnfmj.supabase.co; img-src 'self' data: blob:; style-src 'self' 'sha256-/7BnhKG+z5sMB6qwQEU1oShdXT3gyHX6otVlj7Zrvbg='; font-src 'self' https://raw.githubusercontent.com; script-src 'self' 'sha256-wKsece56r6EwZAAQG+rjgzNkk7UC0BD/eionaLpYZhY='; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://qwnkigorqsgugcctnfmj.supabase.co; img-src 'self' data: blob:; style-src 'self' 'sha256-/7BnhKG+z5sMB6qwQEU1oShdXT3gyHX6otVlj7Zrvbg='; font-src 'self' https://raw.githubusercontent.com; script-src 'self' 'sha256-/i58DcikVnpFeZY4XVWLmuYYul5HpEhJ/ql89L/Oe+E='; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
   <title>Трекер юриста</title>
   <link rel="icon" type="image/png" sizes="32x32" href="tracker-bookmark-32.png?v=20261107-bookmark">
   <link rel="apple-touch-icon" sizes="180x180" href="tracker-bookmark-180.png?v=20261107-bookmark">
   <link rel="apple-touch-icon-precomposed" sizes="180x180" href="tracker-bookmark-180.png?v=20261107-bookmark">
-  <link rel="manifest" href="manifest.webmanifest?v=20261107-bookmark">
+  <link rel="manifest" href="manifest.webmanifest?v=20261107-offline">
   <style id="releaseStyles">
 /* reference-workspace.css */
 /* Journal workspace: one responsive visual system, no stacked theme overrides. */
@@ -74,7 +74,7 @@
 .brand-logo{width:20px;height:24px;flex-shrink:0;color:var(--text)}
 
 </style>
-  <script src="theme-init.js?v=20261107-date-forms"></script>
+  <script src="theme-init.js?v=20261107-offline"></script>
 </head>
 <body>
   <svg class="icon-sprite" aria-hidden="true">
@@ -147,11 +147,11 @@
   <div class="reference-toast" id="referenceToast" role="status" aria-live="polite"></div>
   <input id="caseFileInput" type="file" multiple hidden>
   <input id="restoreInput" type="file" accept="application/json" hidden>
-<script src="app-core.js?v=20261107-date-forms"></script>
-<script src="workflow-model.js?v=20261107-date-forms"></script>
-<script src="task-completion.js?v=20261107-date-forms"></script>
+<script src="app-core.js?v=20261107-offline"></script>
+<script src="workflow-model.js?v=20261107-offline"></script>
+<script src="task-completion.js?v=20261107-offline"></script>
 <script src="qwen-enhancements.js?v=20260901-workspace-final"></script>
-<script src="date-picker.js?v=20261107-date-forms"></script>
+<script src="date-picker.js?v=20261107-offline"></script>
 <script id="releaseWorkspace">
 /* reference-workspace.js */
 /* The journal presentation reuses existing storage and the project-scoped cloud. */
@@ -206,7 +206,8 @@
   function renderSettings(){
     const cloud=cloudState();
     const last=cloud.lastSyncAt?new Date(cloud.lastSyncAt).toLocaleString('ru-RU',{day:'numeric',month:'long',hour:'2-digit',minute:'2-digit'}):'Еще не выполнялась';
-    page.innerHTML=`<div class="j-settings-layout">${header(titles.settings,false)}<section class="j-setting-section" aria-labelledby="cloudHeading"><h3 id="cloudHeading">Облачная синхронизация</h3><div class="j-setting-row"><div><strong>Синхронизация</strong><small>${cloud.enabled?'Включена':cloud.paused?'Приостановлена':'На этом устройстве'}</small></div><button type="button" role="switch" class="j-switch" id="cloudEnabled" aria-label="Облачная синхронизация" aria-checked="${cloud.enabled}" ${cloud.ready?'':'disabled'} data-j-action="cloud-toggle"></button></div>${cloud.email?`<div class="j-setting-row"><div><strong>Аккаунт</strong><small>${esc(cloud.email)}</small></div><button type="button" class="j-text" data-j-action="cloud-logout">Выйти</button></div>`:`<div class="j-setting-row"><div><strong>Подключить аккаунт</strong><small>Войдите с одной почтой на ваших устройствах</small></div><button type="button" class="j-text" data-j-action="cloud-login" ${cloud.ready?'':'disabled'}>Войти</button></div>`}<div class="j-setting-row"><strong>Последняя синхронизация</strong><span id="cloudLastSync">${esc(last)}</span></div><p class="j-sync-status${cloud.state==='error'?' is-danger':''}" id="cloudStatus" role="status">${esc(cloud.label)}</p><p class="j-help">Задачи, подзадачи и план будут доступны на ваших устройствах. При отключении синхронизации локальные данные сохранятся.</p>${cloud.email?`<button type="button" class="btn outline" data-j-action="cloud-sync" ${cloud.enabled?'':'disabled'}>Синхронизировать сейчас</button>`:''}</section><section class="j-setting-section" aria-labelledby="appearanceHeading"><h3 id="appearanceHeading">Оформление</h3><label class="j-setting-row" for="journalTheme"><strong>Тема</strong><select class="j-select" id="journalTheme" aria-label="Цветовая тема"><option value="light">Светлая</option><option value="dark">Темная</option></select></label></section><section class="j-setting-section" aria-labelledby="dataHeading"><h3 id="dataHeading">Данные</h3><button type="button" class="j-setting-row" data-j-action="backup"><strong>Экспорт резервной копии</strong>${icon('arrow-right')}</button><button type="button" class="j-setting-row" data-j-action="restore"><strong>Восстановить из копии</strong>${icon('arrow-right')}</button><p class="j-help">Копия включает задачи, подзадачи, план и ранее сохраненные материалы.</p></section></div>`;
+    const offline=window.lawyerOffline?.getState?.()||{ready:false,label:'Подготавливаем автономный запуск…'};
+    page.innerHTML=`<div class="j-settings-layout">${header(titles.settings,false)}<section class="j-setting-section" aria-labelledby="cloudHeading"><h3 id="cloudHeading">Облачная синхронизация</h3><div class="j-setting-row"><div><strong>Синхронизация</strong><small>${cloud.enabled?'Включена':cloud.paused?'Приостановлена':'На этом устройстве'}</small></div><button type="button" role="switch" class="j-switch" id="cloudEnabled" aria-label="Облачная синхронизация" aria-checked="${cloud.enabled}" ${cloud.ready?'':'disabled'} data-j-action="cloud-toggle"></button></div>${cloud.email?`<div class="j-setting-row"><div><strong>Аккаунт</strong><small>${esc(cloud.email)}</small></div><button type="button" class="j-text" data-j-action="cloud-logout">Выйти</button></div>`:`<div class="j-setting-row"><div><strong>Подключить аккаунт</strong><small>Войдите с одной почтой на ваших устройствах</small></div><button type="button" class="j-text" data-j-action="cloud-login" ${cloud.ready?'':'disabled'}>Войти</button></div>`}<div class="j-setting-row"><strong>Последняя синхронизация</strong><span id="cloudLastSync">${esc(last)}</span></div><p class="j-sync-status${cloud.state==='error'?' is-danger':''}" id="cloudStatus" role="status">${esc(cloud.label)}</p><p class="j-help">Задачи, подзадачи и план будут доступны на ваших устройствах. При отключении синхронизации локальные данные сохранятся.</p>${cloud.email?`<button type="button" class="btn outline" data-j-action="cloud-sync" ${cloud.enabled?'':'disabled'}>Синхронизировать сейчас</button>`:''}</section><section class="j-setting-section" aria-labelledby="offlineHeading"><h3 id="offlineHeading">Работа без интернета</h3><div class="j-setting-row"><strong>Автономный запуск</strong><span id="offlineReady">${offline.ready?'Готов':'Подготовка'}</span></div><p class="j-help" id="offlineStatus" role="status">${esc(offline.label)}</p>${offline.updateAvailable?'<button type="button" class="btn outline" data-j-action="app-update">Обновить приложение</button><p class="j-help">Обновление уже сохранено и готово к установке.</p>':''}</section><section class="j-setting-section" aria-labelledby="appearanceHeading"><h3 id="appearanceHeading">Оформление</h3><label class="j-setting-row" for="journalTheme"><strong>Тема</strong><select class="j-select" id="journalTheme" aria-label="Цветовая тема"><option value="light">Светлая</option><option value="dark">Темная</option></select></label></section><section class="j-setting-section" aria-labelledby="dataHeading"><h3 id="dataHeading">Данные</h3><button type="button" class="j-setting-row" data-j-action="backup"><strong>Экспорт резервной копии</strong>${icon('arrow-right')}</button><button type="button" class="j-setting-row" data-j-action="restore"><strong>Восстановить из копии</strong>${icon('arrow-right')}</button><p class="j-help">Копия включает задачи, подзадачи, план и ранее сохраненные материалы.</p></section></div>`;
     document.getElementById('journalTheme').value=document.documentElement.dataset.theme==='dark'?'dark':'light';
   }
   applyTheme=function journalTheme(theme,persist=false){const next=theme==='dark'?'dark':'light';document.documentElement.dataset.theme=next;document.documentElement.style.colorScheme=next;themeColor.content=next==='dark'?'#1d1e20':'#f7f6f2';if(persist)try{localStorage.setItem(THEME_KEY,next);}catch{}};
@@ -285,6 +286,7 @@
     if(action==='schedule-new'){schedule();return;}
     if(action==='completed'){state.showCompleted=!state.showCompleted;render();return;}
     if(action==='sort'){order=order==='due'?'manual':'due';render();notify(order==='due'?'Задачи упорядочены по сроку':'Восстановлен ваш порядок');return;}
+    if(action==='app-update'){await window.lawyerOffline?.applyUpdate();return;}
     if(action==='backup'){backup();return;}
     if(action==='restore'){askConfirm('Данные из резервной копии заменят соответствующие разделы на этом устройстве. Выбрать файл?',()=>restoreInput.click());confirmAccept.textContent='Выбрать файл';return;}
     if(action.startsWith('cloud-')){
@@ -330,6 +332,7 @@
     handle.addEventListener('lostpointercapture',cancel,{once:true});window.addEventListener('pointermove',move,{passive:false,capture:true});window.addEventListener('pointerup',finish,true);window.addEventListener('pointercancel',cancel,true);
   });
   window.addEventListener('storage',event=>{if(Object.values(LS).includes(event.key)&&!document.querySelector('.overlay.show'))render();});
+  window.addEventListener('lawyer-offline-state',()=>{if(state.tab==='settings'&&!document.querySelector('.overlay.show'))renderSettings();});
   window.addEventListener('lawyer-cloud-state',()=>{if(state.tab==='settings'&&!document.querySelector('.overlay.show')){const focus=document.activeElement?.id;renderSettings();if(focus)document.getElementById(focus)?.focus({preventScroll:true});}});
   document.addEventListener('keydown',event=>{if(event.key.toLowerCase()==='n'&&!event.metaKey&&!event.ctrlKey&&!event.altKey&&!event.target.closest('input,textarea,select,[contenteditable=true]')&&!document.querySelector('.overlay.show'))openEditor(null,state.tab==='priorities'?{priorityDate:selectedDay}:{});});
   tabs.addEventListener('keydown', event => {
@@ -346,6 +349,7 @@
 })();
 
 </script>
-<script src="sync.js?v=20261107-date-forms"></script>
+<script src="offline.js?v=20261107-offline"></script>
+<script src="sync.js?v=20261107-offline"></script>
 </body>
 </html>

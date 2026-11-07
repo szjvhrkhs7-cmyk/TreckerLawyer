@@ -1,0 +1,10 @@
+const fs=require('node:fs'),crypto=require('node:crypto'),assert=require('node:assert/strict');
+const source=fs.readFileSync('sw.js','utf8'),html=fs.readFileSync('index.html','utf8');
+const assets=JSON.parse(source.match(/const ASSETS = ([\s\S]*?);\nconst BASE/)[1]);
+const paths=new Set(assets.map(a=>a.path));
+for(const a of assets)assert.equal('sha256-'+crypto.createHash('sha256').update(fs.readFileSync(a.path)).digest('base64'),a.integrity,'offline package stale: '+a.path);
+for(const m of html.matchAll(/<script\b[^>]*\bsrc="([^"]+)"/g))assert(paths.has(m[1].split('?')[0]),'uncached script '+m[1]);
+for(const m of fs.readFileSync('sync.js','utf8').matchAll(/loadScript\('([^']+)'/g))assert(paths.has(m[1].split('?')[0]),'uncached deferred script '+m[1]);
+assert(!fs.readFileSync('app-core.js','utf8').includes('r.unregister()'),'startup must not unregister offline worker');
+assert(html.includes('offline.js?v='));
+console.log('OFFLINE_ASSETS_PASS: complete public package, exact integrity hashes and no startup unregistration');

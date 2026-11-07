@@ -16,7 +16,7 @@ function response(status, body) {
   return { ok: status >= 200 && status < 300, status, clone: () => response(status, body), text: async () => JSON.stringify(body) };
 }
 const settle = async () => { for (let i = 0; i < 40; i++) await Promise.resolve(); };
-function harness({ fetch, saved = initialSession, storage, locks, hash = '' } = {}) {
+function harness({ fetch, saved = initialSession, storage, locks, hash = '', online = true } = {}) {
   const localStorage = storage || new Storage({
     lawyerCloudSession_qwnkigorqsgugcctnfmj: JSON.stringify(saved),
     lawyerTasks: JSON.stringify([{ id: 'task-1', title: 'Keep local data' }]),
@@ -33,7 +33,7 @@ function harness({ fetch, saved = initialSession, storage, locks, hash = '' } = 
   const context = {
     LS: Object.fromEntries(['tasks', 'projects', 'projectTasks', 'notes', 'calendarEvents', 'taskOrder', 'projectTaskOrder', 'projectOrder', 'noteOrder'].map(k => [k, 'lawyer' + k[0].toUpperCase() + k.slice(1)])),
     localStorage, sessionStorage: new Storage(),
-    navigator: { onLine: true, locks },
+    navigator: { onLine: online, locks },
     location: { hash, pathname: '/', search: '', reload() {} }, history: { replaceState() {} },
     document: { visibilityState: 'visible', getElementById(id) { if (!elements.has(id)) elements.set(id, element()); return elements.get(id); }, createElement: element, addEventListener: (name, fn) => events.set(name, fn) },
     addEventListener: (name, fn) => events.set(name, fn),
@@ -63,6 +63,15 @@ function harness({ fetch, saved = initialSession, storage, locks, hash = '' } = 
   return { context, localStorage, requests, events, timers, elements, refreshes, runTimer, advance: ms => { clock += ms; } };
 }
 async function main() {
+  const offlineBoot = harness({saved:{...freshSession,user:null},online:false,fetch:url=>url.includes('/auth/v1/user')?response(200,freshSession.user):null}); await settle();
+  assert.equal(offlineBoot.requests.length,0,'offline startup never authenticates or fetches user data');
+  assert(![...offlineBoot.timers.values()].some(t=>t.delay===5000||t.delay===15000),'offline startup has no network retry timers');
+  offlineBoot.context.navigator.onLine=true;offlineBoot.events.get('online')();await settle();
+  assert(offlineBoot.requests.some(r=>r.url.includes('/auth/v1/user')),'user restoration resumes only after online');
+  const offlineExpired = harness({online:false});await settle();
+  assert.equal(offlineExpired.requests.length,0,'expired session stays local offline');
+  assert(![...offlineExpired.timers.values()].some(t=>t.delay===5000||t.delay===15000),'expired offline session waits for online event');
+  assert(offlineExpired.localStorage.getItem('lawyerCloudSession_qwnkigorqsgugcctnfmj'));
   const legacySession = JSON.stringify(initialSession);
   const legacyStorage = new Storage({ lawyerCloudSession: legacySession, lawyerTasks: '[{"id":"legacy-task"}]', lawyerCloudDirty: '{"lawyerTasks":"2099-01-01T00:00:00Z"}' });
   const legacy = harness({ storage: legacyStorage }); await settle();

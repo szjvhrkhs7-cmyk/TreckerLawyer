@@ -56,6 +56,7 @@
   }
 
   async function check(url, token) {
+    if (!navigator.onLine) return {status:0,code:'OFFLINE'};
     try {
       const response = await globalThis.fetch(url, {
         method: 'GET',

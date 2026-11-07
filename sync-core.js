@@ -194,7 +194,7 @@
 
   function scheduleRefresh() {
     clearTimeout(refreshTimer);
-    if (paused || !session?.expires_at) return;
+    if (paused || !navigator.onLine || !session?.expires_at) return;
     const delay = Math.max(15000, (Number(session.expires_at) * 1000) - Date.now() - 60000);
     refreshTimer = setTimeout(() => refreshSession().catch(() => {}), Math.min(delay, 2147483647));
   }
@@ -222,6 +222,7 @@
   }
 
   async function timedRequest(url, options, raw = false) {
+    if (!navigator.onLine) throw new Error('OFFLINE');
     const controller = new AbortController();
     const timer = setTimeout(() => controller.abort(), 20000);
     try {
@@ -262,7 +263,7 @@
   }
 
   async function refreshSession() {
-    if (paused) return session;
+    if (paused || !navigator.onLine) return session;
     if (refreshPromise) return refreshPromise;
     const requestedToken = session?.refresh_token;
     const refresh = async () => {
@@ -295,7 +296,7 @@
           const delay = Math.min(60000, 5000 * (2 ** Math.min(refreshFailures++, 4)));
           refreshRetryAt = Date.now() + delay;
           clearTimeout(refreshTimer);
-          refreshTimer = setTimeout(() => syncFromCloud().catch(() => {}), delay);
+          refreshTimer = navigator.onLine ? setTimeout(() => syncFromCloud().catch(() => {}), delay) : null;
           setStatus(navigator.onLine ? 'error' : 'offline', 'Аккаунт сохранён. Подключение восстановится автоматически');
         }
         throw error;
@@ -387,7 +388,7 @@
       setStatus('syncing', 'Сохраняем изменения в облаке');
       try {
         for (const [localKey, entry] of [...pending.entries()]) {
-          if (paused || !session) break;
+          if (paused || !navigator.onLine || !session) break;
           await upsertCloudValue(localKey, entry);
           const current = pending.get(localKey);
           if (current?.revision === entry.revision) {
@@ -399,13 +400,13 @@
             localStorage.setItem(MIGRATION_KEY, JSON.stringify(migrated));
           }
         }
-        lastSyncAt = new Date();
-        setStatus('synced', 'Локальная и сетевая копии сохранены');
+        if (!pending.size) { lastSyncAt = new Date(); setStatus('synced', 'Локальная и сетевая копии сохранены'); }
+        else if (!navigator.onLine) setStatus('offline', 'Нет сети, изменения сохранены локально');
       } catch (error) {
         console.warn('Cloud save failed', error);
         setStatus(navigator.onLine ? 'error' : 'offline', friendlyError(error));
         clearTimeout(retryTimer);
-        retryTimer = setTimeout(() => flushPending().catch(() => {}), 5000);
+        retryTimer = navigator.onLine ? setTimeout(() => flushPending().catch(() => {}), 5000) : null;
         throw error;
       } finally {
         flushPromise = null;
@@ -431,7 +432,7 @@
         await loadUser();
         if (paused) return;
         const rows = await fetchCloudRows();
-        if (paused || !session) return;
+        if (paused || !navigator.onLine || !session) return;
         const remoteByKey = new Map(rows.map(row => [row.storage_key, row]));
         let changed = false;
         const migrated = readObject(MIGRATION_KEY);
@@ -677,6 +678,7 @@
       setStatus('local', 'Адрес облака обновлён. Войдите для подключения, локальные данные сохранены');
       return;
     }
+    if (!navigator.onLine) { setStatus('offline', 'Нет сети. Данные сохраняются на устройстве'); return; }
     setStatus('connecting', 'Восстанавливаем подключение');
     try {
       await ensureSession();
@@ -690,11 +692,15 @@
   window.addEventListener('online', () => {
     adoptSavedSession();
     refreshRetryAt = 0;
-    if (!session) return;
+    if (paused || !session) return;
+    scheduleRefresh();
     setStatus('syncing', 'Соединение восстановлено');
     syncFromCloud().catch(() => scheduleFlush(1000));
   });
-  window.addEventListener('offline', () => setStatus('offline', 'Нет сети, локальная копия доступна'));
+  window.addEventListener('offline', () => {
+    clearTimeout(refreshTimer); clearTimeout(flushTimer); clearTimeout(retryTimer); clearTimeout(syncRetryTimer);
+    setStatus('offline', 'Нет сети, локальная копия доступна');
+  });
   function resumeSync() {
     adoptSavedSession();
     if (document.visibilityState === 'visible' && session) syncFromCloud().catch(() => {});
