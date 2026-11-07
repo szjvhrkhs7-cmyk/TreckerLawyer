@@ -3,7 +3,7 @@
   "short_name": "Трекер",
   "description": "Приоритеты, задачи и подзадачи юриста",
   "lang": "ru",
-  "start_url": "./?source=pwa&v=20261107-journal",
+  "start_url": "./?source=pwa&v=20261107-date-forms",
   "scope": "./",
   "display": "standalone",
   "background_color": "#f7f6f2",

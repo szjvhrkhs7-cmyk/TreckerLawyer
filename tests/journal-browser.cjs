@@ -33,7 +33,7 @@ const screenshots=process.env.TEST_SCREENSHOT_DIR||'/tmp/journal-qa';
   await page.getByRole('button',{name:'Отменить выполнение задачи «Общая задача»',exact:true}).click();assert.equal((await read('lawyerTasks'))[0].status,'inwork');assert.equal((await read('lawyerTasks'))[0].subtasks.length,3);
   console.log('PASS nested subtasks: add/edit/complete/reload, parent confirmation/cancel and undo');
   // Schedule an existing task without changing its deadline, then test month layout and keyboard reorder.
-  await tab('priorities');await page.locator('[data-j-action="schedule-new"]').click();await page.locator('#priorityExisting').selectOption('root:same');await page.locator('#priorityDay').fill('2026-11-09');await page.locator('#priorityForm [name=main]').check();await page.locator('#priorityForm [type=submit]').click();
+  await tab('priorities');await page.locator('[data-j-action="schedule-new"]').click();await page.locator('#priorityExisting').selectOption('root:same');await require('./date-forms-browser.cjs').pickDate(page,'priorityDay','2026-11-09');await page.locator('#priorityForm [name=main]').check();await page.locator('#priorityForm [type=submit]').click();
   assert.equal((await read('lawyerTasks'))[0].dueDate,'2026-11-20');assert.equal(await page.locator('.j-star').count(),1);
   await page.locator('[data-j-action="calendar-toggle"]').click();assert.equal(await page.locator('[data-j-day]').count(),30);
   assert.equal(await page.locator('[data-j-day="2026-11-01"]').evaluate(el=>[...el.parentElement.children].indexOf(el)),13,'Sunday November 1 follows seven labels and six blanks');
@@ -76,6 +76,7 @@ const screenshots=process.env.TEST_SCREENSHOT_DIR||'/tmp/journal-qa';
   console.log('PASS backup/restore includes subtasks and historical materials, login entry, persistent theme');
   assert.deepEqual(errors,[],'no browser exceptions');assert.deepEqual(csp,[],'no CSP violations');assert.deepEqual(failed,[],'no failed application assets');await context.close();
   await require('./journal-cloud-browser.cjs')(browser,baseURL);
+  await require('./date-forms-browser.cjs')(browser,baseURL,screenshots);
   console.log('JOURNAL_WORKSPACE_PASS');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>server?.close());

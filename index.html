@@ -9,12 +9,12 @@
   <meta name="apple-mobile-web-app-title" content="Трекер юриста">
   <meta id="themeColor" name="theme-color" content="#f7f6f2">
   <meta name="referrer" content="no-referrer">
-  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://qwnkigorqsgugcctnfmj.supabase.co; img-src 'self' data: blob:; style-src 'self' 'sha256-+PmDnfJLlzvVmKaYyJZ0AkxcZMum8vjcJv6twx7FabU='; font-src 'self' https://raw.githubusercontent.com; script-src 'self' 'sha256-yemvFBRA51zB1wixkQPdIgJDJzF33S+2OUL29n6JG00='; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; connect-src 'self' https://qwnkigorqsgugcctnfmj.supabase.co; img-src 'self' data: blob:; style-src 'self' 'sha256-LoWgxH3rVn5rN6Qu3MN2Atca/rfa5/sWuARVJL4w74U='; font-src 'self' https://raw.githubusercontent.com; script-src 'self' 'sha256-wKsece56r6EwZAAQG+rjgzNkk7UC0BD/eionaLpYZhY='; object-src 'none'; base-uri 'self'; form-action 'self'; frame-src 'none'; media-src 'none'; manifest-src 'self'; worker-src 'self'; upgrade-insecure-requests">
   <title>Трекер юриста</title>
   <link rel="icon" type="image/png" sizes="192x192" href="tracker-icon-graphite-192.png?v=20260901-graphite">
   <link rel="apple-touch-icon" sizes="180x180" href="tracker-icon-graphite-180.png?v=20260901-graphite">
   <link rel="apple-touch-icon-precomposed" sizes="180x180" href="tracker-icon-graphite-180.png?v=20260901-graphite">
-  <link rel="manifest" href="manifest.webmanifest?v=20261107-journal">
+  <link rel="manifest" href="manifest.webmanifest?v=20261107-date-forms">
   <style id="releaseStyles">
 /* reference-workspace.css */
 /* Journal workspace: one responsive visual system, no stacked theme overrides. */
@@ -27,8 +27,50 @@
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
 @supports not (backdrop-filter:blur(1px)){.tabs{background:var(--surface)}}
 
+/* Forms use identical bounded controls; native iOS date intrinsic widths are removed. */
+.form,.sheet-fields,.grid2{width:100%;min-width:0;max-width:100%}
+.grid2{grid-template-columns:repeat(2,minmax(0,1fr));align-items:end}
+.field{width:100%;max-width:100%;min-width:0}
+.field input:not([type=checkbox]),.field select,.j-date-trigger{box-sizing:border-box;width:100%;max-width:100%;min-width:0;height:48px;min-height:48px;font-size:16px;line-height:1.25;border:1px solid var(--line);border-radius:10px;background:var(--bg);padding:12px;text-align:left}
+.field select{overflow:hidden;text-overflow:ellipsis}
+.j-date-trigger{display:flex;align-items:center;justify-content:space-between;gap:10px;appearance:none;-webkit-appearance:none}
+.j-date-trigger [data-date-text]{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.j-date-trigger .icon{width:19px;height:19px;color:var(--muted)}
+.j-date-trigger.is-empty [data-date-text]{color:var(--muted)}
+.j-date-trigger:hover{border-color:var(--accent);color:var(--text)}
+.overlay{padding:max(16px,env(safe-area-inset-top)) 20px max(16px,env(safe-area-inset-bottom))}
+.sheet{max-width:540px;margin:0 auto}
+#prioritySheet .sheet{max-width:420px;padding:24px}
+#prioritySheet h2{font-size:23px;line-height:1.25;margin-bottom:24px}
+#priorityForm{gap:24px}
+#priorityForm .sheet-fields{gap:20px}
+#priorityForm .j-check-label{margin:0;min-height:36px}
+#priorityForm .sheet-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;width:100%;margin-top:0;padding:0}
+#priorityForm .sheet-actions .btn{width:100%;min-width:0;margin:0}
+#priorityForm [data-j-create-instead]{grid-column:1/-1;color:var(--accent);border-color:transparent;background:transparent;min-height:40px;padding:8px}
+.j-date-overlay{z-index:80;padding:12px}
+.j-date-picker.sheet{width:100%;max-width:320px;max-height:calc(100dvh - 24px);padding:16px;border-radius:18px;overflow:auto}
+.j-date-title{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.j-date-title h2{font-size:15px;letter-spacing:0;line-height:1.35;margin:0;font-weight:600}
+.j-date-title .j-icon{width:32px;min-height:32px}
+.j-date-title .icon{width:18px;height:18px}
+.j-date-month{display:flex;align-items:center;justify-content:space-between;gap:4px;margin-bottom:10px}
+.j-date-month strong{font-size:15px;font-weight:600;text-transform:capitalize}
+.j-date-month .j-icon{width:36px;min-height:36px}
+.j-date-month .icon{width:18px;height:18px}
+.j-date-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:3px}
+.j-date-grid>span{display:grid;place-items:center;min-height:26px;font-size:11px;color:var(--muted)}
+.j-date-day{display:grid;place-items:center;min-width:0;min-height:36px;padding:4px;border-radius:9px;border:1px solid transparent;font-size:14px;line-height:1}
+.j-date-day.is-selected{background:var(--accent);color:var(--bg)}
+.j-date-day.is-today:not(.is-selected){border-color:var(--accent);color:var(--accent)}
+.j-date-day:hover:not(.is-selected){background:var(--accent-soft)}
+.j-date-footer{display:flex;justify-content:space-between;gap:12px;margin-top:12px;border-top:1px solid var(--line);padding-top:6px}
+.j-date-footer .j-text{font-size:13px;min-height:36px}
+@media(max-width:520px){.grid2{grid-template-columns:minmax(0,1fr)}.sheet{padding:22px;max-width:100%}#prioritySheet .sheet{padding:22px}}
+@media(max-width:360px){.overlay{padding-inline:14px}.sheet,#prioritySheet .sheet{padding:18px}.j-date-overlay{padding:12px}.j-date-picker.sheet{padding:14px}}
+
 </style>
-  <script src="theme-init.js?v=20261107-journal"></script>
+  <script src="theme-init.js?v=20261107-date-forms"></script>
 </head>
 <body>
   <svg class="icon-sprite" aria-hidden="true">
@@ -101,10 +143,11 @@
   <div class="reference-toast" id="referenceToast" role="status" aria-live="polite"></div>
   <input id="caseFileInput" type="file" multiple hidden>
   <input id="restoreInput" type="file" accept="application/json" hidden>
-<script src="app-core.js?v=20261107-journal"></script>
-<script src="workflow-model.js?v=20261107-journal"></script>
-<script src="task-completion.js?v=20261107-journal"></script>
+<script src="app-core.js?v=20261107-date-forms"></script>
+<script src="workflow-model.js?v=20261107-date-forms"></script>
+<script src="task-completion.js?v=20261107-date-forms"></script>
 <script src="qwen-enhancements.js?v=20260901-workspace-final"></script>
+<script src="date-picker.js?v=20261107-date-forms"></script>
 <script id="releaseWorkspace">
 /* reference-workspace.js */
 /* The journal presentation reuses existing storage and the project-scoped cloud. */
@@ -189,6 +232,7 @@
       const progress=entry?W.subtaskProgress(find(token(entry))?.task||t):{done:0,total:0};
       if(patch.status==='done'&&progress.done<progress.total){askConfirm('В задаче остались невыполненные подзадачи. Завершить основную задачу?',commit);confirmAccept.textContent='Завершить';}else commit();
     };
+    DateFields.enhance(taskForm);
     showOverlay(taskSheet);
   }
   openTask=function journalOpenTask(task={}){const entry=task.id?entries().find(e=>sameId(e.task.id,task.id)&&Boolean(e.task.projectId)===Boolean(task.projectId)):null;openEditor(entry,task);};
@@ -199,6 +243,7 @@
     priorityForm.querySelector('[data-j-create-instead]')?.addEventListener('click',()=>{hideOverlay(prioritySheet);openEditor(null,{priorityDate:priorityForm.elements.date.value||selectedDay});});
     priorityForm.querySelector('[data-j-close-priority]').onclick=()=>hideOverlay(prioritySheet);
     priorityForm.onsubmit=event=>{event.preventDefault();const target=entry?find(token(entry)):find(priorityForm.elements.existing.value);const date=priorityForm.elements.date.value;if(!target||!W.validDay(date))return;if(movePriority(target,date,null,priorityForm.elements.main.checked?'main':'other')){selectedDay=date;hideOverlay(prioritySheet);render();notify('План сохранен');}};
+    DateFields.enhance(priorityForm);
     showOverlay(prioritySheet);
   }
   function movePriority(entry,date,before=null,level=entry.task.priorityLevel==='main'?'main':'other'){
@@ -297,6 +342,6 @@
 })();
 
 </script>
-<script src="sync.js?v=20261107-journal"></script>
+<script src="sync.js?v=20261107-date-forms"></script>
 </body>
 </html>

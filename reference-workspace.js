@@ -80,6 +80,7 @@
       const progress=entry?W.subtaskProgress(find(token(entry))?.task||t):{done:0,total:0};
       if(patch.status==='done'&&progress.done<progress.total){askConfirm('В задаче остались невыполненные подзадачи. Завершить основную задачу?',commit);confirmAccept.textContent='Завершить';}else commit();
     };
+    DateFields.enhance(taskForm);
     showOverlay(taskSheet);
   }
   openTask=function journalOpenTask(task={}){const entry=task.id?entries().find(e=>sameId(e.task.id,task.id)&&Boolean(e.task.projectId)===Boolean(task.projectId)):null;openEditor(entry,task);};
@@ -90,6 +91,7 @@
     priorityForm.querySelector('[data-j-create-instead]')?.addEventListener('click',()=>{hideOverlay(prioritySheet);openEditor(null,{priorityDate:priorityForm.elements.date.value||selectedDay});});
     priorityForm.querySelector('[data-j-close-priority]').onclick=()=>hideOverlay(prioritySheet);
     priorityForm.onsubmit=event=>{event.preventDefault();const target=entry?find(token(entry)):find(priorityForm.elements.existing.value);const date=priorityForm.elements.date.value;if(!target||!W.validDay(date))return;if(movePriority(target,date,null,priorityForm.elements.main.checked?'main':'other')){selectedDay=date;hideOverlay(prioritySheet);render();notify('План сохранен');}};
+    DateFields.enhance(priorityForm);
     showOverlay(prioritySheet);
   }
   function movePriority(entry,date,before=null,level=entry.task.priorityLevel==='main'?'main':'other'){
