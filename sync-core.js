@@ -5,6 +5,9 @@
   const SUPABASE_KEY = 'sb_publishable_pmAp_voLq3GvpnSAeu4AIw_opSxTWXB';
   const SESSION_KEY = 'lawyerCloudSession_qwnkigorqsgugcctnfmj';
   const DIRTY_KEY = 'lawyerCloudDirty';
+  const PAUSED_KEY = 'lawyerCloudPaused';
+  let paused = false;
+  try { paused = localStorage.getItem(PAUSED_KEY) === '1'; } catch {}
   const MIGRATION_KEY = 'lawyerCloudMigrated_qwnkigorqsgugcctnfmj';
   const BACKUP_KEY = 'lawyerCloudBackup_before_qwnkigorqsgugcctnfmj';
   const storageEntries = [
@@ -114,7 +117,7 @@
     if (applyingRemote || !storageKeyByLocal.has(localKey)) return;
     const timestamp = markDirty(localKey);
     queueValue(localKey, value, timestamp);
-    if (!session) {
+    if (paused || !session) {
       setStatus('local', 'Изменения сохранены на устройстве');
       return;
     }
@@ -126,9 +129,34 @@
     scheduleFlush(350);
   }
 
-  window.lawyerCloud = { onLocalSave };
+  function cloudSnapshot() {
+    return {ready: true, enabled: !paused && Boolean(session?.user), paused,
+      email: session?.user?.email || '', state: paused ? 'paused' : syncState,
+      label: paused ? 'Синхронизация приостановлена. Изменения сохраняются на устройстве.' : syncLabel,
+      lastSyncAt: lastSyncAt ? lastSyncAt.toISOString() : null};
+  }
+  function publishState() {
+    if (typeof window.dispatchEvent === 'function' && typeof CustomEvent === 'function')
+      window.dispatchEvent(new CustomEvent('lawyer-cloud-state', {detail: cloudSnapshot()}));
+  }
+  async function setEnabled(enabled) {
+    // Persist the switch before changing behavior. Quota errors must not show a false state.
+    localStorage.setItem(PAUSED_KEY, enabled ? '0' : '1');
+    paused = !enabled;
+    clearTimeout(flushTimer); clearTimeout(retryTimer); clearTimeout(syncRetryTimer);
+    if (paused) { clearTimeout(refreshTimer); refreshTimer = null; setStatus('local', 'Синхронизация приостановлена'); return; }
+    scheduleRefresh();
+    if (!session?.user) { setStatus('local', 'Войдите, чтобы включить синхронизацию'); renderSyncPanel(); showOverlay(syncSheet); return; }
+    // An older operation may have been paused mid-flight. Let it leave its guarded section first.
+    await Promise.allSettled([syncPromise, flushPromise].filter(Boolean));
+    await syncFromCloud();
+  }
+  window.lawyerCloud = {onLocalSave, getState: cloudSnapshot, setEnabled,
+    open: () => { renderSyncPanel(); showOverlay(syncSheet); },
+    syncNow: () => syncFromCloud(), signOut};
 
   function setStatus(nextState, label) {
+    if (paused) { nextState = 'local'; label = 'Синхронизация приостановлена. Данные сохранены на устройстве'; }
     syncState = nextState;
     syncLabel = label;
     const buttonLabels = {
@@ -144,6 +172,7 @@
     syncButton.title = label;
     syncButton.setAttribute('aria-label', label);
     if (syncSheet.classList.contains('show')) renderSyncPanel();
+    publishState();
   }
 
   function saveSession(nextSession) {
@@ -165,7 +194,7 @@
 
   function scheduleRefresh() {
     clearTimeout(refreshTimer);
-    if (!session?.expires_at) return;
+    if (paused || !session?.expires_at) return;
     const delay = Math.max(15000, (Number(session.expires_at) * 1000) - Date.now() - 60000);
     refreshTimer = setTimeout(() => refreshSession().catch(() => {}), Math.min(delay, 2147483647));
   }
@@ -233,6 +262,7 @@
   }
 
   async function refreshSession() {
+    if (paused) return session;
     if (refreshPromise) return refreshPromise;
     const requestedToken = session?.refresh_token;
     const refresh = async () => {
@@ -291,6 +321,7 @@
   async function dataRequest(path, options = {}, retried = false) {
     const userId = session?.user?.id;
     await ensureSession();
+    if (paused) throw new Error('SYNC_PAUSED');
     if (userId && session?.user?.id !== userId) throw new Error('AUTH_REQUIRED');
     if (!session?.access_token) throw new Error('AUTH_REQUIRED');
     const data = await timedRequest(`${SUPABASE_URL}/rest/v1${path}`, {
@@ -347,7 +378,7 @@
 
   async function flushPending() {
     if (flushPromise) return flushPromise;
-    if (!session || !pending.size) return;
+    if (paused || !session || !pending.size) return;
     if (!navigator.onLine) {
       setStatus('offline', 'Нет сети, изменения сохранены локально');
       return;
@@ -356,6 +387,7 @@
       setStatus('syncing', 'Сохраняем изменения в облаке');
       try {
         for (const [localKey, entry] of [...pending.entries()]) {
+          if (paused || !session) break;
           await upsertCloudValue(localKey, entry);
           const current = pending.get(localKey);
           if (current?.revision === entry.revision) {
@@ -383,6 +415,7 @@
   }
 
   async function syncFromCloud() {
+    if (paused) return;
     if (syncPromise) return syncPromise;
     if (!session) {
       setStatus('local', 'Данные сохраняются только на устройстве');
@@ -396,7 +429,9 @@
       setStatus('syncing', 'Получаем сетевую копию');
       try {
         await loadUser();
+        if (paused) return;
         const rows = await fetchCloudRows();
+        if (paused || !session) return;
         const remoteByKey = new Map(rows.map(row => [row.storage_key, row]));
         let changed = false;
         const migrated = readObject(MIGRATION_KEY);
@@ -568,6 +603,8 @@
         renderSyncPanel('Проверьте почту и подтвердите регистрацию. Затем вернитесь в приложение и войдите.', 'success');
         return;
       }
+      localStorage.setItem(PAUSED_KEY, '0');
+      paused = false;
       saveSession(result);
       setStatus('connecting', 'Подключаем сетевое хранилище');
       await loadUser();
@@ -635,6 +672,7 @@
     }
     const redirected = sessionFromHash();
     saveSession(redirected || readSession());
+    if (paused) { setStatus('local', 'Синхронизация приостановлена'); return; }
     if (!session) {
       setStatus('local', 'Адрес облака обновлён. Войдите для подключения, локальные данные сохранены');
       return;
@@ -664,6 +702,7 @@
   document.addEventListener('visibilitychange', resumeSync);
   window.addEventListener('pageshow', resumeSync);
   window.addEventListener('storage', event => {
+    if (event.key === PAUSED_KEY) { paused = event.newValue === '1'; if (paused) setStatus('local', 'Синхронизация приостановлена'); else syncFromCloud().catch(() => {}); return; }
     if (event.key !== SESSION_KEY) return;
     adoptSavedSession();
     if (!session) setStatus('local', 'Данные сохраняются на устройстве');

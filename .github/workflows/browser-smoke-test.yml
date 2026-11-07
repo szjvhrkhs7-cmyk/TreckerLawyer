@@ -23,6 +23,10 @@ jobs:
           node tests/task-scope.cjs
           node tests/completion-undo.cjs
           node tests/workflow-model.cjs
+          node tests/journal-model.cjs
+          node tests/journal-release.cjs
+          node tests/journal-sync.cjs
+          node tests/embedded-assets.cjs
           node tests/smoke.cjs
           node tests/sync.cjs
           node tests/sync-recovery.cjs
@@ -34,7 +38,7 @@ jobs:
         run: |
           CHROME="$(command -v google-chrome || command -v chromium || command -v chromium-browser || true)"
           test -n "$CHROME"
-          NODE_PATH="$RUNNER_TEMP/tracker-test-deps/node_modules" TEST_BROWSER_EXECUTABLE="$CHROME" TEST_SCREENSHOT_DIR="$RUNNER_TEMP/reference-qa" node tests/simple-workspace.cjs
+          NODE_PATH="$RUNNER_TEMP/tracker-test-deps/node_modules" TEST_BROWSER_EXECUTABLE="$CHROME" TEST_SCREENSHOT_DIR="$RUNNER_TEMP/reference-qa" node tests/journal-browser.cjs
       - name: Upload actual interface screenshots
         if: always()
         uses: actions/upload-artifact@v4

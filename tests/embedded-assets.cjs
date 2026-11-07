@@ -6,7 +6,7 @@ const root = path.resolve(__dirname, '..');
 const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const policy = html.match(/http-equiv="Content-Security-Policy" content="([^"]+)"/)[1];
 const expected = {
-  releaseStyles: '\n' + ['priorities.css', 'calendar.css', 'reference-workspace.css'].map(name => `/* ${name} */\n${fs.readFileSync(path.join(root, name), 'utf8')}`).join('\n') + '\n',
+  releaseStyles: '\n' + ['reference-workspace.css'].map(name => `/* ${name} */\n${fs.readFileSync(path.join(root, name), 'utf8')}`).join('\n') + '\n',
   releaseWorkspace: '\n/* reference-workspace.js */\n' + fs.readFileSync(path.join(root, 'reference-workspace.js'), 'utf8') + '\n'
 };
 for (const [tag, directive] of [['style', 'style-src'], ['script', 'script-src']]) {

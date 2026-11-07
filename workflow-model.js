@@ -33,5 +33,34 @@
     if(project.draftHtml)history=[{id:String(revision),html:project.draftHtml,savedAt:project.updatedAt||timestamp},...history];
     return {draftHtml:html,draftHistory:history.slice(0,10),draftRevision:revision};
   }
-  return {validDay,ordered,movePriority,commitCollections,draftPatch};
+  function monthDays(year, month) {
+    if (!Number.isInteger(year) || year < 100 || year > 9999 || !Number.isInteger(month) || month < 0 || month > 11) return [];
+    const offset = (new Date(year, month, 1, 12).getDay() + 6) % 7;
+    const count = new Date(year, month + 1, 0, 12).getDate();
+    return Array.from({length: Math.ceil((offset + count) / 7) * 7}, (_, i) => {
+      const day = i - offset + 1;
+      return day < 1 || day > count ? null : `${year}-${String(month + 1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+    });
+  }
+  function subtaskProgress(task) {
+    const items = Array.isArray(task.subtasks) ? task.subtasks.filter(s => s && s.id != null && typeof s.title === 'string') : [];
+    return {done: items.filter(s => s.completed === true).length, total: items.length};
+  }
+  function patchSubtask(task, operation, timestamp) {
+    const items = Array.isArray(task.subtasks) ? task.subtasks.map(s => s && typeof s === 'object' ? {...s} : s) : [];
+    const index = items.findIndex(s => s && String(s.id) === String(operation.id));
+    const title = typeof operation.title === 'string' ? operation.title.trim() : '';
+    if (operation.type === 'add') {
+      if (!title || operation.id == null || !String(operation.id) || index >= 0) return null;
+      items.push({id: operation.id, title, completed: false, createdAt: timestamp, updatedAt: timestamp});
+    } else {
+      if (index < 0) return null;
+      if (operation.type === 'edit') { if (!title) return null; items[index] = {...items[index], title, updatedAt: timestamp}; }
+      else if (operation.type === 'toggle') items[index] = {...items[index], completed: !items[index].completed, updatedAt: timestamp};
+      else if (operation.type === 'remove') items.splice(index, 1);
+      else return null;
+    }
+    return {...task, subtasks: items, updatedAt: timestamp};
+  }
+  return {validDay,ordered,movePriority,commitCollections,draftPatch,monthDays,subtaskProgress,patchSubtask};
 });

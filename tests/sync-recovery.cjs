@@ -80,6 +80,10 @@ async function main() {
   assert.match(full.elements.get('syncContent').innerHTML, /До сохранения резервной копии подключение остановлено/);
   full.elements.get('cloudAuthForm').onsubmit({ preventDefault() {} }); await settle();
   assert.equal(full.requests.length, 0, 'sign-in cannot bypass a failed backup');
+  await full.context.lawyerCloud.setEnabled(true).catch(() => {}); await settle();
+  assert.equal(full.requests.length, 0, 'settings cannot bypass failed durable backup');
+  await full.context.lawyerCloud.syncNow().catch(() => {}); await settle();
+  assert.equal(full.requests.length, 0, 'manual sync cannot bypass failed durable backup');
   const oldJwt = 'header.' + Buffer.from(JSON.stringify({ iss: 'https://cfkpxrvinkcutbtqpufa.supabase.co/auth/v1' })).toString('base64url') + '.signature';
   const redirect = harness({ saved: null, hash: '#access_token=' + oldJwt + '&refresh_token=old-refresh' }); await settle();
   assert.equal(redirect.requests.length, 0, 'redirect token from obsolete project is rejected before fetch');
