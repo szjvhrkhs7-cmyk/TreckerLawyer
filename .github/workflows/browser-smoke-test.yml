@@ -26,6 +26,9 @@ jobs:
           node tests/journal-model.cjs
           node tests/journal-release.cjs
           node tests/date-forms.cjs
+          node tests/offline-worker.cjs
+          node tests/offline-assets.cjs
+          node tests/offline-release.cjs
           node tests/journal-sync.cjs
           node tests/embedded-assets.cjs
           node tests/smoke.cjs

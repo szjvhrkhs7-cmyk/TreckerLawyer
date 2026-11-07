@@ -77,6 +77,7 @@ const screenshots=process.env.TEST_SCREENSHOT_DIR||'/tmp/journal-qa';
   assert.deepEqual(errors,[],'no browser exceptions');assert.deepEqual(csp,[],'no CSP violations');assert.deepEqual(failed,[],'no failed application assets');await context.close();
   await require('./journal-cloud-browser.cjs')(browser,baseURL);
   await require('./date-forms-browser.cjs')(browser,baseURL,screenshots);
+  await require('./offline-browser.cjs')(browser,baseURL,screenshots);
   console.log('JOURNAL_WORKSPACE_PASS');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1;}).finally(()=>server?.close());

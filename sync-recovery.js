@@ -61,6 +61,7 @@
     const requestUrl = typeof args[0] === 'string' ? args[0] : String(args[0]?.url || '');
     const isSupabase = requestUrl.startsWith(SUPABASE_URL);
     if (!isSupabase) return originalFetch(...args);
+    if (!navigator.onLine) throw new Error('OFFLINE');
 
     const kind = endpointKind(requestUrl);
     const retryableRefresh = kind === 'refresh';
@@ -68,6 +69,7 @@
     let lastError;
 
     for (let attempt = 0; attempt < attempts; attempt += 1) {
+      if (!navigator.onLine) throw new Error('OFFLINE');
       try {
         const response = await originalFetch(...args);
         if (response.ok) {
