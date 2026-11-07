@@ -23,6 +23,10 @@ async function request(url,{mode='cors',method='GET'}={}){let promise;handlers.f
  assert.equal(await request('https://test.example/TreckerLawyer/reset-cache.html',{mode:'navigate'}),null,'repair page bypasses shell');
  assert.equal(await request('https://test.example/TreckerLawyer/app-core.js',{method:'POST'}),null);
  assert.equal(network.length,0,'cached app shell needs no network');
+ const message=async type=>{let pending,result;handlers.message({data:{type},ports:[{postMessage:value=>result=value}],waitUntil:p=>pending=p});await pending;return result;};
+ const currentCache=storage.get(own);currentCache.items.delete('https://test.example/TreckerLawyer/app-core.js');
+ assert.equal((await message('CHECK_READY')).type,'NOT_READY','cache eviction cannot produce false offline-ready status');
+ assert.equal((await message('PREPARE_CACHE')).type,'READY','missing cache can be rebuilt from public assets');
  fail=true;self.registration.active={};skipped=false;vm.runInNewContext(source.replace(/const RELEASE = '[^']+'/,"const RELEASE = 'failed-release'"),{self,caches,URL,Request,Response,fetch:async()=>new Response('network'),console});await assert.rejects(lifecycle('install'));assert(!skipped,'failed update never activates');assert(storage.has(own),'failed install preserves active release');
  console.log('OFFLINE_WORKER_PASS: atomic install, scoped cleanup, query-safe offline shell and no API/auth caching');
 })().catch(e=>{console.error(e);process.exitCode=1;});

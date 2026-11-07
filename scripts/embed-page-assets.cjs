@@ -17,3 +17,6 @@ else html = html.replace(/<script src="reference-workspace\.js[^"]*"><\/script>/
 html = html.replace(/style-src [^;]+;/, `style-src 'self' '${hash(css)}';`).replace(/script-src [^;]+;/, `script-src 'self' '${hash(js)}';`);
 fs.writeFileSync(path.join(root, 'index.html'), html);
 console.log('Embedded release styles and workspace with exact CSP hashes.');
+
+// Keep the offline package in step with embedded UI releases.
+if (fs.existsSync(path.join(root, 'offline.js'))) require('./build-offline-worker.cjs');

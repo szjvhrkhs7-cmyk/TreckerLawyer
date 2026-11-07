@@ -43,6 +43,13 @@ module.exports=async function(browser,baseURL,screenshots){
   await tab('settings');await page.locator('#cloudEnabled').click();await context.setOffline(true);const pausedCount=cloudRequests;await page.close();page=await context.newPage();await page.goto(baseURL+'/?source=pwa&v=paused-cold');await poll(()=>page.evaluate(()=>window.lawyerCloud?.getState?.().paused));
   await tab('tasks');await page.locator('[data-task-token="root:remote"] [data-j-action=edit]').first().click();await page.locator('#task-title').fill('Локально при паузе');await page.locator('#taskForm [type=submit]').click();await context.setOffline(false);await page.waitForTimeout(500);assert.equal(cloudRequests,pausedCount);assert(!rows.get('tasks').value.some(t=>t.title==='Локально при паузе'));
   await tab('settings');await page.locator('#cloudEnabled').click();await poll(()=>rows.get('tasks').value.some(t=>t.title==='Локально при паузе'));
+  // Cache eviction must be detected and recoverable without touching local records.
+  await page.evaluate(async()=>{for(const key of await caches.keys())if(key.startsWith('lawyer-shell:'))await caches.delete(key);});
+  const detected=await page.evaluate(()=>new Promise(resolve=>{const channel=new MessageChannel();channel.port1.onmessage=event=>resolve(event.data.type);navigator.serviceWorker.controller.postMessage({type:'CHECK_READY'},[channel.port2]);}));
+  assert.equal(detected,'NOT_READY');await page.evaluate(()=>window.lawyerOffline.prepare());
+  await poll(()=>page.evaluate(async()=>{const keys=(await caches.keys()).filter(key=>key.startsWith('lawyer-shell:'));return keys.length>0&&(await(await caches.open(keys[0])).keys()).length>=19&&window.lawyerOffline.getState().ready;}));
+  assert((await read('lawyerTasks')).some(t=>t.title==='Локально при паузе'));
+  console.log('PASS offline cache eviction: readiness detects missing assets and online preparation repairs them');
   assert.deepEqual(errors,[]);console.log('OFFLINE_BROWSER_PASS: reconnect drains durable queue, paused sync stays paused, no private API/auth cache');
  }finally{await context.close();}
 };

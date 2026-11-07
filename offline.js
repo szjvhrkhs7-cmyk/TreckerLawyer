@@ -6,13 +6,23 @@
   let registration=null,preparing=null,hadController=Boolean(navigator.serviceWorker?.controller),needsReload=false;
   const scope=new URL('./',location.href).href,workerURL=new URL('sw.js',scope).href;
   function publish(patch){Object.assign(snapshot,patch);window.dispatchEvent(new CustomEvent('lawyer-offline-state',{detail:{...snapshot}}));}
-  const watched=new WeakSet(),watchedWorkers=new WeakSet();
+  const watched=new WeakSet(),watchedWorkers=new WeakSet(),checking=new WeakSet();
   function reloadWhenSafe(){const subtaskDraft=[...document.querySelectorAll('.j-subform input')].some(input=>input.value.trim());if(needsReload&&!document.querySelector('.overlay.show')&&!subtaskDraft){needsReload=false;location.reload();}}
-  function verify(worker){
-    if(!worker)return;
-    const channel=new MessageChannel(),timer=setTimeout(()=>{channel.port1.close();if(!snapshot.ready)publish({label:'Подготовка еще не завершена. Откройте трекер с интернетом.'});},5000);
-    channel.port1.onmessage=event=>{clearTimeout(timer);channel.port1.close();if(event.data?.type==='READY')publish({ready:true,label:'Готово. Трекер можно закрывать и открывать без интернета.',updateAvailable:Boolean(registration?.waiting)});};
-    worker.postMessage({type:'CHECK_READY'},[channel.port2]);
+  function verify(worker,repair=false){
+    if(!worker||checking.has(worker))return;
+    checking.add(worker);
+    const channel=new MessageChannel(),timer=setTimeout(()=>{checking.delete(worker);channel.port1.close();publish({ready:false,label:'Подготовка еще не завершена. Откройте трекер с интернетом.'});},repair?30000:5000);
+    channel.port1.onmessage=event=>{
+      clearTimeout(timer);checking.delete(worker);channel.port1.close();
+      if(event.data?.type==='READY')publish({ready:true,label:'Готово. Трекер можно закрывать и открывать без интернета.',updateAvailable:Boolean(registration?.waiting)});
+      else {
+        publish({ready:false,label:navigator.onLine?'Восстанавливаем файлы для автономного запуска…':'Файлы автономного запуска отсутствуют. Подключитесь к интернету для подготовки.'});
+        if(navigator.onLine&&!repair)verify(worker,true);
+        else if(repair)publish({ready:false,label:'Не удалось сохранить все файлы. Повторим при подключении к интернету.'});
+      }
+    };
+    try{worker.postMessage({type:repair?'PREPARE_CACHE':'CHECK_READY'},[channel.port2]);}
+    catch{clearTimeout(timer);checking.delete(worker);channel.port1.close();publish({ready:false,label:'Подготовка автономного запуска еще не завершена.'});}
   }
   function watch(reg){
     registration=reg;if(reg.active)verify(reg.active);
