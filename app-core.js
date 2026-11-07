@@ -252,4 +252,4 @@ document.addEventListener('keydown',e=>{const open=[...document.querySelectorAll
 const systemTheme=matchMedia('(prefers-color-scheme: dark)');systemTheme.addEventListener?.('change',event=>{let saved=null;try{saved=localStorage.getItem(THEME_KEY)}catch{}if(!saved)applyTheme(event.matches?'dark':'light')});
 if('serviceWorker' in navigator){navigator.serviceWorker.getRegistrations().then(rs=>rs.forEach(r=>r.unregister())).catch(()=>{})}
 applyTheme(document.documentElement.dataset.theme);
-render();
+// The embedded journal initializes the UI after the shared helpers are ready.
